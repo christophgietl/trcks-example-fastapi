@@ -3,8 +3,7 @@ name: CI
 on:
   - push
 
-permissions:
-    contents: read
+permissions: { }
 
 jobs:
   lint-and-test:
