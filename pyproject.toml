@@ -1,0 +1,134 @@
+[dependency-groups]
+dev = [
+    "import-linter==2.9",
+    "pre-commit==4.5.1",
+    "pyright[nodejs]==1.1.407",
+    "pytest==9.0.2",
+    "pytest-asyncio==1.3.0",
+    "pytest-cov==7.0.0",
+    "trcks[pyright]==0.4.0",
+]
+
+[project]
+dependencies = [
+    "fastapi[standard-no-fastapi-cloud-cli]==0.127.0",
+    "pydantic==2.12.5",
+    "sqlalchemy[aiosqlite]==2.0.45",
+    "trcks==0.4.0",
+]
+dynamic = ["version"]
+name = "trcks-example-fastapi"
+requires-python = "==3.14.*"
+
+[tool.importlinter]
+exclude_type_checking_imports = false
+include_external_packages = true
+root_package = "app"
+
+[[tool.importlinter.contracts]]
+name = "Main, routers, services and repositories can only import from layers below them"
+type = "layers"
+layers = [
+    "app.main",
+    "app.logic.routers",
+    "app.logic.services",
+    "app.logic.repositories",
+    "app.data_structures",
+]
+
+[[tool.importlinter.contracts]]
+name = "Database can only be imported from main and repositories"
+type = "protected"
+protected_modules = ["app.database"]
+allowed_importers = [
+    "app.main",
+    "app.logic.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain can only be imported from models, repositories, schemas and services"
+type = "protected"
+protected_modules = ["app.data_structures.domain"]
+allowed_importers = [
+    "app.data_structures.models",
+    "app.data_structures.schemas",
+    "app.logic.repositories",
+    "app.logic.services",
+]
+
+[[tool.importlinter.contracts]]
+name = "Models can only be imported from database and repositories"
+type = "protected"
+protected_modules = ["app.data_structures.models"]
+allowed_importers = [
+    "app.database",
+    "app.logic.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "Schemas can only be imported from routers"
+type = "protected"
+protected_modules = ["app.data_structures.schemas"]
+allowed_importers = [
+    "app.logic.routers",
+]
+
+[[tool.importlinter.contracts]]
+name = "Routers are independent"
+type = "independence"
+modules = [
+    "app.logic.routers.*",
+]
+
+[[tool.importlinter.contracts]]
+name = "Services are independent"
+type = "independence"
+modules = [
+    "app.logic.services.*",
+]
+
+[tool.pyright]
+deprecateTypingAliases = true
+reportCallInDefaultInitializer = true
+reportImplicitOverride = true
+reportImplicitStringConcatenation = true
+reportImportCycles = true
+reportMissingSuperCall = true
+reportPropertyTypeMismatch = true
+reportUninitializedInstanceVariable = true
+reportUnnecessaryTypeIgnoreComment = true
+reportUnusedCallResult = true
+typeCheckingMode = "strict"
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-fail-under=100 --cov-report=term-missing"
+asyncio_mode = "auto"
+
+[tool.ruff.lint]
+ignore = [
+    "COM812", # "may cause conflicts when used with the formatter"
+    "D",
+]
+select = ["ALL"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "sqlalchemy.orm.DeclarativeBase",
+]
+runtime-evaluated-decorators = [
+    "fastapi.APIRouter.delete",
+    "fastapi.APIRouter.get",
+    "fastapi.APIRouter.post",
+    "fastapi.APIRouter.put",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.uv]
+add-bounds = "exact"
+required-version = ">=0.9.18,<0.10.0"

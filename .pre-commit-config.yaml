@@ -1,0 +1,69 @@
+default_install_hook_types:
+  - commit-msg
+  - pre-commit
+default_stages:
+  - pre-commit
+minimum_pre_commit_version: 4.2.0
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 5ba58aca0bd5bc7c0e1c0fc45af2e88d6a2bde83  # frozen: v0.14.10
+    hooks:
+      - id: ruff-check
+        args:
+          - --exit-non-zero-on-fix
+          - --fix
+      - id: ruff-format
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: e90530d2cface051bb46cbd33f2362558e5ee9fb  # frozen: 0.9.18
+    hooks:
+      - id: uv-lock
+  - repo: https://github.com/codespell-project/codespell
+    rev: 63c8f8312b7559622c0d82815639671ae42132ac  # frozen: v2.4.1
+    hooks:
+      - id: codespell
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: 6d356e098eda1e0bb80b8180d408feb0cb296d65  # frozen: v0.9.34
+    hooks:
+      - id: pymarkdown
+        args:
+          - fix
+        name: pymarkdown fix
+      - id: pymarkdown
+        args:
+          - scan
+        name: pymarkdown scan
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: acc9d9de6369b76d22cb4167029d2035e8730b98  # frozen: v0.19.1
+    hooks:
+      - id: gitlint
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-illegal-windows-names
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-xml
+      - id: check-yaml
+      - id: debug-statements
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: forbid-submodules
+      - id: mixed-line-ending
+      - id: name-tests-test
+        args:
+          - --pytest-test-first
+      - id: pretty-format-json
+      - id: trailing-whitespace
+  - repo: https://github.com/rhysd/actionlint
+    rev: a443f344ff32813837fa49f7aa6cbc478d770e62  # frozen: v1.7.9
+    hooks:
+      - id: actionlint
