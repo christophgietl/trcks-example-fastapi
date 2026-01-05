@@ -1,0 +1,24 @@
+name: Run tests and type checks
+description: Executes import-linter, the test suite and a static type checker.
+inputs:
+  locked:
+    default: "true"
+    description: Whether to assert that uv.lock remains unchanged during `uv sync`.
+    required: true
+  resolution-strategy:
+    default: highest
+    description: Strategy used by uv when selecting between different versions for a given package requirement.
+    required: true
+runs:
+  using: composite
+  steps:
+    - run: uv sync --all-extras${{ fromJSON(inputs.locked) && ' --locked' || '' }} --resolution=${{ inputs.resolution-strategy }}
+      shell: bash
+    - env:
+        PYTHONIOENCODING: utf-8 # avoids UnicodeEncodeError in Windows (see https://github.com/Textualize/rich/issues/2411)
+      run: uv run --no-sync lint-imports
+      shell: bash
+    - run: uv run --no-sync pyright
+      shell: bash
+    - run: uv run --no-sync pytest
+      shell: bash

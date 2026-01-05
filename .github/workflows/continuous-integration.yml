@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  - push
+
+permissions:
+    contents: read
+
+jobs:
+  lint-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/set-up-uv
+        with:
+          install-and-cache-dependencies: true
+      - uses: ./.github/actions/run-pre-commit
+        with:
+          cache-key-suffix: ${{ matrix.os }}
+      - uses: ./.github/actions/run-tests-and-type-checks
