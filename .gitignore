@@ -1,0 +1,19 @@
+# PyCharm-generated files
+/.idea/
+
+# pytest-generated files
+.coverage
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# SQLite-generated files
+*.sqlite3
+
+# Virtual environments
+.venv
