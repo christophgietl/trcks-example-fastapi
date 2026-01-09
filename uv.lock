@@ -803,7 +803,7 @@ dev = [
     { name = "pytest", specifier = "==9.0.2" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-cov", specifier = "==7.0.0" },
-    { name = "trcks", extras = ["pyright"], specifier = "==0.4.0" },
+    { name = "trcks", extras = ["pyright"] },
 ]
 
 [[package]]
