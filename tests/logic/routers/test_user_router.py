@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
-from uuid import UUID, uuid4
+from uuid import UUID, uuid7
 
 from fastapi import status
 from sqlalchemy import Row, select
@@ -25,12 +25,12 @@ async def _get_users_from_database(
 async def test_create_user_adds_additional_user_to_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    users = ((uuid4(), "spam@foo.org"), (uuid4(), "ham@bar.com"))
+    users = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
     async with session.begin():
         session.add_all(UserModel(id=user[0], email=user[1]) for user in users)
         await session.flush()
 
-    additional_user = (uuid4(), "test@baz.com")
+    additional_user = (uuid7(), "test@baz.com")
     response = await client.post(
         "/users/", json={"id": str(additional_user[0]), "email": additional_user[1]}
     )
@@ -46,12 +46,12 @@ async def test_create_user_adds_additional_user_to_database(
 async def test_create_user_with_existing_email_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    user = (uuid4(), "spam@foo.org")
+    user = (uuid7(), "spam@foo.org")
     async with session.begin():
         session.add(UserModel(id=user[0], email=user[1]))
         await session.flush()
 
-    response = await client.post("/users/", json={"id": str(uuid4()), "email": user[1]})
+    response = await client.post("/users/", json={"id": str(uuid7()), "email": user[1]})
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {"detail": f"User with email {user[1]} already exists."}
@@ -64,7 +64,7 @@ async def test_create_user_with_existing_email_fails(
 async def test_create_user_with_existing_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    user = (uuid4(), "spam@foo.org")
+    user = (uuid7(), "spam@foo.org")
     async with session.begin():
         session.add(UserModel(id=user[0], email=user[1]))
         await session.flush()
@@ -84,7 +84,7 @@ async def test_create_user_with_existing_id_fails(
 async def test_delete_user_removes_user_from_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    users = ((uuid4(), "spam@foo.org"), (uuid4(), "ham@bar.com"))
+    users = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
     async with session.begin():
         session.add_all(UserModel(id=user[0], email=user[1]) for user in users)
         await session.flush()
@@ -102,12 +102,12 @@ async def test_delete_user_removes_user_from_database(
 async def test_delete_user_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    user = (uuid4(), "spam@foo.org")
+    user = (uuid7(), "spam@foo.org")
     async with session.begin():
         session.add(UserModel(id=user[0], email=user[1]))
         await session.flush()
 
-    nonexistent_user_id = uuid4()
+    nonexistent_user_id = uuid7()
     response = await client.delete(f"/users/{nonexistent_user_id}")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -123,13 +123,13 @@ async def test_delete_user_with_nonexistent_id_fails(
 async def test_read_user_by_email_returns_user(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_monthly_fee_in_euros = Decimal("9.99")
     product_name = "Test Product"
     product_status: Literal["published"] = "published"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "test@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     subscription_is_active = True
     async with session.begin():
         session.add(
@@ -175,7 +175,7 @@ async def test_read_user_by_email_returns_user(
 async def test_read_user_by_email_with_nonexistent_email_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    user = (uuid4(), "spam@foo.org")
+    user = (uuid7(), "spam@foo.org")
     async with session.begin():
         session.add(UserModel(id=user[0], email=user[1]))
         await session.flush()
@@ -193,13 +193,13 @@ async def test_read_user_by_id_returns_user(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: tuple[UUID, Decimal, str, Literal["published"]] = (
-        uuid4(),
+        uuid7(),
         Decimal("9.99"),
         "Test Product",
         "published",
     )
-    user = (uuid4(), "test@example.com")
-    subscription = (uuid4(), True, product[0], user[0])
+    user = (uuid7(), "test@example.com")
+    subscription = (uuid7(), True, product[0], user[0])
     async with session.begin():
         session.add(
             ProductModel(
@@ -244,12 +244,12 @@ async def test_read_user_by_id_returns_user(
 async def test_read_user_by_id_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    user = (uuid4(), "spam@foo.org")
+    user = (uuid7(), "spam@foo.org")
     async with session.begin():
         session.add(UserModel(id=user[0], email=user[1]))
         await session.flush()
 
-    nonexistent_user_id = uuid4()
+    nonexistent_user_id = uuid7()
     response = await client.get(f"/users/{nonexistent_user_id}")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -261,15 +261,15 @@ async def test_read_user_by_id_with_nonexistent_id_fails(
 async def test_read_users_returns_all_users(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_monthly_fee_in_euros = Decimal("9.99")
     product_name = "Test Product"
     product_status: Literal["published"] = "published"
-    user1_id = uuid4()
+    user1_id = uuid7()
     user1_email = "user1@example.com"
-    user2_id = uuid4()
+    user2_id = uuid7()
     user2_email = "user2@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     subscription_is_active = True
     async with session.begin():
         session.add(
@@ -326,7 +326,7 @@ async def test_read_users_returns_empty_list_when_no_users(client: AsyncClient) 
 async def test_update_user_modifies_user_in_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    users = ((uuid4(), "original@example.com"), (uuid4(), "other@example.com"))
+    users = ((uuid7(), "original@example.com"), (uuid7(), "other@example.com"))
     async with session.begin():
         session.add_all(UserModel(id=user[0], email=user[1]) for user in users)
         await session.flush()
@@ -349,12 +349,12 @@ async def test_update_user_modifies_user_in_database(
 async def test_update_user_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    user = (uuid4(), "spam@foo.org")
+    user = (uuid7(), "spam@foo.org")
     async with session.begin():
         session.add(UserModel(id=user[0], email=user[1]))
         await session.flush()
 
-    nonexistent_user_id = uuid4()
+    nonexistent_user_id = uuid7()
     response = await client.put(
         f"/users/{nonexistent_user_id}", json={"email": "updated@example.com"}
     )
@@ -372,7 +372,7 @@ async def test_update_user_with_nonexistent_id_fails(
 async def test_update_user_with_existing_email_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    users = ((uuid4(), "original@example.com"), (uuid4(), "existing@example.com"))
+    users = ((uuid7(), "original@example.com"), (uuid7(), "existing@example.com"))
     async with session.begin():
         session.add_all(UserModel(id=user[0], email=user[1]) for user in users)
         await session.flush()

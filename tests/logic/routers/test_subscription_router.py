@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
-from uuid import UUID, uuid4
+from uuid import UUID, uuid7
 
 import pytest
 from fastapi import status
@@ -31,14 +31,14 @@ async def _get_subscriptions_from_database(
 async def test_create_subscription_adds_subscription_to_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user1_id = uuid4()
+    user1_id = uuid7()
     user1_email = "user1@example.com"
-    user2_id = uuid4()
+    user2_id = uuid7()
     user2_email = "user2@example.com"
-    subscription1_id = uuid4()
+    subscription1_id = uuid7()
     subscription1_is_active = True
     async with session.begin():
         session.add_all(
@@ -61,7 +61,7 @@ async def test_create_subscription_adds_subscription_to_database(
         )
         await session.flush()
 
-    new_subscription_id = uuid4()
+    new_subscription_id = uuid7()
     new_subscription_is_active = True
     response = await client.post(
         "/subscriptions/",
@@ -90,11 +90,11 @@ async def test_create_subscription_for_non_published_product_fails(
     session: AsyncSession,
     product_status: Literal["draft", "deprecated"],
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -131,14 +131,14 @@ async def test_create_subscription_for_non_published_product_fails(
 async def test_create_subscription_with_existing_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user1_id = uuid4()
+    user1_id = uuid7()
     user1_email = "user1@example.com"
-    user2_id = uuid4()
+    user2_id = uuid7()
     user2_email = "user2@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -185,12 +185,12 @@ async def test_create_subscription_with_existing_id_fails(
 async def test_create_subscription_with_nonexistent_user_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -205,7 +205,7 @@ async def test_create_subscription_with_nonexistent_user_fails(
         )
         await session.flush()
 
-    nonexistent_user_id = uuid4()
+    nonexistent_user_id = uuid7()
     response = await client.post(
         "/subscriptions/",
         json={
@@ -229,14 +229,14 @@ async def test_create_subscription_with_nonexistent_user_fails(
 async def test_create_subscription_with_nonexistent_product_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add(UserModel(id=user_id, email=user_email))
         await session.flush()
 
-    nonexistent_product_id = uuid4()
+    nonexistent_product_id = uuid7()
     response = await client.post(
         "/subscriptions/",
         json={
@@ -260,15 +260,15 @@ async def test_create_subscription_with_nonexistent_product_fails(
 async def test_delete_subscription_removes_subscription_from_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user1_id = uuid4()
+    user1_id = uuid7()
     user1_email = "user1@example.com"
-    user2_id = uuid4()
+    user2_id = uuid7()
     user2_email = "user2@example.com"
-    subscription1_id = uuid4()
-    subscription2_id = uuid4()
+    subscription1_id = uuid7()
+    subscription2_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -311,12 +311,12 @@ async def test_delete_subscription_removes_subscription_from_database(
 async def test_delete_subscription_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -337,7 +337,7 @@ async def test_delete_subscription_with_nonexistent_id_fails(
         )
         await session.flush()
 
-    nonexistent_subscription_id = uuid4()
+    nonexistent_subscription_id = uuid7()
     response = await client.delete(f"/subscriptions/{nonexistent_subscription_id}")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -353,19 +353,19 @@ async def test_delete_subscription_with_nonexistent_id_fails(
 async def test_read_subscriptions_returns_all_subscriptions(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product1_id = uuid4()
+    product1_id = uuid7()
     product1_name = "Product 1"
     product1_status: Literal["published"] = "published"
-    product2_id = uuid4()
+    product2_id = uuid7()
     product2_name = "Product 2"
     product2_status: Literal["published"] = "published"
-    user1_id = uuid4()
+    user1_id = uuid7()
     user1_email = "user1@example.com"
-    user2_id = uuid4()
+    user2_id = uuid7()
     user2_email = "user2@example.com"
-    subscription1_id = uuid4()
+    subscription1_id = uuid7()
     subscription1_is_active = True
-    subscription2_id = uuid4()
+    subscription2_id = uuid7()
     subscription2_is_active = False
     async with session.begin():
         session.add_all(
@@ -439,12 +439,12 @@ async def test_read_subscriptions_returns_empty_list_when_no_subscriptions(
 async def test_read_subscription_by_id_returns_subscription(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     subscription_is_active = True
     async with session.begin():
         session.add_all(
@@ -484,7 +484,7 @@ async def test_read_subscription_by_id_returns_subscription(
 async def test_read_subscription_by_id_returns_404_when_subscription_does_not_exist(
     client: AsyncClient,
 ) -> None:
-    subscription_id = uuid4()
+    subscription_id = uuid7()
 
     response = await client.get(f"/subscriptions/{subscription_id}")
 
@@ -497,17 +497,17 @@ async def test_read_subscription_by_id_returns_404_when_subscription_does_not_ex
 async def test_update_subscription_updates_subscription_in_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product1_id = uuid4()
+    product1_id = uuid7()
     product1_name = "Product 1"
     product1_status: Literal["published"] = "published"
-    product2_id = uuid4()
+    product2_id = uuid7()
     product2_name = "Product 2"
     product2_status: Literal["published"] = "published"
-    user1_id = uuid4()
+    user1_id = uuid7()
     user1_email = "user1@example.com"
-    user2_id = uuid4()
+    user2_id = uuid7()
     user2_email = "user2@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -569,13 +569,13 @@ async def test_update_subscription_to_non_published_product_fails(
     session: AsyncSession,
     product_status: Literal["draft", "deprecated"],
 ) -> None:
-    published_product_id = uuid4()
+    published_product_id = uuid7()
     published_product_name = "Published Product"
-    non_published_product_id = uuid4()
+    non_published_product_id = uuid7()
     non_published_product_name = "Non-Published Product"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -628,12 +628,12 @@ async def test_update_subscription_to_non_published_product_fails(
 async def test_update_subscription_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -654,7 +654,7 @@ async def test_update_subscription_with_nonexistent_id_fails(
         )
         await session.flush()
 
-    nonexistent_subscription_id = uuid4()
+    nonexistent_subscription_id = uuid7()
     response = await client.put(
         f"/subscriptions/{nonexistent_subscription_id}",
         json={
@@ -679,12 +679,12 @@ async def test_update_subscription_with_nonexistent_id_fails(
 async def test_update_subscription_with_nonexistent_user_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -705,7 +705,7 @@ async def test_update_subscription_with_nonexistent_user_fails(
         )
         await session.flush()
 
-    nonexistent_user_id = uuid4()
+    nonexistent_user_id = uuid7()
     response = await client.put(
         f"/subscriptions/{subscription_id}",
         json={
@@ -730,12 +730,12 @@ async def test_update_subscription_with_nonexistent_user_fails(
 async def test_update_subscription_with_nonexistent_product_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
-    product_id = uuid4()
+    product_id = uuid7()
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
-    user_id = uuid4()
+    user_id = uuid7()
     user_email = "user@example.com"
-    subscription_id = uuid4()
+    subscription_id = uuid7()
     async with session.begin():
         session.add_all(
             [
@@ -756,7 +756,7 @@ async def test_update_subscription_with_nonexistent_product_fails(
         )
         await session.flush()
 
-    nonexistent_product_id = uuid4()
+    nonexistent_product_id = uuid7()
     response = await client.put(
         f"/subscriptions/{subscription_id}",
         json={
