@@ -14,7 +14,7 @@ dependencies = [
     "fastapi[standard-no-fastapi-cloud-cli]==0.128.0",
     "pydantic==2.12.5",
     "sqlalchemy[aiosqlite]==2.0.45",
-    "trcks==0.4.1",
+    "trcks==0.4.2",
 ]
 dynamic = ["version"]
 name = "trcks-example-fastapi"
