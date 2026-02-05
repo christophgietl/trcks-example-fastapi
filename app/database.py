@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator  # noqa: TC003
 from contextlib import asynccontextmanager
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -29,8 +29,4 @@ async def _get_async_session() -> AsyncIterator[AsyncSession]:  # pragma: no cov
         yield async_session
 
 
-# FastAPI does not support the type keyword when used for dependencies
-# as of October 2025 (see https://github.com/fastapi/fastapi/issues/10719):
-AsyncSessionDep: TypeAlias = Annotated[  # noqa: UP040
-    AsyncSession, Depends(_get_async_session)
-]
+type AsyncSessionDep = Annotated[AsyncSession, Depends(_get_async_session)]
