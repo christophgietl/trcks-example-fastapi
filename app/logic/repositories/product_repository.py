@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Literal
 
 from fastapi import Depends
 from sqlalchemy import delete, select, update
@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from app.data_structures.domain.product import Product
 
 type _BaseProductResult = Result[Literal["Product does not exist"], Product]
+
+type ProductRepositoryDep = Annotated[ProductRepository, Depends()]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -87,8 +89,3 @@ class ProductRepository:
                     raise
         else:
             return self._to_base_product_result(updated_product_model)
-
-
-# FastAPI does not support the type keyword when used for dependencies
-# as of October 2025 (see https://github.com/fastapi/fastapi/issues/10719):
-ProductRepositoryDep: TypeAlias = Annotated[ProductRepository, Depends()]  # noqa: UP040

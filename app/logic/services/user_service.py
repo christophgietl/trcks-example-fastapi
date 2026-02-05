@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Literal
 
 from fastapi import Depends
 
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from trcks import AwaitableResult
 
     from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
+
+type UserServiceDep = Annotated[UserService, Depends()]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -54,8 +56,3 @@ class UserService:
         UserWithSubscriptionsWithProducts,
     ]:
         return self._user_repository.update_user(user)
-
-
-# FastAPI does not support the type keyword when used for dependencies
-# as of October 2025 (see https://github.com/fastapi/fastapi/issues/10719):
-UserServiceDep: TypeAlias = Annotated[UserService, Depends()]  # noqa: UP040

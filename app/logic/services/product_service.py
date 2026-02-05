@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias, assert_never
+from typing import TYPE_CHECKING, Annotated, Literal, assert_never
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -37,6 +37,8 @@ type _ProductDoesNotExistLiteral = Literal["Product does not exist"]
 type _ProductStatusLiteral = Literal[
     "Product status is published", "Product status is deprecated"
 ]
+
+type ProductServiceDep = Annotated[ProductService, Depends()]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -180,8 +182,3 @@ class ProductService:
             .map_success_to_awaitable_result(self._product_repository.update_product)
             .core
         )
-
-
-# FastAPI does not support the type keyword when used for dependencies
-# as of October 2025 (see https://github.com/fastapi/fastapi/issues/10719):
-ProductServiceDep: TypeAlias = Annotated[ProductService, Depends()]  # noqa: UP040

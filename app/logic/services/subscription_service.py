@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias, assert_never
+from typing import TYPE_CHECKING, Annotated, Literal, assert_never
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 type _ProductStatusLiteral = Literal[
     "Product is in draft status", "Product is in deprecated status"
 ]
+
+type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -109,8 +111,3 @@ class SubscriptionService:
             )
             .core
         )
-
-
-# FastAPI does not support the type keyword when used for dependencies
-# as of October 2025 (see https://github.com/fastapi/fastapi/issues/10719):
-SubscriptionServiceDep: TypeAlias = Annotated[SubscriptionService, Depends()]  # noqa: UP040

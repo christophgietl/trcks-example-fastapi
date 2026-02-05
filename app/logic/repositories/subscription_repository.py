@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
 
 from fastapi import Depends
 from sqlalchemy import delete, select, update
@@ -31,6 +31,8 @@ type _BaseSubscriptionResult = Result[
 type _ProductOrUserDoesNotExist = Literal[
     "Product does not exist", "User does not exist"
 ]
+
+type SubscriptionRepositoryDep = Annotated[SubscriptionRepository, Depends()]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -159,8 +161,3 @@ class SubscriptionRepository:
             .map_success_to_awaitable_result(self._update_subscription)
             .core
         )
-
-
-# FastAPI does not support the type keyword when used for dependencies
-# as of October 2025 (see https://github.com/fastapi/fastapi/issues/10719):
-SubscriptionRepositoryDep: TypeAlias = Annotated[SubscriptionRepository, Depends()]  # noqa: UP040

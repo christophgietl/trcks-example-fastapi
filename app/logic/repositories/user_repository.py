@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
 
 from fastapi import Depends
 from sqlalchemy import delete, select, update
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 type _BaseUserResult = Result[
     Literal["User does not exist"], UserWithSubscriptionsWithProducts
 ]
+
+type UserRepositoryDep = Annotated[UserRepository, Depends()]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -107,8 +109,3 @@ class UserRepository:
                     raise
         else:
             return self._to_base_user_result(updated_user_model)
-
-
-# FastAPI does not support the type keyword when used for dependencies
-# as of October 2025 (see https://github.com/fastapi/fastapi/issues/10719):
-UserRepositoryDep: TypeAlias = Annotated[UserRepository, Depends()]  # noqa: UP040

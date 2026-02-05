@@ -34,7 +34,7 @@ def _app(_engine: AsyncEngine) -> Iterator[FastAPI]:  # pyright: ignore[reportUn
             yield async_session
 
     app.dependency_overrides = {
-        typing.get_args(AsyncSessionDep)[1].dependency: get_session
+        typing.get_args(AsyncSessionDep.__value__)[1].dependency: get_session
     }
     yield app
     app.dependency_overrides.clear()

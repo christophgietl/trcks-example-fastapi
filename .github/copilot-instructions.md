@@ -202,8 +202,7 @@ Keep them centralized and consistent—changes require updating all match statem
 - `Annotated[T, Depends(...)]` aliases
     (e.g., `AsyncSessionDep`, `UserRepositoryDep`, `UserServiceDep`)
     provide strongly typed dependencies.
-- Avoid using `type` keyword for these aliases (some FastAPI tooling quirks);
-    use `TypeAlias` plus `Annotated`.
+- Use the `type` keyword for these dependency aliases.
 
 ## Development Workflow
 
