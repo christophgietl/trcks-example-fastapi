@@ -131,4 +131,4 @@ convention = "google"
 
 [tool.uv]
 add-bounds = "exact"
-required-version = ">=0.9.18,<0.10.0"
+required-version = ">=0.10,<0.11"
