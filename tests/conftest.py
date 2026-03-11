@@ -1,5 +1,4 @@
 import typing
-from collections.abc import AsyncIterator  # noqa: TC003
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -14,7 +13,7 @@ from app.database import AsyncSessionDep
 from app.main import app
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator, Iterator
 
     from fastapi import FastAPI
 
