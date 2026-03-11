@@ -280,7 +280,7 @@ If you want POST /users to echo the created resource:
 - Pyright strict mode with extra diagnostics (see `[tool.pyright]`).
 - Ruff enforces almost all rules;
     docstring rules disabled (`D`),
-    conflict-prone rules ignored (`COM812`, `TC001`, `TC003`).
+    conflict-prone rule ignored (`COM812`).
 - Keep new lint ignores minimal; justify via inline comments.
 
 ## Glossary

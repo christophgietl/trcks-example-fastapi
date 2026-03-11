@@ -1,11 +1,13 @@
-from collections.abc import AsyncIterator  # noqa: TC003
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.data_structures.models import set_pragmas_and_create_all_tables
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 _async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
 
