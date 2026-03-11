@@ -5,7 +5,6 @@ from fastapi import Depends
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from sqlalchemy.orm.interfaces import LoaderOption  # noqa: TC002
 
 from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
 from app.data_structures.models import SubscriptionModel, UserModel
@@ -14,6 +13,7 @@ from app.database import AsyncSessionDep  # noqa: TC001
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from sqlalchemy.orm.interfaces import LoaderOption
     from trcks import Failure, Result
 
 type _BaseUserResult = Result[

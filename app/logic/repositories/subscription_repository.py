@@ -5,7 +5,6 @@ from fastapi import Depends
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from sqlalchemy.orm.interfaces import LoaderOption  # noqa: TC002
 from trcks.oop import Wrapper
 
 from app.data_structures.models import SubscriptionModel
@@ -18,6 +17,7 @@ from app.logic.repositories.user_repository import UserRepositoryDep  # noqa: TC
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from sqlalchemy.orm.interfaces import LoaderOption
     from trcks import AwaitableResult, Result
 
     from app.data_structures.domain.subscription import (
