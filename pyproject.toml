@@ -101,8 +101,9 @@ reportUnusedCallResult = true
 typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
-addopts = "--cov=app --cov-fail-under=100 --cov-report=term-missing"
+addopts = "--cov=app --cov-fail-under=100 --cov-report=term-missing --import-mode=importlib"
 asyncio_mode = "auto"
+pythonpath = ["."]
 
 [tool.ruff.lint]
 ignore = [
@@ -124,7 +125,7 @@ runtime-evaluated-decorators = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
+"tests/*" = ["INP001", "S101"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
