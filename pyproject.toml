@@ -107,8 +107,8 @@ pythonpath = ["."]
 
 [tool.ruff.lint]
 ignore = [
-    "COM812", # "may cause conflicts when used with the formatter"
-    "D",
+    "COM812",   # "may cause conflicts when used with the formatter"
+    "D1",       # would complain about missing docstrings
 ]
 select = ["ALL"]
 
