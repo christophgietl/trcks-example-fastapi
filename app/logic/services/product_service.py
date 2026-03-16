@@ -82,7 +82,7 @@ class ProductService:
         payload_is_identical = product_update.before == dataclasses.replace(
             product_update.after, status=product_update.before.status
         )
-        match pair := payload_is_identical, product_update.before.status:
+        match pair := (payload_is_identical, product_update.before.status):
             case True, "draft" | "published" | "deprecated":
                 return "success", None
             case False, "draft":
@@ -118,7 +118,7 @@ class ProductService:
     def _check_that_status_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[_CannotUpdateProductStatusLiteral, None]:
-        match pair := product_update.before.status, product_update.after.status:
+        match pair := (product_update.before.status, product_update.after.status):
             case "draft", "draft" | "published" | "deprecated":
                 return "success", None
             case "published", "draft":
