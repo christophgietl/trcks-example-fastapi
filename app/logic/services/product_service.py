@@ -82,7 +82,7 @@ class ProductService:
         payload_is_identical = product_update.before == dataclasses.replace(
             product_update.after, status=product_update.before.status
         )
-        match pair := (payload_is_identical, product_update.before.status):
+        match payload_is_identical, product_update.before.status:
             case True, "draft" | "published" | "deprecated":
                 return "success", None
             case False, "draft":
@@ -97,7 +97,7 @@ class ProductService:
                     "failure",
                     "Cannot modify non-status attributes of a deprecated product",
                 )
-            case _:  # pragma: no cover
+            case _ as pair:  # pragma: no cover
                 assert_never(pair)
 
     @staticmethod
@@ -118,7 +118,7 @@ class ProductService:
     def _check_that_status_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[_CannotUpdateProductStatusLiteral, None]:
-        match pair := (product_update.before.status, product_update.after.status):
+        match product_update.before.status, product_update.after.status:
             case "draft", "draft" | "published" | "deprecated":
                 return "success", None
             case "published", "draft":
@@ -131,7 +131,7 @@ class ProductService:
                 return "failure", "Cannot change status from deprecated to published"
             case "deprecated", "deprecated":
                 return "success", None
-            case _:  # pragma: no cover
+            case _ as pair:  # pragma: no cover
                 assert_never(pair)
 
     def _check_that_update_is_allowed(
