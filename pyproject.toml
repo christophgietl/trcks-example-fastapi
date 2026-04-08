@@ -3,7 +3,7 @@ dev = [
     "import-linter==2.11",
     "pre-commit==4.5.1",
     "pyright[nodejs]==1.1.408",
-    "pytest==9.0.2",
+    "pytest==9.0.3",
     "pytest-asyncio==1.3.0",
     "pytest-cov==7.1.0",
     "trcks[pyright]", # check project.dependencies for version
