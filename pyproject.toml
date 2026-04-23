@@ -132,4 +132,5 @@ convention = "google"
 
 [tool.uv]
 add-bounds = "exact"
+exclude-newer = "P7D"
 required-version = ">=0.10, <0.12"
