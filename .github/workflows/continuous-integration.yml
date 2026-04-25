@@ -12,10 +12,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: ./.github/actions/set-up-uv
+      - uses: christophgietl/uv-actions/set-up-uv@f025ee6ab6bc5d0cdf1390f59ca7506564598141 # 2026.4.25
         with:
           install-and-cache-dependencies: true
-      - uses: ./.github/actions/set-up-pre-commit
+      - uses: christophgietl/uv-actions/set-up-pre-commit@f025ee6ab6bc5d0cdf1390f59ca7506564598141 # 2026.4.25
         with:
           cache-key-suffix: lint-and-test
       - run: uv run --no-sync pre-commit run --all-files --show-diff-on-failure
