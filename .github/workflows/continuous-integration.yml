@@ -19,4 +19,8 @@ jobs:
         with:
           cache-key-suffix: lint-and-test
       - run: uv run --no-sync pre-commit run --all-files --show-diff-on-failure
-      - uses: ./.github/actions/run-tests-and-type-checks
+      - env:
+          PYTHONIOENCODING: utf-8 # avoids UnicodeEncodeError in Windows (see https://github.com/Textualize/rich/issues/2411)
+        run: uv run --no-sync lint-imports
+      - run: uv run --no-sync pyright
+      - run: uv run --no-sync pytest
