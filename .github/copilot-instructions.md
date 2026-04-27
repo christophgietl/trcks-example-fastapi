@@ -359,4 +359,4 @@ Maintain consistency across these overlapping concerns:
   copilot-instructions.md (Style/Tooling Configuration Summary).
 - Import rules in copilot-instructions.md "Import-Linter Enforcement"
   must match actual contracts in pyproject.toml and be executable
-  via CONTRIBUTING.md's `lint-imports` command.
+  via CONTRIBUTING.md's `import-linter lint` command.

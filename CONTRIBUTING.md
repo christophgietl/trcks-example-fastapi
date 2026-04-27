@@ -48,7 +48,7 @@ uv run pyright
 Enforce rules for the imports within and between Python packages:
 
 ```shell
-uv run lint-imports
+uv run import-linter lint
 ```
 
 Run pre-commit hooks:
