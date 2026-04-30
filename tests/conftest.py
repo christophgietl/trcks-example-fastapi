@@ -13,13 +13,13 @@ from app.database import AsyncSessionDep
 from app.main import app
 
 if typing.TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncGenerator, Generator
 
     from fastapi import FastAPI
 
 
 @pytest.fixture
-async def _engine() -> AsyncIterator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
+async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
     engine = create_async_engine("sqlite+aiosqlite://", echo=True)
     await set_pragmas_and_create_all_tables(engine)
     yield engine
@@ -27,8 +27,8 @@ async def _engine() -> AsyncIterator[AsyncEngine]:  # pyright: ignore[reportUnus
 
 
 @pytest.fixture
-def _app(_engine: AsyncEngine) -> Iterator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
-    async def get_session() -> AsyncIterator[AsyncSession]:
+def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
+    async def get_session() -> AsyncGenerator[AsyncSession]:
         async with AsyncSession(_engine) as async_session, async_session.begin():
             yield async_session
 
@@ -40,7 +40,7 @@ def _app(_engine: AsyncEngine) -> Iterator[FastAPI]:  # pyright: ignore[reportUn
 
 
 @pytest.fixture
-async def client(_app: FastAPI) -> AsyncIterator[AsyncClient]:
+async def client(_app: FastAPI) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(_app)
     async with AsyncClient(
         base_url="http://test", follow_redirects=True, transport=transport
@@ -49,6 +49,6 @@ async def client(_app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-async def session(_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
+async def session(_engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
     async with AsyncSession(_engine) as async_session:
         yield async_session
