@@ -1,5 +1,6 @@
 [dependency-groups]
 dev = [
+    "httpx==0.28.1", # provides ASGITransport and AsyncClient used for testing
     "import-linter==2.11",
     "pre-commit==4.6.0",
     "pyright[nodejs]==1.1.409",
@@ -107,8 +108,8 @@ pythonpath = ["."]
 
 [tool.ruff.lint]
 ignore = [
-    "COM812",   # "may cause conflicts when used with the formatter"
-    "D1",       # would complain about missing docstrings
+    "COM812", # "may cause conflicts when used with the formatter"
+    "D1", # would complain about missing docstrings
 ]
 select = ["ALL"]
 
