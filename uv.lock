@@ -811,6 +811,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "httpx" },
     { name = "import-linter" },
     { name = "pre-commit" },
     { name = "pyright", extra = ["nodejs"] },
@@ -830,6 +831,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "httpx", specifier = "==0.28.1" },
     { name = "import-linter", specifier = "==2.11" },
     { name = "pre-commit", specifier = "==4.6.0" },
     { name = "pyright", extras = ["nodejs"], specifier = "==1.1.409" },
