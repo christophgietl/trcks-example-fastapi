@@ -15,5 +15,8 @@ wheels/
 # SQLite-generated files
 *.sqlite3
 
+# Tool-generated files
+*_cache/
+
 # Virtual environments
 .venv
