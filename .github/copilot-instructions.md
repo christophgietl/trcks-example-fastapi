@@ -238,7 +238,7 @@ ruff format      # Auto-format
 - Dependency management:
   `uv` with exact version pinning (`[tool.uv] add-bounds = "exact"`)
 - Python version: 3.14 (see `requires-python ==3.14.*` in pyproject.toml)
-- Tests present under `tests/` (pytest + pytest-asyncio)
+- Tests present under `tests/` (pytest)
 
 ## Conventions & Style
 
@@ -283,7 +283,7 @@ If you want POST /users to echo the created resource:
 ## Testing Guidelines
 
 - Cover both success and each distinct failure literal for new operations.
-- Use pytest async tests with `asyncio_mode = auto` (see pyproject config).
+- Use pytest async tests with `anyio_mode = "auto"` (see pyproject config).
 - Avoid DB state leakage:
   rely on test database or transaction rollbacks if you introduce more fixtures.
 
