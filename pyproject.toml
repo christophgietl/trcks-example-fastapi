@@ -27,6 +27,11 @@ include_external_packages = true
 root_package = "app"
 
 [[tool.importlinter.contracts]]
+name = "No dependency cycles between siblings"
+type = "acyclic_siblings"
+ancestors = ["app"]
+
+[[tool.importlinter.contracts]]
 name = "Main, routers, services and repositories can only import from layers below them"
 type = "layers"
 layers = [
