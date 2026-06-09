@@ -4,7 +4,7 @@ dev = [
     "httpx==0.28.1", # provides ASGITransport and AsyncClient used for testing
     "import-linter==2.11",
     "pre-commit==4.6.0",
-    "pyright[nodejs]==1.1.409",
+    "pyright[nodejs]==1.1.410",
     "pytest==9.0.3",
     "pytest-cov==7.1.0",
     "trcks[pyright]", # check project.dependencies for version
