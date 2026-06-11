@@ -109,6 +109,7 @@ typeCheckingMode = "strict"
 [tool.pytest.ini_options]
 addopts = "--cov=app --cov-fail-under=100 --cov-report=term-missing --import-mode=importlib"
 anyio_mode = "auto"
+filterwarnings = ["error"]
 pythonpath = ["."]
 
 [tool.ruff.lint]
