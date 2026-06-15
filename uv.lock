@@ -2,10 +2,6 @@ version = 1
 revision = 3
 requires-python = "==3.14.*"
 
-[options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
-exclude-newer-span = "P7D"
-
 [[package]]
 name = "aiosqlite"
 version = "0.22.1"
@@ -783,11 +779,11 @@ wheels = [
 
 [[package]]
 name = "trcks"
-version = "0.4.5"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/71/1f/597d21d8adc996309d73d93dd480cf0e028ad85337d24728e730f9d3a4be/trcks-0.4.5.tar.gz", hash = "sha256:7d81211a41674d54bf3a1ce24e977bc2915659078d273c737dff6f50931cf196", size = 24644, upload-time = "2026-06-03T16:36:34.237Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/0a/9ae5f94fe1d1ef032e11780bbbcb0b80b5e806f6480526e1b045e93686a4/trcks-0.5.0.tar.gz", hash = "sha256:2e8fa86508f7efe5609e1c463bab3664065c4cabee64189692f77ca4eb80c12e", size = 57219, upload-time = "2026-06-15T19:03:39.148Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/13/d1/430527ca1a87ae7094f7db6769b4cc3b9f56200b84b37b0b916fc2e60caa/trcks-0.4.5-py3-none-any.whl", hash = "sha256:94e2710fec400ac9ef2cbd6605b1d00fcea7b801bc66638fbbe94b77443615b1", size = 25247, upload-time = "2026-06-03T16:36:33.327Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/b2/e0517fcb9e5d2c8713834e5762fc827e805b62c856b40d9e9ddb8d438af6/trcks-0.5.0-py3-none-any.whl", hash = "sha256:4a6b9dde8764f7a2315e62f7d382daf338d320403b44fa73f5d6ddca709ee99e", size = 68348, upload-time = "2026-06-15T19:03:38.103Z" },
 ]
 
 [package.optional-dependencies]
@@ -822,7 +818,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = "==0.136.3" },
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "sqlalchemy", extras = ["aiosqlite"], specifier = "==2.0.50" },
-    { name = "trcks", specifier = "==0.4.5" },
+    { name = "trcks", specifier = "==0.5.0" },
 ]
 
 [package.metadata.requires-dev]
