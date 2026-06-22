@@ -12,7 +12,7 @@ dev = [
 
 [project]
 dependencies = [
-    "fastapi[standard-no-fastapi-cloud-cli]==0.136.3",
+    "fastapi[standard-no-fastapi-cloud-cli]==0.137.1",
     "pydantic==2.13.4",
     "sqlalchemy[aiosqlite]==2.0.50",
     "trcks==0.5.0",
