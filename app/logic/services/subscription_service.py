@@ -12,10 +12,9 @@ from app.logic.repositories.subscription_repository import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from uuid import UUID
 
-    from trcks import AwaitableResult, Result
+    from trcks import AwaitableResult, AwaitableTuple, Result
 
     from app.data_structures.domain.product import Product
     from app.data_structures.domain.subscription import (
@@ -89,7 +88,7 @@ class SubscriptionService:
     ]:
         return self._subscription_repository.read_subscription_by_id(id_)
 
-    def read_subscriptions(self) -> Awaitable[tuple[SubscriptionWithProduct, ...]]:
+    def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
         return self._subscription_repository.read_subscriptions()
 
     def update_subscription(
