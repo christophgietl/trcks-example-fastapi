@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from pydantic import BaseModel
+from trcks.oop import TupleWrapper
 
 from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
 from app.data_structures.schemas.subscription_schemas import SubscriptionResponse
@@ -31,8 +32,9 @@ class UserResponse(_UserSchemaWithId, frozen=True):
     def from_user_with_subscriptions_with_products(
         user: UserWithSubscriptionsWithProducts,
     ) -> UserResponse:
-        subscriptions = tuple(
-            SubscriptionResponse.from_subscription_with_product(subscription)
-            for subscription in user.subscriptions_with_products
+        subscriptions = (
+            TupleWrapper(user.subscriptions_with_products)
+            .map(SubscriptionResponse.from_subscription_with_product)
+            .core
         )
         return UserResponse(id=user.id, email=user.email, subscriptions=subscriptions)

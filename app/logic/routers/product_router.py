@@ -2,7 +2,7 @@ from typing import assert_never
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from trcks.oop import Wrapper
+from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.schemas.product_schemas import (
     PostProductRequest,
@@ -147,8 +147,11 @@ async def read_product_by_id(
 async def read_products(
     product_service: ProductServiceDep,
 ) -> tuple[ProductResponse, ...]:
-    products = await product_service.read_products()
-    return tuple(ProductResponse.from_product(product) for product in products)
+    return await (
+        AwaitableTupleWrapper(product_service.read_products())
+        .map(ProductResponse.from_product)
+        .core
+    )
 
 
 @product_router.put(

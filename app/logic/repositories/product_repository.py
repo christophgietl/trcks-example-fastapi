@@ -2,8 +2,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Literal
 
 from fastapi import Depends
-from sqlalchemy import delete, select, update
+from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.exc import IntegrityError
+from trcks.oop import Wrapper
 
 from app.data_structures.models import ProductModel
 from app.database import AsyncSessionDep  # noqa: TC001
@@ -11,7 +12,7 @@ from app.database import AsyncSessionDep  # noqa: TC001
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from trcks import Failure, Result
+    from trcks import AwaitableTuple, Failure, Result
 
     from app.data_structures.domain.product import Product
 
@@ -66,10 +67,14 @@ class ProductRepository:
         )
         return self._to_base_product_result(product_model)
 
-    async def read_products(self) -> tuple[Product, ...]:
-        scalars = await self._session.scalars(select(ProductModel))
-        product_models = scalars.all()
-        return tuple(product_model.to_product() for product_model in product_models)
+    def read_products(self) -> AwaitableTuple[Product]:
+        return (
+            Wrapper(select(ProductModel))
+            .map_to_awaitable(self._session.scalars)
+            .map_to_iterable(ScalarResult[ProductModel].all)
+            .map(ProductModel.to_product)
+            .core
+        )
 
     async def update_product(
         self, product: Product

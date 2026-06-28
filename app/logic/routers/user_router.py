@@ -2,7 +2,7 @@ from typing import assert_never
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from trcks.oop import Wrapper
+from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.schemas.user_schemas import (
     PostUserRequest,
@@ -121,9 +121,10 @@ async def read_user_by_id(id_: UUID, user_service: UserServiceDep) -> UserRespon
 
 @user_router.get("/", tags=["Products", "Subscriptions"])
 async def read_users(user_service: UserServiceDep) -> tuple[UserResponse, ...]:
-    users = await user_service.read_users()
-    return tuple(
-        UserResponse.from_user_with_subscriptions_with_products(user) for user in users
+    return await (
+        AwaitableTupleWrapper(user_service.read_users())
+        .map(UserResponse.from_user_with_subscriptions_with_products)
+        .core
     )
 
 

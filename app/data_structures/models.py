@@ -10,6 +10,7 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
+from trcks.oop import TupleWrapper
 
 from app.data_structures.domain.product import (
     Product,
@@ -102,9 +103,10 @@ class UserModel(_BaseModel):
     def to_user_with_subscriptions_with_products(
         self,
     ) -> UserWithSubscriptionsWithProducts:
-        subscriptions_with_products = tuple(
-            subscription_model.to_subscription_with_product()
-            for subscription_model in self.subscriptions
+        subscriptions_with_products = (
+            TupleWrapper.construct_from_iterable(self.subscriptions)
+            .map(SubscriptionModel.to_subscription_with_product)
+            .core
         )
         return UserWithSubscriptionsWithProducts(
             id=self.id,
