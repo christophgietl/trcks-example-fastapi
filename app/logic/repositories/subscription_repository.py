@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
 
 from fastapi import Depends
-from sqlalchemy import delete, select, update
+from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import Wrapper
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from sqlalchemy.orm.interfaces import LoaderOption
-    from trcks import AwaitableResult, Result
+    from trcks import AwaitableResult, AwaitableTuple, Result
 
     from app.data_structures.domain.subscription import (
         SubscriptionWithProduct,
@@ -135,14 +135,13 @@ class SubscriptionRepository:
         )
         return self._to_base_subscription_result(subscription_model)
 
-    async def read_subscriptions(self) -> tuple[SubscriptionWithProduct, ...]:
-        scalars = await self._session.scalars(
-            select(SubscriptionModel).options(self._LOADER_OPTION)
-        )
-        subscription_models = scalars.all()
-        return tuple(
-            subscription_model.to_subscription_with_product()
-            for subscription_model in subscription_models
+    def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
+        return (
+            Wrapper(select(SubscriptionModel).options(self._LOADER_OPTION))
+            .map_to_awaitable(self._session.scalars)
+            .map_to_iterable(ScalarResult[SubscriptionModel].all)
+            .map(SubscriptionModel.to_subscription_with_product)
+            .core
         )
 
     def update_subscription(

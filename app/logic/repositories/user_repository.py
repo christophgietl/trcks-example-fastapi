@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
 
 from fastapi import Depends
-from sqlalchemy import delete, select, update
+from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
+from trcks.oop import Wrapper
 
 from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
 from app.data_structures.models import SubscriptionModel, UserModel
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from sqlalchemy.orm.interfaces import LoaderOption
-    from trcks import Failure, Result
+    from trcks import AwaitableTuple, Failure, Result
 
 type _BaseUserResult = Result[
     Literal["User does not exist"], UserWithSubscriptionsWithProducts
@@ -80,14 +81,13 @@ class UserRepository:
         )
         return self._to_base_user_result(user_model)
 
-    async def read_users(self) -> tuple[UserWithSubscriptionsWithProducts, ...]:
-        scalars = await self._session.scalars(
-            select(UserModel).options(self._LOADER_OPTION)
-        )
-        user_models = scalars.all()
-        return tuple(
-            user_model.to_user_with_subscriptions_with_products()
-            for user_model in user_models
+    def read_users(self) -> AwaitableTuple[UserWithSubscriptionsWithProducts]:
+        return (
+            Wrapper(select(UserModel).options(self._LOADER_OPTION))
+            .map_to_awaitable(self._session.scalars)
+            .map_to_iterable(ScalarResult[UserModel].all)
+            .map(UserModel.to_user_with_subscriptions_with_products)
+            .core
         )
 
     async def update_user(

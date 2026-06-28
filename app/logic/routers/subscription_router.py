@@ -2,7 +2,7 @@ from typing import assert_never
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from trcks.oop import Wrapper
+from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.schemas.subscription_schemas import (
     PostSubscriptionRequest,
@@ -122,10 +122,10 @@ async def read_subscription_by_id(
 async def read_subscriptions(
     subscription_service: SubscriptionServiceDep,
 ) -> tuple[SubscriptionResponse, ...]:
-    subscriptions = await subscription_service.read_subscriptions()
-    return tuple(
-        SubscriptionResponse.from_subscription_with_product(subscription)
-        for subscription in subscriptions
+    return await (
+        AwaitableTupleWrapper(subscription_service.read_subscriptions())
+        .map(SubscriptionResponse.from_subscription_with_product)
+        .core
     )
 
 
