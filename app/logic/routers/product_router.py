@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 from trcks.oop import Wrapper
 
 from app.data_structures.schemas.product_schemas import (
-    PostProductRequest,
+    PostProductsRequest,
     ProductResponse,
     PutProductRequest,
 )
@@ -23,35 +23,36 @@ def _get_product_cannot_be_deleted_detail(id_: UUID, status_: str) -> str:
     responses={
         status.HTTP_409_CONFLICT: {
             "description": (
-                "Conflict between product in request body and existing product "
-                "(e.g. same name or ID)"
+                "Conflict between a product in the request body and an existing "
+                "product (e.g. same name or ID). If any product conflicts, "
+                "none are created."
             )
         }
     },
     status_code=status.HTTP_201_CREATED,
 )
-async def create_product(
-    post_product_request: PostProductRequest, product_service: ProductServiceDep
+async def create_products(
+    post_products_request: PostProductsRequest, product_service: ProductServiceDep
 ) -> None:
     result = (
-        await Wrapper(post_product_request)
-        .map(PostProductRequest.to_product)
-        .map_to_awaitable_result(product_service.create_product)
+        await Wrapper(post_products_request)
+        .map(PostProductsRequest.to_products)
+        .map_to_awaitable_result(product_service.create_products)
         .core
     )
     match result:
         case ("failure", "Name already exists"):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with name {post_product_request.name} already exists.",
+                detail="A product with a conflicting name already exists.",
             )
         case ("failure", "ID already exists"):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {post_product_request.id} already exists.",
+                detail="A product with a conflicting ID already exists.",
             )
-        case ("success", product_response):
-            return product_response
+        case ("success", _):
+            return
         case _:  # pragma: no cover
             assert_never(result)
 

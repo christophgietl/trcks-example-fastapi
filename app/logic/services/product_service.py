@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Literal, assert_never
 
 from fastapi import Depends
-from trcks.oop import Wrapper
+from trcks.oop import TupleWrapper, Wrapper
 
 from app.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.data_structures.domain.product import Product
 
 type _AwaitableReadProductResult = AwaitableResult[_ProductDoesNotExistLiteral, Product]
+type _CreateProductLiteral = Literal["Name already exists", "ID already exists"]
 type _CannotDeleteProductLiteral = _ProductDoesNotExistLiteral | _ProductStatusLiteral
 type _CannotUpdateProductLiteral = (
     _CannotUpdateProductPayloadLiteral
@@ -148,8 +149,13 @@ class ProductService:
 
     def create_product(
         self, product: Product
-    ) -> AwaitableResult[Literal["Name already exists", "ID already exists"], None]:
+    ) -> AwaitableResult[_CreateProductLiteral, None]:
         return self._product_repository.create_product(product)
+
+    def create_products(
+        self, products: tuple[Product, ...]
+    ) -> AwaitableResult[_CreateProductLiteral, tuple[None, ...]]:
+        return TupleWrapper(products).map_to_awaitable_result(self.create_product).core
 
     def delete_product(
         self, id_: UUID

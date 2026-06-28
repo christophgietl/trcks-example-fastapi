@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 from app.data_structures.domain.product import Product, ProductStatus
 
@@ -25,6 +25,11 @@ class PostProductRequest(_ProductSchemaWithId, frozen=True):
             name=self.name,
             status=self.status,
         )
+
+
+class PostProductsRequest(RootModel[tuple[PostProductRequest, ...]], frozen=True):
+    def to_products(self) -> tuple[Product, ...]:
+        return tuple(request.to_product() for request in self.root)
 
 
 class PutProductRequest(_ProductSchemaWithoutId, frozen=True):

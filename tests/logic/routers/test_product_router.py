@@ -32,7 +32,66 @@ async def _get_products_from_database(
     return result.all()
 
 
-async def test_create_product_adds_additional_product_to_database(
+def _get_duplicate_id_request_body() -> list[dict[str, str]]:
+    conflicting_id = uuid7()
+    return [
+        {
+            "id": str(conflicting_id),
+            "monthly_fee_in_euros": "1.50",
+            "name": "Product 1",
+            "status": "draft",
+        },
+        {
+            "id": str(conflicting_id),
+            "monthly_fee_in_euros": "2.50",
+            "name": "Product 2",
+            "status": "published",
+        },
+    ]
+
+
+async def test_create_products_adds_multiple_products_to_database(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    products: ProductTuples = (
+        (uuid7(), Decimal("9.99"), "Product 1", "published"),
+        (uuid7(), Decimal("4.49"), "Product 2", "draft"),
+    )
+    response = await client.post(
+        "/products/",
+        json=[
+            {
+                "id": str(product[0]),
+                "monthly_fee_in_euros": str(product[1]),
+                "name": product[2],
+                "status": product[3],
+            }
+            for product in products
+        ],
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json() is None
+
+    response = await client.get("/products/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [
+        {
+            "id": str(product[0]),
+            "monthly_fee_in_euros": str(product[1]),
+            "name": product[2],
+            "status": product[3],
+        }
+        for product in products
+    ]
+
+    async with session.begin():
+        products_in_database = await _get_products_from_database(session)
+    assert products_in_database == [*products]
+
+
+async def test_create_products_adds_single_product_from_single_element_array(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     products: ProductTuples = (
@@ -59,23 +118,35 @@ async def test_create_product_adds_additional_product_to_database(
     )
     response = await client.post(
         "/products/",
-        json={
-            "id": str(additional_product[0]),
-            "monthly_fee_in_euros": str(additional_product[1]),
-            "name": additional_product[2],
-            "status": additional_product[3],
-        },
+        json=[
+            {
+                "id": str(additional_product[0]),
+                "monthly_fee_in_euros": str(additional_product[1]),
+                "name": additional_product[2],
+                "status": additional_product[3],
+            }
+        ],
     )
 
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() is None
+
+    response = await client.get(f"/products/{additional_product[0]}")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "id": str(additional_product[0]),
+        "monthly_fee_in_euros": str(additional_product[1]),
+        "name": additional_product[2],
+        "status": additional_product[3],
+    }
 
     async with session.begin():
         products_in_database = await _get_products_from_database(session)
     assert products_in_database == [*products, additional_product]
 
 
-async def test_create_product_with_existing_name_fails(
+async def test_create_products_with_existing_name_fails_without_persisting_batch(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (
@@ -97,17 +168,85 @@ async def test_create_product_with_existing_name_fails(
 
     response = await client.post(
         "/products/",
-        json={
-            "id": str(uuid7()),
-            "monthly_fee_in_euros": "7.57",
-            "name": product[2],
-            "status": "draft",
-        },
+        json=[
+            {
+                "id": str(uuid7()),
+                "monthly_fee_in_euros": "7.57",
+                "name": "Other Product",
+                "status": "draft",
+            },
+            {
+                "id": str(uuid7()),
+                "monthly_fee_in_euros": "8.25",
+                "name": product[2],
+                "status": "draft",
+            },
+        ],
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
-        "detail": f"Product with name {product[2]} already exists."
+        "detail": "A product with a conflicting name already exists."
+    }
+
+    response = await client.get("/products/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [
+        {
+            "id": str(product[0]),
+            "monthly_fee_in_euros": str(product[1]),
+            "name": product[2],
+            "status": product[3],
+        }
+    ]
+
+    async with session.begin():
+        products_in_database = await _get_products_from_database(session)
+    assert products_in_database == [product]
+
+
+async def test_create_products_with_existing_id_fails_without_persisting_batch(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    product: ProductTuple = (
+        uuid7(),
+        Decimal("5.99"),
+        "Test Product",
+        "published",
+    )
+    async with session.begin():
+        session.add(
+            ProductModel(
+                id=product[0],
+                monthly_fee_in_euros=product[1],
+                name=product[2],
+                status=product[3],
+            )
+        )
+        await session.flush()
+
+    response = await client.post(
+        "/products/",
+        json=[
+            {
+                "id": str(uuid7()),
+                "monthly_fee_in_euros": "8.49",
+                "name": "Different Product",
+                "status": "published",
+            },
+            {
+                "id": str(product[0]),
+                "monthly_fee_in_euros": "7.99",
+                "name": "Another Product",
+                "status": "published",
+            },
+        ],
+    )
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json() == {
+        "detail": "A product with a conflicting ID already exists."
     }
 
     async with session.begin():
@@ -115,13 +254,60 @@ async def test_create_product_with_existing_name_fails(
     assert products_in_database == [product]
 
 
-async def test_create_product_with_existing_id_fails(
+@pytest.mark.parametrize(
+    ("request_body", "expected_detail"),
+    [
+        (
+            [
+                {
+                    "id": str(uuid7()),
+                    "monthly_fee_in_euros": "1.50",
+                    "name": "Duplicate Product",
+                    "status": "draft",
+                },
+                {
+                    "id": str(uuid7()),
+                    "monthly_fee_in_euros": "2.50",
+                    "name": "Duplicate Product",
+                    "status": "published",
+                },
+            ],
+            "A product with a conflicting name already exists.",
+        ),
+        (
+            _get_duplicate_id_request_body(),
+            "A product with a conflicting ID already exists.",
+        ),
+    ],
+)
+async def test_create_products_with_intra_payload_conflicts_fails_without_persisting(
+    client: AsyncClient,
+    session: AsyncSession,
+    request_body: list[dict[str, str]],
+    expected_detail: str,
+) -> None:
+    response = await client.post("/products/", json=request_body)
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json() == {"detail": expected_detail}
+
+    response = await client.get("/products/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == []
+
+    async with session.begin():
+        products_in_database = await _get_products_from_database(session)
+    assert products_in_database == []
+
+
+async def test_create_products_with_empty_array_is_a_no_op(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (
         uuid7(),
         Decimal("5.99"),
-        "Test Product",
+        "Existing Product",
         "published",
     )
     async with session.begin():
@@ -135,20 +321,22 @@ async def test_create_product_with_existing_id_fails(
         )
         await session.flush()
 
-    response = await client.post(
-        "/products/",
-        json={
-            "id": str(product[0]),
-            "monthly_fee_in_euros": "8.49",
-            "name": "Different Product",
-            "status": "published",
-        },
-    )
+    response = await client.post("/products/", json=[])
 
-    assert response.status_code == status.HTTP_409_CONFLICT
-    assert response.json() == {
-        "detail": f"Product with ID {product[0]} already exists."
-    }
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json() is None
+
+    response = await client.get("/products/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == [
+        {
+            "id": str(product[0]),
+            "monthly_fee_in_euros": str(product[1]),
+            "name": product[2],
+            "status": product[3],
+        }
+    ]
 
     async with session.begin():
         products_in_database = await _get_products_from_database(session)
