@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable
     from uuid import UUID
 
-    from trcks import AwaitableResult, Result
+    from trcks import AwaitableResult, AwaitableResultTuple, Result
 
     from app.data_structures.domain.product import Product
 
@@ -154,7 +154,7 @@ class ProductService:
 
     def create_products(
         self, products: tuple[Product, ...]
-    ) -> AwaitableResult[_CreateProductLiteral, tuple[None, ...]]:
+    ) -> AwaitableResultTuple[_CreateProductLiteral, None]:
         return TupleWrapper(products).map_to_awaitable_result(self.create_product).core
 
     def delete_product(
