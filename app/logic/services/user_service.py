@@ -6,10 +6,9 @@ from fastapi import Depends
 from app.logic.repositories.user_repository import UserRepositoryDep  # noqa: TC001
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from uuid import UUID
 
-    from trcks import AwaitableResult
+    from trcks import AwaitableResult, AwaitableTuple
 
     from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
 
@@ -46,7 +45,7 @@ class UserService:
     ]:
         return self._user_repository.read_user_by_id(id_)
 
-    def read_users(self) -> Awaitable[tuple[UserWithSubscriptionsWithProducts, ...]]:
+    def read_users(self) -> AwaitableTuple[UserWithSubscriptionsWithProducts]:
         return self._user_repository.read_users()
 
     def update_user(

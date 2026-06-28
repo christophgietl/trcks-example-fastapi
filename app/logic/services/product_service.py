@@ -10,10 +10,9 @@ from app.logic.repositories.product_repository import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from uuid import UUID
 
-    from trcks import AwaitableResult, Result
+    from trcks import AwaitableResult, AwaitableTuple, Result
 
     from app.data_structures.domain.product import Product
 
@@ -167,7 +166,7 @@ class ProductService:
     def read_product_by_name(self, name: str) -> _AwaitableReadProductResult:
         return self._product_repository.read_product_by_name(name)
 
-    def read_products(self) -> Awaitable[tuple[Product, ...]]:
+    def read_products(self) -> AwaitableTuple[Product]:
         return self._product_repository.read_products()
 
     def update_product(
