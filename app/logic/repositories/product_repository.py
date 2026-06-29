@@ -40,7 +40,7 @@ class ProductRepository:
 
     async def create_product(
         self, product: Product
-    ) -> Result[Literal["Name already exists", "ID already exists"], None]:
+    ) -> Result[Literal["Name already exists", "ID already exists"], Product]:
         product_model = ProductModel.from_product(product)
         self._session.add(product_model)
         try:
@@ -54,7 +54,7 @@ class ProductRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            return "success", None
+            return "success", product_model.to_product()
 
     async def delete_product(self, id_: UUID) -> _BaseProductResult:
         deleted_product_model = await self._session.scalar(

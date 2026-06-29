@@ -28,11 +28,12 @@ user_router = APIRouter(prefix="/users", tags=["Users"])
 )
 async def create_user(
     post_user_request: PostUserRequest, user_service: UserServiceDep
-) -> None:
+) -> UserResponse:
     result = (
         await Wrapper(post_user_request)
         .map(PostUserRequest.to_user)
         .map_to_awaitable_result(user_service.create_user)
+        .map_success(UserResponse.from_user_with_subscriptions_with_products)
         .core
     )
     match result:
@@ -46,8 +47,8 @@ async def create_user(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"User with ID {post_user_request.id} already exists.",
             )
-        case ("success", _):
-            return
+        case ("success", user_response):
+            return user_response
         case _:  # pragma: no cover
             assert_never(result)
 

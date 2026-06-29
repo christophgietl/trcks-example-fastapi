@@ -71,7 +71,7 @@ class SubscriptionService:
         Literal["ID already exists"]
         | _ProductNotSubscribableLiteral
         | _UserDoesNotExistLiteral,
-        None,
+        SubscriptionWithProduct,
     ]:
         return (
             Wrapper(subscription)

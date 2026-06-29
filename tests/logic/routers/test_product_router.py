@@ -68,7 +68,12 @@ async def test_create_product_adds_additional_product_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
+    assert response.json() == {
+        "id": str(additional_product[0]),
+        "monthly_fee_in_euros": str(additional_product[1]),
+        "name": additional_product[2],
+        "status": additional_product[3],
+    }
 
     async with session.begin():
         products_in_database = await _get_products_from_database(session)

@@ -36,7 +36,11 @@ async def test_create_user_adds_additional_user_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
+    assert response.json() == {
+        "id": str(additional_user[0]),
+        "email": additional_user[1],
+        "subscriptions": [],
+    }
 
     async with session.begin():
         users_in_database = await _get_users_from_database(session)

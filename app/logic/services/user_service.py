@@ -26,7 +26,10 @@ class UserService:
 
     def create_user(
         self, user: User
-    ) -> AwaitableResult[Literal["Email already exists", "ID already exists"], None]:
+    ) -> AwaitableResult[
+        Literal["Email already exists", "ID already exists"],
+        UserWithSubscriptionsWithProducts,
+    ]:
         return self._user_repository.create_user(user)
 
     def delete_user(self, id_: UUID) -> _AwaitableDeleteOrReadUserResult:
