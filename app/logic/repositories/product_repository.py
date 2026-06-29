@@ -86,7 +86,11 @@ class ProductRepository:
         statement = (
             update(ProductModel)
             .where(ProductModel.id == product.id)
-            .values(name=product.name, status=product.status)
+            .values(
+                monthly_fee_in_euros=product.monthly_fee_in_euros,
+                name=product.name,
+                status=product.status,
+            )
             .returning(ProductModel)
         )
         try:
