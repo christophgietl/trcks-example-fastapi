@@ -17,10 +17,7 @@ from app.data_structures.domain.product import (
     ProductStatus,
 )
 from app.data_structures.domain.subscription import SubscriptionWithProduct
-from app.data_structures.domain.user import (
-    User,
-    UserWithSubscriptionsWithProducts,
-)
+from app.data_structures.domain.user import UserWithSubscriptionsWithProducts
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
@@ -38,15 +35,6 @@ class ProductModel(_BaseModel):
     subscriptions: Mapped[list[SubscriptionModel]] = relationship(
         back_populates="product", default_factory=list
     )
-
-    @staticmethod
-    def from_product(product: Product) -> ProductModel:
-        return ProductModel(
-            id=product.id,
-            monthly_fee_in_euros=product.monthly_fee_in_euros,
-            name=product.name,
-            status=product.status,
-        )
 
     def to_product(self) -> Product:
         return Product(
@@ -81,10 +69,6 @@ class UserModel(_BaseModel):
     subscriptions: Mapped[list[SubscriptionModel]] = relationship(
         back_populates="user", default_factory=list
     )
-
-    @staticmethod
-    def from_user(user: User) -> UserModel:
-        return UserModel(id=user.id, email=user.email)
 
     def to_user_with_subscriptions_with_products(
         self,
