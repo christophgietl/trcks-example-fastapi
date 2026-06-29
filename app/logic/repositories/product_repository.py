@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal, final
 
 from fastapi import Depends
 from sqlalchemy import delete, select, update
@@ -21,6 +21,7 @@ type _BaseProductResult = Result[Literal["Product does not exist"], Product]
 type ProductRepositoryDep = Annotated[ProductRepository, Depends()]
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class ProductRepository:
     _session: AsyncSessionDep

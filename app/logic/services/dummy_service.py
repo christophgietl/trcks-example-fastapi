@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, final
 
 from fastapi import Depends
 
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 type DummyServiceDep = Annotated[DummyService, Depends()]
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class DummyService:
     _dummy_repository: DummyRepositoryDep

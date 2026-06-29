@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, assert_never
+from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -46,6 +46,7 @@ class _ProductUpdate:
     after: Product
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class ProductService:
     _product_repository: ProductRepositoryDep

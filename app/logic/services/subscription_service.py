@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, assert_never
+from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -29,6 +29,7 @@ type _ProductStatusLiteral = Literal[
 type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionService:
     _product_repository: ProductRepositoryDep

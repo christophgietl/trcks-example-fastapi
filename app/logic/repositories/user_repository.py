@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
 
 from fastapi import Depends
 from sqlalchemy import delete, select, update
@@ -24,6 +24,7 @@ type _BaseUserResult = Result[
 type UserRepositoryDep = Annotated[UserRepository, Depends()]
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class UserRepository:
     _LOADER_OPTION: ClassVar[Final[LoaderOption]] = selectinload(
