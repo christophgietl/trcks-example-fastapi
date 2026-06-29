@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
 
 from fastapi import Depends
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
@@ -70,14 +70,18 @@ class SubscriptionRepository:
     async def _create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> Result[Literal["ID already exists"], SubscriptionWithProduct]:
-        subscription_model = (
-            SubscriptionModel.from_subscription_with_user_id_and_product_id(
-                subscription
-            )
-        )
-        self._session.add(subscription_model)
         try:
-            await self._session.flush()
+            created_subscription_model = await self._session.scalar(
+                insert(SubscriptionModel)
+                .values(
+                    id=subscription.id,
+                    is_active=subscription.is_active,
+                    user_id=subscription.user_id,
+                    product_id=subscription.product_id,
+                )
+                .returning(SubscriptionModel)
+                .options(self._LOADER_OPTION)
+            )
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: subscription.id":
@@ -85,13 +89,7 @@ class SubscriptionRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            created_subscription_model = await self._session.scalar(
-                select(SubscriptionModel)
-                .where(SubscriptionModel.id == subscription.id)
-                .options(self._LOADER_OPTION)
-            )
-            if created_subscription_model is None:  # pragma: no cover
-                raise RuntimeError
+            assert created_subscription_model is not None  # noqa: S101
             return "success", created_subscription_model.to_subscription_with_product()
 
     @staticmethod
