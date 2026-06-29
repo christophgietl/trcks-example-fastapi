@@ -40,6 +40,7 @@ type _ProductStatusLiteral = Literal[
 type ProductServiceDep = Annotated[ProductService, Depends()]
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _ProductUpdate:
     before: Product
