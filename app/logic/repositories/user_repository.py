@@ -47,7 +47,10 @@ class UserRepository:
 
     async def create_user(
         self, user: User
-    ) -> Result[Literal["Email already exists", "ID already exists"], None]:
+    ) -> Result[
+        Literal["Email already exists", "ID already exists"],
+        UserWithSubscriptionsWithProducts,
+    ]:
         user_model = UserModel.from_user(user)
         self._session.add(user_model)
         try:
@@ -61,7 +64,7 @@ class UserRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            return "success", None
+            return "success", user_model.to_user_with_subscriptions_with_products()
 
     async def delete_user(self, id_: UUID) -> _BaseUserResult:
         deleted_user_model = await self._session.scalar(

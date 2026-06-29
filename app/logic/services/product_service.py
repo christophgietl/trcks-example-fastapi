@@ -149,7 +149,7 @@ class ProductService:
 
     def create_product(
         self, product: Product
-    ) -> AwaitableResult[Literal["Name already exists", "ID already exists"], None]:
+    ) -> AwaitableResult[Literal["Name already exists", "ID already exists"], Product]:
         return self._product_repository.create_product(product)
 
     def delete_product(

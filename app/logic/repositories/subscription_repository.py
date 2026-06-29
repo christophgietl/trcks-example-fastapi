@@ -69,7 +69,7 @@ class SubscriptionRepository:
 
     async def _create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> Result[Literal["ID already exists"], None]:
+    ) -> Result[Literal["ID already exists"], SubscriptionWithProduct]:
         subscription_model = (
             SubscriptionModel.from_subscription_with_user_id_and_product_id(
                 subscription
@@ -85,7 +85,14 @@ class SubscriptionRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            return "success", None
+            created_subscription_model = await self._session.scalar(
+                select(SubscriptionModel)
+                .where(SubscriptionModel.id == subscription.id)
+                .options(self._LOADER_OPTION)
+            )
+            if created_subscription_model is None:  # pragma: no cover
+                raise RuntimeError
+            return "success", created_subscription_model.to_subscription_with_product()
 
     @staticmethod
     def _to_base_subscription_result(
@@ -114,7 +121,8 @@ class SubscriptionRepository:
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["ID already exists"] | _ProductOrUserDoesNotExist, None
+        Literal["ID already exists"] | _ProductOrUserDoesNotExist,
+        SubscriptionWithProduct,
     ]:
         return (
             Wrapper(subscription)

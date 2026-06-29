@@ -32,6 +32,7 @@ async def test_create_subscription_adds_subscription_to_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product_id = uuid7()
+    product_monthly_fee_in_euros = Decimal("9.99")
     product_name = "Product 1"
     product_status: Literal["published"] = "published"
     user1_id = uuid7()
@@ -45,7 +46,7 @@ async def test_create_subscription_adds_subscription_to_database(
             [
                 ProductModel(
                     id=product_id,
-                    monthly_fee_in_euros=Decimal("9.99"),
+                    monthly_fee_in_euros=product_monthly_fee_in_euros,
                     name=product_name,
                     status=product_status,
                 ),
@@ -74,7 +75,16 @@ async def test_create_subscription_adds_subscription_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
+    assert response.json() == {
+        "id": str(new_subscription_id),
+        "is_active": new_subscription_is_active,
+        "product": {
+            "id": str(product_id),
+            "monthly_fee_in_euros": str(product_monthly_fee_in_euros),
+            "name": product_name,
+            "status": product_status,
+        },
+    }
 
     async with session.begin():
         subscriptions_in_database = await _get_subscriptions_from_database(session)

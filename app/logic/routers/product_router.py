@@ -32,11 +32,12 @@ def _get_product_cannot_be_deleted_detail(id_: UUID, status_: str) -> str:
 )
 async def create_product(
     post_product_request: PostProductRequest, product_service: ProductServiceDep
-) -> None:
+) -> ProductResponse:
     result = (
         await Wrapper(post_product_request)
         .map(PostProductRequest.to_product)
         .map_to_awaitable_result(product_service.create_product)
+        .map_success(ProductResponse.from_product)
         .core
     )
     match result:
@@ -50,8 +51,8 @@ async def create_product(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {post_product_request.id} already exists.",
             )
-        case ("success", _):
-            return
+        case ("success", product_response):
+            return product_response
         case _:  # pragma: no cover
             assert_never(result)
 

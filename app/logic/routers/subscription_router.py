@@ -32,11 +32,12 @@ subscription_router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 async def create_subscription(
     post_subscription_request: PostSubscriptionRequest,
     subscription_service: SubscriptionServiceDep,
-) -> None:
+) -> SubscriptionResponse:
     result = (
         await Wrapper(post_subscription_request)
         .map(PostSubscriptionRequest.to_subscription_with_user_id_and_product_id)
         .map_to_awaitable_result(subscription_service.create_subscription)
+        .map_success(SubscriptionResponse.from_subscription_with_product)
         .core
     )
     match result:
@@ -75,8 +76,8 @@ async def create_subscription(
                     post_subscription_request.product_id
                 } is in deprecated status.",
             )
-        case ("success", _):
-            return
+        case ("success", subscription_response):
+            return subscription_response
         case _:  # pragma: no cover
             assert_never(result)
 
