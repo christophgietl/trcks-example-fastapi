@@ -22,7 +22,7 @@ if TYPE_CHECKING:
         SubscriptionWithUserIdAndProductId,
     )
 
-type _AwaitableReadSubscriptionResult = AwaitableResult[
+type _AwaitableDeleteOrReadSubscriptionResult = AwaitableResult[
     _SubscriptionDoesNotExistLiteral, SubscriptionWithProduct
 ]
 type _ProductNotSubscribableLiteral = (
@@ -82,10 +82,14 @@ class SubscriptionService:
             .core
         )
 
-    def delete_subscription(self, id_: UUID) -> _AwaitableReadSubscriptionResult:
+    def delete_subscription(
+        self, id_: UUID
+    ) -> _AwaitableDeleteOrReadSubscriptionResult:
         return self._subscription_repository.delete_subscription(id_)
 
-    def read_subscription_by_id(self, id_: UUID) -> _AwaitableReadSubscriptionResult:
+    def read_subscription_by_id(
+        self, id_: UUID
+    ) -> _AwaitableDeleteOrReadSubscriptionResult:
         return self._subscription_repository.read_subscription_by_id(id_)
 
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
