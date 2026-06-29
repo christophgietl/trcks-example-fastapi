@@ -63,19 +63,21 @@ class UserRepository:
             return "success", scalars.one()
 
     async def _delete_user_model(self, id_: UUID) -> UserModel | None:
-        return await self._session.scalar(
-            statement=delete(UserModel)
+        statement = (
+            delete(UserModel)
             .where(UserModel.id == id_)
             .returning(UserModel)
             .options(self._LOADER_OPTION)
         )
+        return await self._session.scalar(statement=statement)
 
     async def _read_user_model_by_email(self, email: str) -> UserModel | None:
-        return await self._session.scalar(
-            statement=select(UserModel)
+        statement = (
+            select(UserModel)
             .where(UserModel.email == email)
             .options(self._LOADER_OPTION)
         )
+        return await self._session.scalar(statement=statement)
 
     async def _read_user_model_by_id(self, id_: UUID) -> UserModel | None:
         return await self._session.get(
@@ -85,9 +87,8 @@ class UserRepository:
         )
 
     async def _read_user_models(self) -> tuple[UserModel, ...]:
-        scalars = await self._session.scalars(
-            statement=select(UserModel).options(self._LOADER_OPTION)
-        )
+        statement = select(UserModel).options(self._LOADER_OPTION)
+        scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 
     @staticmethod
@@ -99,14 +100,15 @@ class UserRepository:
     async def _update_user_model(
         self, user: User
     ) -> Result[Literal["Email already exists"], UserModel | None]:
+        statement = (
+            update(UserModel)
+            .where(UserModel.id == user.id)
+            .values(email=user.email)
+            .returning(UserModel)
+            .options(self._LOADER_OPTION)
+        )
         try:
-            updated_user_model = await self._session.scalar(
-                statement=update(UserModel)
-                .where(UserModel.id == user.id)
-                .values(email=user.email)
-                .returning(UserModel)
-                .options(self._LOADER_OPTION)
-            )
+            updated_user_model = await self._session.scalar(statement=statement)
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: user.email":

@@ -55,22 +55,21 @@ class ProductRepository:
             return "success", scalars.one()
 
     async def _delete_product_model(self, id_: UUID) -> ProductModel | None:
-        return await self._session.scalar(
-            statement=delete(ProductModel)
-            .where(ProductModel.id == id_)
-            .returning(ProductModel)
+        statement = (
+            delete(ProductModel).where(ProductModel.id == id_).returning(ProductModel)
         )
+        return await self._session.scalar(statement=statement)
 
     async def _read_product_model_by_id(self, id_: UUID) -> ProductModel | None:
         return await self._session.get(ProductModel, id_)
 
     async def _read_product_model_by_name(self, name: str) -> ProductModel | None:
-        return await self._session.scalar(
-            statement=select(ProductModel).where(ProductModel.name == name)
-        )
+        statement = select(ProductModel).where(ProductModel.name == name)
+        return await self._session.scalar(statement=statement)
 
     async def _read_product_models(self) -> tuple[ProductModel, ...]:
-        scalars = await self._session.scalars(statement=select(ProductModel))
+        statement = select(ProductModel)
+        scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 
     @staticmethod
@@ -84,13 +83,14 @@ class ProductRepository:
     async def _update_product_model(
         self, product: Product
     ) -> Result[Literal["Name already exists"], ProductModel | None]:
+        statement = (
+            update(ProductModel)
+            .where(ProductModel.id == product.id)
+            .values(name=product.name, status=product.status)
+            .returning(ProductModel)
+        )
         try:
-            updated_product_model = await self._session.scalar(
-                statement=update(ProductModel)
-                .where(ProductModel.id == product.id)
-                .values(name=product.name, status=product.status)
-                .returning(ProductModel)
-            )
+            updated_product_model = await self._session.scalar(statement=statement)
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: product.name":
