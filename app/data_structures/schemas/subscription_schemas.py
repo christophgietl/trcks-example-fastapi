@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING
+# pyright: reportUninitializedInstanceVariable=false
+# See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
+from typing import TYPE_CHECKING, final
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -18,6 +20,7 @@ class _SubscriptionSchemaWithId(_SubscriptionSchemaWithoutId, frozen=True):
     id: UUID
 
 
+@final
 class PostSubscriptionRequest(_SubscriptionSchemaWithId, frozen=True):
     user_id: UUID
     product_id: UUID
@@ -33,6 +36,7 @@ class PostSubscriptionRequest(_SubscriptionSchemaWithId, frozen=True):
         )
 
 
+@final
 class PutSubscriptionRequest(_SubscriptionSchemaWithoutId, frozen=True):
     user_id: UUID
     product_id: UUID
@@ -48,6 +52,7 @@ class PutSubscriptionRequest(_SubscriptionSchemaWithoutId, frozen=True):
         )
 
 
+@final
 class SubscriptionResponse(_SubscriptionSchemaWithId, frozen=True):
     product: ProductResponse
 
