@@ -16,10 +16,7 @@ from app.data_structures.domain.product import (
     Product,
     ProductStatus,
 )
-from app.data_structures.domain.subscription import (
-    SubscriptionWithProduct,
-    SubscriptionWithUserIdAndProductId,
-)
+from app.data_structures.domain.subscription import SubscriptionWithProduct
 from app.data_structures.domain.user import (
     User,
     UserWithSubscriptionsWithProducts,
@@ -69,17 +66,6 @@ class SubscriptionModel(_BaseModel):
     product: Mapped[ProductModel] = relationship(
         back_populates="subscriptions", init=False
     )
-
-    @staticmethod
-    def from_subscription_with_user_id_and_product_id(
-        subscription: SubscriptionWithUserIdAndProductId,
-    ) -> SubscriptionModel:
-        return SubscriptionModel(
-            id=subscription.id,
-            is_active=subscription.is_active,
-            user_id=subscription.user_id,
-            product_id=subscription.product_id,
-        )
 
     def to_subscription_with_product(self) -> SubscriptionWithProduct:
         return SubscriptionWithProduct(
