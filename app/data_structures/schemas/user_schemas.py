@@ -1,4 +1,3 @@
-from typing import final
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -16,26 +15,17 @@ class _UserSchemaWithId(_UserSchemaWithoutId, frozen=True):
     id: UUID
 
 
-@final
-class PostUserRequest(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _UserSchemaWithId, frozen=True
-):
+class PostUserRequest(_UserSchemaWithId, frozen=True):
     def to_user(self) -> User:
         return User(id=self.id, email=self.email)
 
 
-@final
-class PutUserRequest(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _UserSchemaWithoutId, frozen=True
-):
+class PutUserRequest(_UserSchemaWithoutId, frozen=True):
     def to_user(self, id_: UUID) -> User:
         return User(id=id_, email=self.email)
 
 
-@final
-class UserResponse(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _UserSchemaWithId, frozen=True
-):
+class UserResponse(_UserSchemaWithId, frozen=True):
     subscriptions: tuple[SubscriptionResponse, ...]
 
     @staticmethod

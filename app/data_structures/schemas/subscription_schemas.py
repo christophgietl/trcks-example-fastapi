@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, final
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -18,10 +18,7 @@ class _SubscriptionSchemaWithId(_SubscriptionSchemaWithoutId, frozen=True):
     id: UUID
 
 
-@final
-class PostSubscriptionRequest(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _SubscriptionSchemaWithId, frozen=True
-):
+class PostSubscriptionRequest(_SubscriptionSchemaWithId, frozen=True):
     user_id: UUID
     product_id: UUID
 
@@ -36,10 +33,7 @@ class PostSubscriptionRequest(  # pyright: ignore[reportUninitializedInstanceVar
         )
 
 
-@final
-class PutSubscriptionRequest(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _SubscriptionSchemaWithoutId, frozen=True
-):
+class PutSubscriptionRequest(_SubscriptionSchemaWithoutId, frozen=True):
     user_id: UUID
     product_id: UUID
 
@@ -54,10 +48,7 @@ class PutSubscriptionRequest(  # pyright: ignore[reportUninitializedInstanceVari
         )
 
 
-@final
-class SubscriptionResponse(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _SubscriptionSchemaWithId, frozen=True
-):
+class SubscriptionResponse(_SubscriptionSchemaWithId, frozen=True):
     product: ProductResponse
 
     @staticmethod
