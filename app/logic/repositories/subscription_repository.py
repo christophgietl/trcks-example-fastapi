@@ -76,7 +76,7 @@ class SubscriptionRepository:
             .options(self._LOADER_OPTION)
         )
         try:
-            result = await self._session.execute(statement)
+            result = await self._session.execute(statement=statement)
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: subscription.id":
@@ -87,9 +87,8 @@ class SubscriptionRepository:
             return "success", result.scalar_one().to_subscription_with_product()
 
     async def _read_subscription_models(self) -> tuple[SubscriptionModel, ...]:
-        scalars = await self._session.scalars(
-            select(SubscriptionModel).options(self._LOADER_OPTION)
-        )
+        statement = select(SubscriptionModel).options(self._LOADER_OPTION)
+        scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 
     @staticmethod
@@ -114,7 +113,7 @@ class SubscriptionRepository:
             .returning(SubscriptionModel)
             .options(self._LOADER_OPTION)
         )
-        updated_subscription_model = await self._session.scalar(statement)
+        updated_subscription_model = await self._session.scalar(statement=statement)
         return self._to_base_subscription_result(updated_subscription_model)
 
     def create_subscription(
@@ -141,7 +140,7 @@ class SubscriptionRepository:
             .returning(SubscriptionModel)
             .options(self._LOADER_OPTION)
         )
-        deleted_subscription_model = await self._session.scalar(statement)
+        deleted_subscription_model = await self._session.scalar(statement=statement)
         return self._to_base_subscription_result(deleted_subscription_model)
 
     async def read_subscription_by_id(self, id_: UUID) -> _BaseSubscriptionResult:
