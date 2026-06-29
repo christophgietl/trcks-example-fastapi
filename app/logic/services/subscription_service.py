@@ -25,13 +25,14 @@ if TYPE_CHECKING:
 type _AwaitableReadSubscriptionResult = AwaitableResult[
     _SubscriptionDoesNotExistLiteral, SubscriptionWithProduct
 ]
+type _IdAlreadyExistsLiteral = Literal["ID already exists"]
 type _ProductDoesNotExistLiteral = Literal["Product does not exist"]
+type _ProductNotSubscribableLiteral = (
+    _ProductDoesNotExistLiteral | _ProductStatusLiteral
+)
 type _ProductStatusLiteral = Literal[
     "Product is in draft status", "Product is in deprecated status"
 ]
-type _ReadProductAndCheckStatusLiteral = (
-    _ProductDoesNotExistLiteral | _ProductStatusLiteral
-)
 type _SubscriptionDoesNotExistLiteral = Literal["Subscription does not exist"]
 type _UserDoesNotExistLiteral = Literal["User does not exist"]
 
@@ -58,7 +59,7 @@ class SubscriptionService:
 
     def _read_product_and_check_status(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> AwaitableResult[_ReadProductAndCheckStatusLiteral, None]:
+    ) -> AwaitableResult[_ProductNotSubscribableLiteral, None]:
         return (
             Wrapper(subscription.product_id)
             .map_to_awaitable_result(self._product_repository.read_product_by_id)
@@ -69,9 +70,9 @@ class SubscriptionService:
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["ID already exists"]
-        | _UserDoesNotExistLiteral
-        | _ReadProductAndCheckStatusLiteral,
+        _IdAlreadyExistsLiteral
+        | _ProductNotSubscribableLiteral
+        | _UserDoesNotExistLiteral,
         None,
     ]:
         return (
@@ -95,9 +96,9 @@ class SubscriptionService:
     def update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        _SubscriptionDoesNotExistLiteral
-        | _UserDoesNotExistLiteral
-        | _ReadProductAndCheckStatusLiteral,
+        _ProductNotSubscribableLiteral
+        | _SubscriptionDoesNotExistLiteral
+        | _UserDoesNotExistLiteral,
         SubscriptionWithProduct,
     ]:
         return (
