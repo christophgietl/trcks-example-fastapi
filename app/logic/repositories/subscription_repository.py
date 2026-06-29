@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
 
 from fastapi import Depends
 from sqlalchemy import delete, select, update
@@ -35,6 +35,7 @@ type _ProductOrUserDoesNotExist = Literal[
 type SubscriptionRepositoryDep = Annotated[SubscriptionRepository, Depends()]
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionRepository:
     _LOADER_OPTION: ClassVar[Final[LoaderOption]] = selectinload(

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal, final
 
 from fastapi import Depends
 
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 type UserServiceDep = Annotated[UserService, Depends()]
 
 
+@final
 @dataclass(frozen=True, kw_only=True, slots=True)
 class UserService:
     _user_repository: UserRepositoryDep
