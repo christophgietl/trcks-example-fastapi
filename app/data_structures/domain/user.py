@@ -8,12 +8,18 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class User:
+class _User:
     id: UUID
     email: str
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class UserWithSubscriptionsWithProducts(User):
+class User(_User):
+    pass
+
+
+@final
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class UserWithSubscriptionsWithProducts(_User):
     subscriptions_with_products: tuple[SubscriptionWithProduct, ...]
