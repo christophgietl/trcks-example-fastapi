@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Annotated, final
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -17,10 +17,7 @@ class _ProductSchemaWithId(_ProductSchemaWithoutId, frozen=True):
     id: UUID
 
 
-@final
-class PostProductRequest(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _ProductSchemaWithId, frozen=True
-):
+class PostProductRequest(_ProductSchemaWithId, frozen=True):
     def to_product(self) -> Product:
         return Product(
             id=self.id,
@@ -30,10 +27,7 @@ class PostProductRequest(  # pyright: ignore[reportUninitializedInstanceVariable
         )
 
 
-@final
-class PutProductRequest(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _ProductSchemaWithoutId, frozen=True
-):
+class PutProductRequest(_ProductSchemaWithoutId, frozen=True):
     def to_product(self, id_: UUID) -> Product:
         return Product(
             id=id_,
@@ -43,10 +37,7 @@ class PutProductRequest(  # pyright: ignore[reportUninitializedInstanceVariable]
         )
 
 
-@final
-class ProductResponse(  # pyright: ignore[reportUninitializedInstanceVariable]
-    _ProductSchemaWithId, frozen=True
-):
+class ProductResponse(_ProductSchemaWithId, frozen=True):
     @staticmethod
     def from_product(product: Product) -> ProductResponse:
         return ProductResponse(
