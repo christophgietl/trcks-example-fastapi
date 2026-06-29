@@ -70,18 +70,19 @@ class SubscriptionRepository:
     async def _create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> Result[Literal["ID already exists"], SubscriptionWithProduct]:
-        try:
-            created_subscription_model = await self._session.execute(
-                insert(SubscriptionModel)
-                .values(
-                    id=subscription.id,
-                    is_active=subscription.is_active,
-                    user_id=subscription.user_id,
-                    product_id=subscription.product_id,
-                )
-                .returning(SubscriptionModel)
-                .options(self._LOADER_OPTION)
+        statement = (
+            insert(SubscriptionModel)
+            .values(
+                id=subscription.id,
+                is_active=subscription.is_active,
+                user_id=subscription.user_id,
+                product_id=subscription.product_id,
             )
+            .returning(SubscriptionModel)
+            .options(self._LOADER_OPTION)
+        )
+        try:
+            result = await self._session.execute(statement)
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: subscription.id":
@@ -89,10 +90,7 @@ class SubscriptionRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            return (
-                "success",
-                created_subscription_model.scalar_one().to_subscription_with_product(),
-            )
+            return "success", result.scalar_one().to_subscription_with_product()
 
     @staticmethod
     def _to_base_subscription_result(
@@ -105,7 +103,7 @@ class SubscriptionRepository:
     async def _update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> _BaseSubscriptionResult:
-        updated_subscription_model = await self._session.scalar(
+        statement = (
             update(SubscriptionModel)
             .where(SubscriptionModel.id == subscription.id)
             .values(
@@ -116,6 +114,7 @@ class SubscriptionRepository:
             .returning(SubscriptionModel)
             .options(self._LOADER_OPTION)
         )
+        updated_subscription_model = await self._session.scalar(statement)
         return self._to_base_subscription_result(updated_subscription_model)
 
     def create_subscription(
@@ -136,12 +135,13 @@ class SubscriptionRepository:
         )
 
     async def delete_subscription(self, id_: UUID) -> _BaseSubscriptionResult:
-        deleted_subscription_model = await self._session.scalar(
+        statement = (
             delete(SubscriptionModel)
             .where(SubscriptionModel.id == id_)
             .returning(SubscriptionModel)
             .options(self._LOADER_OPTION)
         )
+        deleted_subscription_model = await self._session.scalar(statement)
         return self._to_base_subscription_result(deleted_subscription_model)
 
     async def read_subscription_by_id(self, id_: UUID) -> _BaseSubscriptionResult:
