@@ -46,12 +46,6 @@ class SubscriptionRepository:
     _session: AsyncSessionDep
     _user_repository: UserRepositoryDep
 
-    async def _read_subscription_models(self) -> tuple[SubscriptionModel, ...]:
-        scalars = await self._session.scalars(
-            select(SubscriptionModel).options(self._LOADER_OPTION)
-        )
-        return tuple(scalars.all())
-
     def _check_that_product_and_user_exist(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[_ProductOrUserDoesNotExist, None]:
@@ -91,6 +85,12 @@ class SubscriptionRepository:
                     raise
         else:
             return "success", result.scalar_one().to_subscription_with_product()
+
+    async def _read_subscription_models(self) -> tuple[SubscriptionModel, ...]:
+        scalars = await self._session.scalars(
+            select(SubscriptionModel).options(self._LOADER_OPTION)
+        )
+        return tuple(scalars.all())
 
     @staticmethod
     def _to_base_subscription_result(
