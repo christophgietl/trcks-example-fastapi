@@ -46,8 +46,8 @@ async def create_user(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"User with ID {post_user_request.id} already exists.",
             )
-        case ("success", user_response):
-            return user_response
+        case ("success", _):
+            return
         case _:  # pragma: no cover
             assert_never(result)
 

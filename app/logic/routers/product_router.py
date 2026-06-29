@@ -50,8 +50,8 @@ async def create_product(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {post_product_request.id} already exists.",
             )
-        case ("success", product_response):
-            return product_response
+        case ("success", _):
+            return
         case _:  # pragma: no cover
             assert_never(result)
 
