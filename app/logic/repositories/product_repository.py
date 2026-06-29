@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Literal
 
 from fastapi import Depends
-from sqlalchemy import ScalarResult, delete, select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
-from trcks.oop import Wrapper
+from trcks.oop import AwaitableTupleWrapper
 
 from app.data_structures.models import ProductModel
 from app.database import AsyncSessionDep  # noqa: TC001
@@ -24,6 +24,10 @@ type ProductRepositoryDep = Annotated[ProductRepository, Depends()]
 @dataclass(frozen=True, kw_only=True, slots=True)
 class ProductRepository:
     _session: AsyncSessionDep
+
+    async def _read_product_models(self) -> tuple[ProductModel, ...]:
+        scalars = await self._session.scalars(select(ProductModel))
+        return tuple(scalars.all())
 
     @staticmethod
     def _to_base_product_result(
@@ -69,9 +73,7 @@ class ProductRepository:
 
     def read_products(self) -> AwaitableTuple[Product]:
         return (
-            Wrapper(select(ProductModel))
-            .map_to_awaitable(self._session.scalars)
-            .map_to_iterable(ScalarResult[ProductModel].all)
+            AwaitableTupleWrapper(self._read_product_models())
             .map(ProductModel.to_product)
             .core
         )

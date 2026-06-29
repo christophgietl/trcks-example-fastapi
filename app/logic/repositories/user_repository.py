@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
 
 from fastapi import Depends
-from sqlalchemy import ScalarResult, delete, select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from trcks.oop import Wrapper
+from trcks.oop import AwaitableTupleWrapper
 
 from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
 from app.data_structures.models import SubscriptionModel, UserModel
@@ -31,6 +31,12 @@ class UserRepository:
     ).selectinload(SubscriptionModel.product)
 
     _session: AsyncSessionDep
+
+    async def _read_user_models(self) -> tuple[UserModel, ...]:
+        scalars = await self._session.scalars(
+            select(UserModel).options(self._LOADER_OPTION)
+        )
+        return tuple(scalars.all())
 
     @staticmethod
     def _to_base_user_result(user_model: UserModel | None) -> _BaseUserResult:
@@ -83,9 +89,7 @@ class UserRepository:
 
     def read_users(self) -> AwaitableTuple[UserWithSubscriptionsWithProducts]:
         return (
-            Wrapper(select(UserModel).options(self._LOADER_OPTION))
-            .map_to_awaitable(self._session.scalars)
-            .map_to_iterable(ScalarResult[UserModel].all)
+            AwaitableTupleWrapper(self._read_user_models())
             .map(UserModel.to_user_with_subscriptions_with_products)
             .core
         )

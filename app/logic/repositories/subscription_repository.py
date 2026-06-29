@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
 
 from fastapi import Depends
-from sqlalchemy import ScalarResult, delete, select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from trcks.oop import Wrapper
+from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.models import SubscriptionModel
 from app.database import AsyncSessionDep  # noqa: TC001
@@ -44,6 +44,12 @@ class SubscriptionRepository:
     _product_repository: ProductRepositoryDep
     _session: AsyncSessionDep
     _user_repository: UserRepositoryDep
+
+    async def _read_subscription_models(self) -> tuple[SubscriptionModel, ...]:
+        scalars = await self._session.scalars(
+            select(SubscriptionModel).options(self._LOADER_OPTION)
+        )
+        return tuple(scalars.all())
 
     def _check_that_product_and_user_exist(
         self, subscription: SubscriptionWithUserIdAndProductId
@@ -137,9 +143,7 @@ class SubscriptionRepository:
 
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
         return (
-            Wrapper(select(SubscriptionModel).options(self._LOADER_OPTION))
-            .map_to_awaitable(self._session.scalars)
-            .map_to_iterable(ScalarResult[SubscriptionModel].all)
+            AwaitableTupleWrapper(self._read_subscription_models())
             .map(SubscriptionModel.to_subscription_with_product)
             .core
         )
