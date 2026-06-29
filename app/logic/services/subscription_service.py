@@ -22,9 +22,18 @@ if TYPE_CHECKING:
         SubscriptionWithUserIdAndProductId,
     )
 
+type _AwaitableReadSubscriptionResult = AwaitableResult[
+    _SubscriptionDoesNotExistLiteral, SubscriptionWithProduct
+]
+type _ProductDoesNotExistLiteral = Literal["Product does not exist"]
 type _ProductStatusLiteral = Literal[
     "Product is in draft status", "Product is in deprecated status"
 ]
+type _ReadProductAndCheckStatusLiteral = (
+    _ProductDoesNotExistLiteral | _ProductStatusLiteral
+)
+type _SubscriptionDoesNotExistLiteral = Literal["Subscription does not exist"]
+type _UserDoesNotExistLiteral = Literal["User does not exist"]
 
 type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
@@ -49,9 +58,7 @@ class SubscriptionService:
 
     def _read_product_and_check_status(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> AwaitableResult[
-        Literal["Product does not exist"] | _ProductStatusLiteral, None
-    ]:
+    ) -> AwaitableResult[_ReadProductAndCheckStatusLiteral, None]:
         return (
             Wrapper(subscription.product_id)
             .map_to_awaitable_result(self._product_repository.read_product_by_id)
@@ -62,8 +69,9 @@ class SubscriptionService:
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["ID already exists", "User does not exist", "Product does not exist"]
-        | _ProductStatusLiteral,
+        Literal["ID already exists"]
+        | _UserDoesNotExistLiteral
+        | _ReadProductAndCheckStatusLiteral,
         None,
     ]:
         return (
@@ -75,18 +83,10 @@ class SubscriptionService:
             .core
         )
 
-    def delete_subscription(
-        self, id_: UUID
-    ) -> AwaitableResult[
-        Literal["Subscription does not exist"], SubscriptionWithProduct
-    ]:
+    def delete_subscription(self, id_: UUID) -> _AwaitableReadSubscriptionResult:
         return self._subscription_repository.delete_subscription(id_)
 
-    def read_subscription_by_id(
-        self, id_: UUID
-    ) -> AwaitableResult[
-        Literal["Subscription does not exist"], SubscriptionWithProduct
-    ]:
+    def read_subscription_by_id(self, id_: UUID) -> _AwaitableReadSubscriptionResult:
         return self._subscription_repository.read_subscription_by_id(id_)
 
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
@@ -95,12 +95,9 @@ class SubscriptionService:
     def update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal[
-            "Subscription does not exist",
-            "User does not exist",
-            "Product does not exist",
-        ]
-        | _ProductStatusLiteral,
+        _SubscriptionDoesNotExistLiteral
+        | _UserDoesNotExistLiteral
+        | _ReadProductAndCheckStatusLiteral,
         SubscriptionWithProduct,
     ]:
         return (
