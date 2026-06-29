@@ -25,10 +25,8 @@ if TYPE_CHECKING:
 type _AwaitableReadSubscriptionResult = AwaitableResult[
     _SubscriptionDoesNotExistLiteral, SubscriptionWithProduct
 ]
-type _IdAlreadyExistsLiteral = Literal["ID already exists"]
-type _ProductDoesNotExistLiteral = Literal["Product does not exist"]
 type _ProductNotSubscribableLiteral = (
-    _ProductDoesNotExistLiteral | _ProductStatusLiteral
+    Literal["Product does not exist"] | _ProductStatusLiteral
 )
 type _ProductStatusLiteral = Literal[
     "Product is in draft status", "Product is in deprecated status"
@@ -70,7 +68,7 @@ class SubscriptionService:
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        _IdAlreadyExistsLiteral
+        Literal["ID already exists"]
         | _ProductNotSubscribableLiteral
         | _UserDoesNotExistLiteral,
         None,
