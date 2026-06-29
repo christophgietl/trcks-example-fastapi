@@ -71,7 +71,7 @@ class SubscriptionRepository:
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> Result[Literal["ID already exists"], SubscriptionWithProduct]:
         try:
-            created_subscription_model = await self._session.scalar(
+            created_subscription_model = await self._session.execute(
                 insert(SubscriptionModel)
                 .values(
                     id=subscription.id,
@@ -89,8 +89,10 @@ class SubscriptionRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            assert created_subscription_model is not None  # noqa: S101
-            return "success", created_subscription_model.to_subscription_with_product()
+            return (
+                "success",
+                created_subscription_model.scalar_one().to_subscription_with_product(),
+            )
 
     @staticmethod
     def _to_base_subscription_result(
