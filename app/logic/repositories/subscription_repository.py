@@ -15,6 +15,7 @@ from app.logic.repositories.product_repository import (
 from app.logic.repositories.user_repository import UserRepositoryDep  # noqa: TC001
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
     from uuid import UUID
 
     from sqlalchemy.orm.interfaces import LoaderOption
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
         SubscriptionWithUserIdAndProductId,
     )
 
+type _AwaitableBaseSubscriptionResult = Awaitable[_BaseSubscriptionResult]
 type _BaseSubscriptionResult = Result[
     Literal["Subscription does not exist"], SubscriptionWithProduct
 ]
@@ -61,9 +63,9 @@ class SubscriptionRepository:
             .core
         )
 
-    async def _create_subscription(
+    async def _create_subscription_model(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> Result[Literal["ID already exists"], SubscriptionWithProduct]:
+    ) -> Result[Literal["ID already exists"], SubscriptionModel]:
         statement = (
             insert(SubscriptionModel)
             .values(
@@ -76,7 +78,7 @@ class SubscriptionRepository:
             .options(self._LOADER_OPTION)
         )
         try:
-            result = await self._session.execute(statement=statement)
+            scalars = await self._session.scalars(statement=statement)
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: subscription.id":
@@ -84,7 +86,23 @@ class SubscriptionRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            return "success", result.scalar_one().to_subscription_with_product()
+            return "success", scalars.one()
+
+    async def _delete_subscription_model(self, id_: UUID) -> SubscriptionModel | None:
+        statement = (
+            delete(SubscriptionModel)
+            .where(SubscriptionModel.id == id_)
+            .returning(SubscriptionModel)
+            .options(self._LOADER_OPTION)
+        )
+        return await self._session.scalar(statement=statement)
+
+    async def _read_subscription_model_by_id(
+        self, id_: UUID
+    ) -> SubscriptionModel | None:
+        return await self._session.get(
+            SubscriptionModel, id_, options=[self._LOADER_OPTION]
+        )
 
     async def _read_subscription_models(self) -> tuple[SubscriptionModel, ...]:
         statement = select(SubscriptionModel).options(self._LOADER_OPTION)
@@ -99,9 +117,9 @@ class SubscriptionRepository:
             return "failure", "Subscription does not exist"
         return "success", subscription_model.to_subscription_with_product()
 
-    async def _update_subscription(
+    async def _update_subscription_model(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> _BaseSubscriptionResult:
+    ) -> SubscriptionModel | None:
         statement = (
             update(SubscriptionModel)
             .where(SubscriptionModel.id == subscription.id)
@@ -113,8 +131,7 @@ class SubscriptionRepository:
             .returning(SubscriptionModel)
             .options(self._LOADER_OPTION)
         )
-        updated_subscription_model = await self._session.scalar(statement=statement)
-        return self._to_base_subscription_result(updated_subscription_model)
+        return await self._session.scalar(statement=statement)
 
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
@@ -129,25 +146,26 @@ class SubscriptionRepository:
             # Therefore, we read the related entities first
             # in order to provide more specific `Failure`s:
             .tap_to_awaitable_result(self._check_that_product_and_user_exist)
-            .map_success_to_awaitable_result(self._create_subscription)
+            .map_success_to_awaitable_result(self._create_subscription_model)
+            .map_success(SubscriptionModel.to_subscription_with_product)
             .core
         )
 
-    async def delete_subscription(self, id_: UUID) -> _BaseSubscriptionResult:
-        statement = (
-            delete(SubscriptionModel)
-            .where(SubscriptionModel.id == id_)
-            .returning(SubscriptionModel)
-            .options(self._LOADER_OPTION)
+    def delete_subscription(self, id_: UUID) -> _AwaitableBaseSubscriptionResult:
+        return (
+            Wrapper(id_)
+            .map_to_awaitable(self._delete_subscription_model)
+            .map(self._to_base_subscription_result)
+            .core
         )
-        deleted_subscription_model = await self._session.scalar(statement=statement)
-        return self._to_base_subscription_result(deleted_subscription_model)
 
-    async def read_subscription_by_id(self, id_: UUID) -> _BaseSubscriptionResult:
-        subscription_model = await self._session.get(
-            SubscriptionModel, id_, options=[self._LOADER_OPTION]
+    def read_subscription_by_id(self, id_: UUID) -> _AwaitableBaseSubscriptionResult:
+        return (
+            Wrapper(id_)
+            .map_to_awaitable(self._read_subscription_model_by_id)
+            .map(self._to_base_subscription_result)
+            .core
         )
-        return self._to_base_subscription_result(subscription_model)
 
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
         return (
@@ -169,6 +187,7 @@ class SubscriptionRepository:
             # Therefore, we read the related entities first
             # in order to provide more specific `Failure`s:
             .tap_to_awaitable_result(self._check_that_product_and_user_exist)
-            .map_success_to_awaitable_result(self._update_subscription)
+            .map_success_to_awaitable(self._update_subscription_model)
+            .map_success_to_result(self._to_base_subscription_result)
             .core
         )
