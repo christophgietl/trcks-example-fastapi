@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, final
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -13,11 +13,13 @@ class _Subscription:
     is_active: bool
 
 
+@final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionWithProduct(_Subscription):
     product: Product
 
 
+@final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionWithUserIdAndProductId(_Subscription):
     user_id: UUID
