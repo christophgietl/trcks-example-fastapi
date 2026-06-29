@@ -1,5 +1,7 @@
+# pyright: reportUninitializedInstanceVariable=false
+# See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, final
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -17,6 +19,7 @@ class _ProductSchemaWithId(_ProductSchemaWithoutId, frozen=True):
     id: UUID
 
 
+@final
 class PostProductRequest(_ProductSchemaWithId, frozen=True):
     def to_product(self) -> Product:
         return Product(
@@ -27,6 +30,7 @@ class PostProductRequest(_ProductSchemaWithId, frozen=True):
         )
 
 
+@final
 class PutProductRequest(_ProductSchemaWithoutId, frozen=True):
     def to_product(self, id_: UUID) -> Product:
         return Product(
@@ -37,6 +41,7 @@ class PutProductRequest(_ProductSchemaWithoutId, frozen=True):
         )
 
 
+@final
 class ProductResponse(_ProductSchemaWithId, frozen=True):
     @staticmethod
     def from_product(product: Product) -> ProductResponse:

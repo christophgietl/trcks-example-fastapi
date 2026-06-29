@@ -1,3 +1,6 @@
+# pyright: reportUninitializedInstanceVariable=false
+# See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
+from typing import final
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -15,16 +18,19 @@ class _UserSchemaWithId(_UserSchemaWithoutId, frozen=True):
     id: UUID
 
 
+@final
 class PostUserRequest(_UserSchemaWithId, frozen=True):
     def to_user(self) -> User:
         return User(id=self.id, email=self.email)
 
 
+@final
 class PutUserRequest(_UserSchemaWithoutId, frozen=True):
     def to_user(self, id_: UUID) -> User:
         return User(id=id_, email=self.email)
 
 
+@final
 class UserResponse(_UserSchemaWithId, frozen=True):
     subscriptions: tuple[SubscriptionResponse, ...]
 
