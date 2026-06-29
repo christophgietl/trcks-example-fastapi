@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, final
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -13,6 +13,7 @@ class User:
     email: str
 
 
+@final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class UserWithSubscriptionsWithProducts(User):
     subscriptions_with_products: tuple[SubscriptionWithProduct, ...]

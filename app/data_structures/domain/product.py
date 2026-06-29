@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, final
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 type ProductStatus = Literal["draft", "published", "deprecated"]
 
 
+@final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class Product:
     id: UUID
