@@ -195,7 +195,10 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
 
     assert users_in_database == [(user2_id, "user2@example.com")]
     assert subscriptions_in_database == [(subscription2_id, product2_id, user2_id)]
-    assert {row[0] for row in products_in_database} == {product1_id, product2_id}
+    assert {product[0] for product in products_in_database} == {
+        product1_id,
+        product2_id,
+    }
 
 
 async def test_read_user_by_email_returns_user(
