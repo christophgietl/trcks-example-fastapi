@@ -4,7 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.database import create_engine, get_engine, initialize_engine
+from app.database import create_engine, get_engine
 from app.main import app
 
 if TYPE_CHECKING:
@@ -17,9 +17,8 @@ if TYPE_CHECKING:
 @pytest.fixture
 async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
     database_file = tmp_path / "database.sqlite3"
-    engine = create_engine(f"sqlite+aiosqlite:///{database_file}")
-    await initialize_engine(engine)
-    await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
+    engine = await create_engine(f"sqlite+aiosqlite:///{database_file}")
+    await engine.dispose()  # avoids reusing the connection used by table initialization
     yield engine
     await engine.dispose()
 

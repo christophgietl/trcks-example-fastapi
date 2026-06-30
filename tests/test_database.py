@@ -38,16 +38,12 @@ async def test_lifespan_sets_engine_initializes_and_disposes(
 
     initialized = False
 
-    def _create_engine() -> FakeEngine:
-        return fake_engine
-
-    async def _initialize_engine(engine: FakeEngine) -> None:
+    async def _create_engine() -> FakeEngine:
         nonlocal initialized
         initialized = True
-        assert engine is fake_engine
+        return fake_engine
 
     monkeypatch.setattr(database, "create_engine", _create_engine)
-    monkeypatch.setattr(database, "initialize_engine", _initialize_engine)
 
     async with database.lifespan(app):
         assert initialized

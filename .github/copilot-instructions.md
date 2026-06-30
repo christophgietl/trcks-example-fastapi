@@ -206,9 +206,9 @@ Keep them centralized and consistent—changes require updating all match statem
   (not at import time). `create_engine` attaches a `connect` event listener
   that runs `PRAGMA foreign_keys=ON` on every DB-API connection
   (SQLite enforces foreign keys per connection).
-- FastAPI `lifespan` creates the engine, calls `initialize_engine(engine)` to
-  create tables (`app/data_structures/models.py#create_all_tables`), stores the
-  engine on `app.state.engine`, and disposes it on shutdown.
+- FastAPI `lifespan` creates the engine via `create_engine()` (which also
+  creates tables through `app/data_structures/models.py#create_all_tables`),
+  stores the engine on `app.state.engine`, and disposes it on shutdown.
 - Session lifecycle is defined once in the public `get_async_session`
   dependency, which depends on public `get_engine`.
 - Tests override `get_engine` to inject a test engine, so they reuse the
