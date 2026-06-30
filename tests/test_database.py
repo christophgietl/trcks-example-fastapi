@@ -1,12 +1,3 @@
-"""Tests for per-connection SQLite foreign key enforcement.
-
-SQLite enforces foreign keys per connection, so `PRAGMA foreign_keys=ON` must be
-applied to every pooled connection -- not just the one used to create the
-tables. These tests use a request-scoped session (obtained through the `session`
-fixture, which checks out its own connection from the pool) to confirm that
-enforcement is active outside of table creation.
-"""
-
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import uuid7
@@ -25,14 +16,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
-async def test_foreign_keys_are_enforced_for_request_scoped_session(
-    session: AsyncSession,
-) -> None:
-    """Inserting a subscription with a dangling user_id must be rejected.
-
-    If `PRAGMA foreign_keys=ON` were not applied to the request-scoped
-    connection, SQLite would silently accept the orphaned foreign key.
-    """
+async def test_foreign_keys_are_enforced(session: AsyncSession) -> None:
     product_id = uuid7()
     nonexistent_user_id = uuid7()
     async with session.begin():
@@ -57,15 +41,7 @@ async def test_foreign_keys_are_enforced_for_request_scoped_session(
             session.add(subscription)
 
 
-async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_session(
-    session: AsyncSession,
-) -> None:
-    """Deleting a user cascades to its subscriptions when FKs are enforced.
-
-    `subscription.user_id` declares `ON DELETE CASCADE`, which SQLite only
-    honors when foreign keys are enabled on the connection performing the
-    delete.
-    """
+async def test_on_delete_cascade_removes_subscriptions(session: AsyncSession) -> None:
     product_id = uuid7()
     user_id = uuid7()
     subscription_id = uuid7()
