@@ -7,6 +7,7 @@ fixture, which checks out its own connection from the pool) to confirm that
 enforcement is active outside of table creation.
 """
 
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
 
@@ -45,7 +46,7 @@ async def test_foreign_keys_are_enforced_for_request_scoped_session(
         session.add(
             ProductModel(
                 id=product_id,
-                monthly_fee_in_euros=Decimal_9_99(),
+                monthly_fee_in_euros=Decimal("9.99"),
                 name="Product 1",
                 status="published",
             )
@@ -82,7 +83,7 @@ async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_sessio
             [
                 ProductModel(
                     id=product_id,
-                    monthly_fee_in_euros=Decimal_9_99(),
+                    monthly_fee_in_euros=Decimal("9.99"),
                     name="Product 1",
                     status="published",
                 ),
@@ -105,9 +106,3 @@ async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_sessio
     async with session.begin():
         remaining_user_ids = await _get_subscription_user_ids(session)
     assert remaining_user_ids == []
-
-
-def Decimal_9_99():  # noqa: N802
-    from decimal import Decimal
-
-    return Decimal("9.99")
