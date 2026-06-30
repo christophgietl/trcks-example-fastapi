@@ -20,9 +20,14 @@ def _enable_foreign_keys(connection: DBAPIConnection, _: ConnectionPoolEntry) ->
         cursor.execute("PRAGMA foreign_keys=ON")
 
 
-def enable_foreign_keys_for_engine(engine: AsyncEngine) -> None:
+def _enable_foreign_keys_for_engine(engine: AsyncEngine) -> None:
     if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
         event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
+
+
+async def initialize_engine(engine: AsyncEngine) -> None:
+    _enable_foreign_keys_for_engine(engine)
+    await create_all_tables(engine)
 
 
 _async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
@@ -30,8 +35,7 @@ _async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo
 
 @asynccontextmanager
 async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
-    enable_foreign_keys_for_engine(_async_engine)
-    await create_all_tables(_async_engine)
+    await initialize_engine(_async_engine)
     yield
     await _async_engine.dispose()
 
