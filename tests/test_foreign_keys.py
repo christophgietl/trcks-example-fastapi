@@ -94,8 +94,6 @@ async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_sessio
         assert user is not None
         await session.delete(user)
 
-    async with session.begin():
-        result = await session.execute(select(SubscriptionModel.user_id))
-        remaining_user_ids = result.scalars().all()
+    remaining_user_ids = await session.scalars(select(SubscriptionModel.user_id))
 
-    assert remaining_user_ids == []
+    assert remaining_user_ids.all() == []
