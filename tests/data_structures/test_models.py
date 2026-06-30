@@ -38,9 +38,9 @@ class TestSubscriptionModel:
             product_id=product_id,
             user_id=nonexistent_user_id,
         )
-        async with session.begin():
-            session.add(subscription_model)
-            with pytest.raises(IntegrityError):
+        with pytest.raises(IntegrityError):  # noqa: PT012
+            async with session.begin():
+                session.add(subscription_model)
                 await session.flush()
 
     async def test_subscriptions_are_deleted_on_user_deletion(
