@@ -4,17 +4,21 @@ from typing import TYPE_CHECKING, Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.data_structures.models import set_pragmas_and_create_all_tables
+from app.data_structures.models import (
+    create_all_tables,
+    enable_foreign_keys_for_engine,
+)
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 _async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
+enable_foreign_keys_for_engine(_async_engine)
 
 
 @asynccontextmanager
 async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
-    await set_pragmas_and_create_all_tables(_async_engine)
+    await create_all_tables(_async_engine)
     yield
     await _async_engine.dispose()
 

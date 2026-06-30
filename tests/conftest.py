@@ -8,7 +8,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.data_structures.models import set_pragmas_and_create_all_tables
+from app.data_structures.models import (
+    create_all_tables,
+    enable_foreign_keys_for_engine,
+)
 from app.database import AsyncSessionDep
 from app.main import app
 
@@ -21,7 +24,8 @@ if typing.TYPE_CHECKING:
 @pytest.fixture
 async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
     engine = create_async_engine("sqlite+aiosqlite://", echo=True)
-    await set_pragmas_and_create_all_tables(engine)
+    enable_foreign_keys_for_engine(engine)
+    await create_all_tables(engine)
     yield engine
     await engine.dispose()
 

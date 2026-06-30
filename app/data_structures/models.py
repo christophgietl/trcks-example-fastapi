@@ -95,7 +95,21 @@ def _enable_foreign_keys(
         cursor.execute("PRAGMA foreign_keys=ON")
 
 
-async def set_pragmas_and_create_all_tables(engine: AsyncEngine) -> None:
-    event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
+def enable_foreign_keys_for_engine(engine: AsyncEngine) -> None:
+    """Enforce SQLite foreign keys on every connection of `engine`.
+
+    SQLite enforces foreign keys per connection, so `PRAGMA foreign_keys=ON`
+    must run for each DB-API connection rather than only once at startup.
+    Registering a `connect` event listener applies the pragma to every pooled
+    connection, keeping `ON DELETE CASCADE` behavior consistent.
+
+    Call this once, right after the engine is created. The registration is
+    idempotent: repeated calls on the same engine do not stack listeners.
+    """
+    if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
+        event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
+
+
+async def create_all_tables(engine: AsyncEngine) -> None:
     async with engine.begin() as conn:
         await conn.run_sync(_BaseModel.metadata.create_all)
