@@ -20,13 +20,9 @@ def _enable_foreign_keys(connection: DBAPIConnection, _: ConnectionPoolEntry) ->
         cursor.execute("PRAGMA foreign_keys=ON")
 
 
-def _enable_foreign_keys_for_engine(engine: AsyncEngine) -> None:
+async def initialize_engine(engine: AsyncEngine) -> None:
     if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
         event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
-
-
-async def initialize_engine(engine: AsyncEngine) -> None:
-    _enable_foreign_keys_for_engine(engine)
     await create_all_tables(engine)
 
 
