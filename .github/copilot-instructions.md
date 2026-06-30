@@ -202,15 +202,16 @@ Keep them centralized and consistent—changes require updating all match statem
 - SQLite via `sqlalchemy[aiosqlite]` driver URL: `sqlite+aiosqlite:///database.sqlite3`
 - All ORM models live in a single file: `app/data_structures/models.py`
 - Internal declarative base: `_BaseModel` (inherits `DeclarativeBase`, `MappedAsDataclass`)
-- SQLite foreign key enforcement is registered per engine via
-  `app/database.py#enable_foreign_keys_for_engine`,
+- SQLite foreign key enforcement is set up per engine via
+  `app/database.py#initialize_engine`,
   which attaches a `connect` event listener that runs `PRAGMA foreign_keys=ON`
-  on every DB-API connection (SQLite enforces foreign keys per connection).
-  It is invoked from the FastAPI `lifespan` context (and from the test engine
-  fixture) before any connection is used; registration is idempotent.
+  on every DB-API connection (SQLite enforces foreign keys per connection)
+  and then creates the tables. It is invoked from the FastAPI `lifespan`
+  context (and from the test engine fixture) before any connection is used;
+  listener registration is idempotent.
 - Table creation occurs at startup inside the FastAPI `lifespan` context
-  (see `app/data_structures/models.py#create_all_tables`
-  used by `app/database.py` and registered in `app/main.py`).
+  (see `app/data_structures/models.py#create_all_tables`,
+  called by `app/database.py#initialize_engine`).
 
 ## Dependency Injection Pattern
 
