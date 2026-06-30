@@ -20,8 +20,8 @@ if typing.TYPE_CHECKING:
 
 @pytest.fixture
 async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    database_path = tmp_path / "database.sqlite3"
-    engine = create_async_engine(f"sqlite+aiosqlite:///{database_path}", echo=True)
+    database_file = tmp_path / "database.sqlite3"
+    engine = create_async_engine(f"sqlite+aiosqlite:///{database_file}", echo=True)
     await initialize_engine(engine)
     await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
     yield engine
