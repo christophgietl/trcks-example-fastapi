@@ -13,14 +13,18 @@ from app.main import app
 
 if typing.TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
+    from pathlib import Path
 
     from fastapi import FastAPI
 
 
 @pytest.fixture
-async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    engine = create_async_engine("sqlite+aiosqlite://", echo=True)
+async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
+    engine = create_async_engine(
+        f"sqlite+aiosqlite:///{tmp_path / 'database.sqlite3'}", echo=True
+    )
     await initialize_engine(engine)
+    await engine.dispose()
     yield engine
     await engine.dispose()
 
