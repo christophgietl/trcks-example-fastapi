@@ -55,6 +55,7 @@ async def create_user(
 
 @user_router.delete(
     "/{id_}",
+    description="Delete a user and all of their subscriptions.",
     responses={status.HTTP_404_NOT_FOUND: {"description": "User Not Found"}},
     status_code=status.HTTP_204_NO_CONTENT,
 )

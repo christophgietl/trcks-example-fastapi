@@ -1,20 +1,37 @@
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.data_structures.models import set_pragmas_and_create_all_tables
+from app.data_structures.models import create_all_tables
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    from sqlalchemy.engine.interfaces import DBAPIConnection
+    from sqlalchemy.ext.asyncio import AsyncEngine
+    from sqlalchemy.pool import ConnectionPoolEntry
+
+
+def _enable_foreign_keys(connection: DBAPIConnection, _: ConnectionPoolEntry) -> None:
+    with closing(connection.cursor()) as cursor:
+        cursor.execute("PRAGMA foreign_keys=ON")
+
+
+async def initialize_engine(engine: AsyncEngine) -> None:
+    if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
+        event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
+    await create_all_tables(engine)
+
 
 _async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
 
 
 @asynccontextmanager
 async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
-    await set_pragmas_and_create_all_tables(_async_engine)
+    await initialize_engine(_async_engine)
     yield
     await _async_engine.dispose()
 

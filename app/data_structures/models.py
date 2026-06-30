@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Numeric, text
+from sqlalchemy import ForeignKey, Numeric
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -48,7 +48,7 @@ class ProductModel(_BaseModel):
 class SubscriptionModel(_BaseModel):
     __tablename__ = "subscription"
     is_active: Mapped[bool]
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
     user: Mapped[UserModel] = relationship(back_populates="subscriptions", init=False)
     product_id: Mapped[UUID] = mapped_column(ForeignKey("product.id"))
     product: Mapped[ProductModel] = relationship(
@@ -67,7 +67,7 @@ class UserModel(_BaseModel):
     __tablename__ = "user"
     email: Mapped[str] = mapped_column(index=True, unique=True)
     subscriptions: Mapped[list[SubscriptionModel]] = relationship(
-        back_populates="user", default_factory=list
+        back_populates="user", default_factory=list, passive_deletes=True
     )
 
     def to_user_with_subscriptions_with_products(
@@ -85,7 +85,6 @@ class UserModel(_BaseModel):
         )
 
 
-async def set_pragmas_and_create_all_tables(engine: AsyncEngine) -> None:
+async def create_all_tables(engine: AsyncEngine) -> None:
     async with engine.begin() as conn:
-        _ = await conn.execute(text("PRAGMA foreign_keys=ON"))
         await conn.run_sync(_BaseModel.metadata.create_all)
