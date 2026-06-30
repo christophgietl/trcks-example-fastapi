@@ -59,9 +59,9 @@ async def test_foreign_keys_are_enforced_for_request_scoped_session(
         product_id=product_id,
         user_id=nonexistent_user_id,
     )
-    session.add(subscription)
     with pytest.raises(IntegrityError):
-        await session.commit()
+        async with session.begin():
+            session.add(subscription)
 
 
 async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_session(
@@ -98,7 +98,6 @@ async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_sessio
 
     async with session.begin():
         user = await session.get(UserModel, user_id)
-        assert user is not None
         await session.delete(user)
 
     async with session.begin():

@@ -15,10 +15,8 @@ if TYPE_CHECKING:
     from sqlalchemy.pool import ConnectionPoolEntry
 
 
-def _enable_foreign_keys(
-    dbapi_connection: DBAPIConnection, _: ConnectionPoolEntry
-) -> None:
-    with closing(dbapi_connection.cursor()) as cursor:
+def _enable_foreign_keys(connection: DBAPIConnection, _: ConnectionPoolEntry) -> None:
+    with closing(connection.cursor()) as cursor:
         cursor.execute("PRAGMA foreign_keys=ON")
 
 
@@ -28,11 +26,11 @@ def enable_foreign_keys_for_engine(engine: AsyncEngine) -> None:
 
 
 _async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
-enable_foreign_keys_for_engine(_async_engine)
 
 
 @asynccontextmanager
 async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
+    enable_foreign_keys_for_engine(_async_engine)
     await create_all_tables(_async_engine)
     yield
     await _async_engine.dispose()
