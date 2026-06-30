@@ -44,32 +44,31 @@ async def test_foreign_keys_are_enforced(session: AsyncSession) -> None:
 async def test_on_delete_cascade_removes_subscriptions(session: AsyncSession) -> None:
     product_id = uuid7()
     user_id = uuid7()
-    subscription_id = uuid7()
+    models = (
+        ProductModel(
+            id=product_id,
+            monthly_fee_in_euros=Decimal("9.99"),
+            name="Product 1",
+            status="published",
+        ),
+        UserModel(id=user_id, email="user@example.com"),
+        SubscriptionModel(
+            id=uuid7(),
+            is_active=True,
+            product_id=product_id,
+            user_id=user_id,
+        ),
+    )
+
     async with session.begin():
-        session.add_all(
-            [
-                ProductModel(
-                    id=product_id,
-                    monthly_fee_in_euros=Decimal("9.99"),
-                    name="Product 1",
-                    status="published",
-                ),
-                UserModel(id=user_id, email="user@example.com"),
-                SubscriptionModel(
-                    id=subscription_id,
-                    is_active=True,
-                    product_id=product_id,
-                    user_id=user_id,
-                ),
-            ]
-        )
+        session.add_all(models)
         await session.flush()
 
     async with session.begin():
-        user = await session.get(UserModel, user_id)
-        assert user is not None
-        await session.delete(user)
+        user_model = await session.get(UserModel, user_id)
+        assert user_model is not None
+        await session.delete(user_model)
 
-    remaining_user_ids = await session.scalars(select(SubscriptionModel.user_id))
-
-    assert remaining_user_ids.all() == []
+    user_id_scalars = await session.scalars(select(SubscriptionModel.user_id))
+    user_ids = user_id_scalars.all()
+    assert user_ids == []
