@@ -1,3 +1,4 @@
+from contextlib import closing
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -90,9 +91,8 @@ class UserModel(_BaseModel):
 def _enable_foreign_keys(
     dbapi_connection: DBAPIConnection, _connection_record: ConnectionPoolEntry
 ) -> None:
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+    with closing(dbapi_connection.cursor()) as cursor:
+        cursor.execute("PRAGMA foreign_keys=ON")
 
 
 async def set_pragmas_and_create_all_tables(engine: AsyncEngine) -> None:
