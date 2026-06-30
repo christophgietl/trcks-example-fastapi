@@ -206,7 +206,8 @@ Keep them centralized and consistent—changes require updating all match statem
   `app/database.py#enable_foreign_keys_for_engine`,
   which attaches a `connect` event listener that runs `PRAGMA foreign_keys=ON`
   on every DB-API connection (SQLite enforces foreign keys per connection).
-  Call it once, right after the engine is created; registration is idempotent.
+  It is invoked from the FastAPI `lifespan` context (and from the test engine
+  fixture) before any connection is used; registration is idempotent.
 - Table creation occurs at startup inside the FastAPI `lifespan` context
   (see `app/data_structures/models.py#create_all_tables`
   used by `app/database.py` and registered in `app/main.py`).
