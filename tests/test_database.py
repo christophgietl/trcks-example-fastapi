@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     import pytest
 
 
-class _FakeEngine:
+class FakeEngine:
     disposed = False
 
     async def dispose(self) -> None:
@@ -21,7 +21,7 @@ class _FakeEngine:
 
 def test_get_engine_reads_engine_from_app_state() -> None:
     app = FastAPI()
-    fake_engine = _FakeEngine()
+    fake_engine = FakeEngine()
     app.state.engine = fake_engine
     # Minimal scope is sufficient because get_engine only reads
     # request.app.state.engine.
@@ -34,13 +34,14 @@ async def test_lifespan_sets_engine_initializes_and_disposes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     app = FastAPI()
-    fake_engine = _FakeEngine()
+    fake_engine = FakeEngine()
+
     initialized = False
 
-    def _create_engine() -> _FakeEngine:
+    def _create_engine() -> FakeEngine:
         return fake_engine
 
-    async def _initialize_engine(engine: _FakeEngine) -> None:
+    async def _initialize_engine(engine: FakeEngine) -> None:
         nonlocal initialized
         initialized = True
         assert engine is fake_engine
