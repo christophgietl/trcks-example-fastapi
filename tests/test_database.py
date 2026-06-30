@@ -18,27 +18,27 @@ if TYPE_CHECKING:
 
 async def test_foreign_keys_are_enforced(session: AsyncSession) -> None:
     product_id = uuid7()
-    nonexistent_user_id = uuid7()
+    product_model = ProductModel(
+        id=product_id,
+        monthly_fee_in_euros=Decimal("9.99"),
+        name="Product 1",
+        status="published",
+    )
     async with session.begin():
-        session.add(
-            ProductModel(
-                id=product_id,
-                monthly_fee_in_euros=Decimal("9.99"),
-                name="Product 1",
-                status="published",
-            )
-        )
+        session.add(product_model)
         await session.flush()
 
-    subscription = SubscriptionModel(
+    nonexistent_user_id = uuid7()
+    subscription_model = SubscriptionModel(
         id=uuid7(),
         is_active=True,
         product_id=product_id,
         user_id=nonexistent_user_id,
     )
-    with pytest.raises(IntegrityError):
-        async with session.begin():
-            session.add(subscription)
+    async with session.begin():
+        session.add(subscription_model)
+        with pytest.raises(IntegrityError):
+            await session.flush()
 
 
 async def test_on_delete_cascade_removes_subscriptions(session: AsyncSession) -> None:
