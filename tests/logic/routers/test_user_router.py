@@ -148,39 +148,39 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product1_id, product2_id = uuid7(), uuid7()
-    user1_id, user2_id = uuid7(), uuid7()
     subscription1_id, subscription2_id = uuid7(), uuid7()
+    user1_id, user2_id = uuid7(), uuid7()
+    user1_email, user2_email = "user1@example.com", "user2@example.com"
+    models = (
+        ProductModel(
+            id=product1_id,
+            monthly_fee_in_euros=Decimal("9.99"),
+            name="Product 1",
+            status="published",
+        ),
+        ProductModel(
+            id=product2_id,
+            monthly_fee_in_euros=Decimal("19.99"),
+            name="Product 2",
+            status="published",
+        ),
+        UserModel(id=user1_id, email=user1_email),
+        UserModel(id=user2_id, email=user2_email),
+        SubscriptionModel(
+            id=subscription1_id,
+            is_active=True,
+            product_id=product1_id,
+            user_id=user1_id,
+        ),
+        SubscriptionModel(
+            id=subscription2_id,
+            is_active=True,
+            product_id=product2_id,
+            user_id=user2_id,
+        ),
+    )
     async with session.begin():
-        session.add_all(
-            [
-                ProductModel(
-                    id=product1_id,
-                    monthly_fee_in_euros=Decimal("9.99"),
-                    name="Product 1",
-                    status="published",
-                ),
-                ProductModel(
-                    id=product2_id,
-                    monthly_fee_in_euros=Decimal("19.99"),
-                    name="Product 2",
-                    status="published",
-                ),
-                UserModel(id=user1_id, email="user1@example.com"),
-                UserModel(id=user2_id, email="user2@example.com"),
-                SubscriptionModel(
-                    id=subscription1_id,
-                    is_active=True,
-                    product_id=product1_id,
-                    user_id=user1_id,
-                ),
-                SubscriptionModel(
-                    id=subscription2_id,
-                    is_active=True,
-                    product_id=product2_id,
-                    user_id=user2_id,
-                ),
-            ]
-        )
+        session.add_all(models)
         await session.flush()
 
     response = await client.delete(f"/users/{user1_id}")
@@ -189,16 +189,16 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
     assert response.content == b""
 
     async with session.begin():
-        users_in_database = await _get_users_from_database(session)
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
         products_in_database = await _get_products_from_database(session)
+        subscriptions_in_database = await _get_subscriptions_from_database(session)
+        users_in_database = await _get_users_from_database(session)
 
-    assert users_in_database == [(user2_id, "user2@example.com")]
-    assert subscriptions_in_database == [(subscription2_id, product2_id, user2_id)]
     assert {product[0] for product in products_in_database} == {
         product1_id,
         product2_id,
     }
+    assert subscriptions_in_database == [(subscription2_id, product2_id, user2_id)]
+    assert users_in_database == [(user2_id, user2_email)]
 
 
 async def test_read_user_by_email_returns_user(
