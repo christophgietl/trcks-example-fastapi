@@ -20,6 +20,7 @@ def _enable_foreign_keys(connection: DBAPIConnection, _: ConnectionPoolEntry) ->
 
 
 async def initialize_engine(engine: AsyncEngine) -> None:
+    # Foreign-key PRAGMA registration happens in `create_engine` for each engine.
     await create_all_tables(engine)
 
 

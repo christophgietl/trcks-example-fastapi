@@ -1,3 +1,4 @@
+import importlib
 from typing import TYPE_CHECKING
 
 from fastapi import FastAPI
@@ -6,6 +7,8 @@ from starlette.requests import Request
 from app import database
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import pytest
 
 
@@ -51,7 +54,13 @@ async def test_lifespan_sets_engine_initializes_and_disposes(
     assert fake_engine.disposed
 
 
-def test_database_module_has_no_import_time_engine() -> None:
-    assert not hasattr(database, "_async_engine")
-    assert not hasattr(database, "_async_sessionmaker")
-    assert not hasattr(database, "_get_async_session")
+def test_importing_database_module_does_not_create_default_database_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database_file = tmp_path / "database.sqlite3"
+    monkeypatch.chdir(tmp_path)
+
+    _ = importlib.reload(database)
+
+    assert not database_file.exists()
