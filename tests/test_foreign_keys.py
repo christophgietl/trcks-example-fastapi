@@ -9,7 +9,7 @@ enforcement is active outside of table creation.
 
 from decimal import Decimal
 from typing import TYPE_CHECKING
-from uuid import UUID, uuid7
+from uuid import uuid7
 
 import pytest
 from sqlalchemy import select
@@ -22,14 +22,7 @@ from app.data_structures.models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from sqlalchemy.ext.asyncio import AsyncSession
-
-
-async def _get_subscription_user_ids(session: AsyncSession) -> Sequence[UUID]:
-    result = await session.execute(select(SubscriptionModel.user_id))
-    return result.scalars().all()
 
 
 async def test_foreign_keys_are_enforced_for_request_scoped_session(
@@ -102,6 +95,7 @@ async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_sessio
         await session.delete(user)
 
     async with session.begin():
-        remaining_user_ids = await _get_subscription_user_ids(session)
+        result = await session.execute(select(SubscriptionModel.user_id))
+        remaining_user_ids = result.scalars().all()
 
     assert remaining_user_ids == []
