@@ -59,7 +59,6 @@ async def test_on_delete_cascade_removes_subscriptions(session: AsyncSession) ->
             user_id=user_id,
         ),
     )
-
     async with session.begin():
         session.add_all(models)
         await session.flush()
@@ -68,7 +67,9 @@ async def test_on_delete_cascade_removes_subscriptions(session: AsyncSession) ->
         user_model = await session.get(UserModel, user_id)
         assert user_model is not None
         await session.delete(user_model)
+        await session.flush()
 
-    user_id_scalars = await session.scalars(select(SubscriptionModel.user_id))
-    user_ids = user_id_scalars.all()
+    async with session.begin():
+        user_id_scalars = await session.scalars(select(SubscriptionModel.user_id))
+        user_ids = user_id_scalars.all()
     assert user_ids == []
