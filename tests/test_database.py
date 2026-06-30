@@ -56,7 +56,7 @@ async def test_lifespan_sets_engine_initializes_and_disposes(
     assert fake_engine.disposed
 
 
-def test_importing_database_module_does_not_create_default_database_file(
+def test_import_does_not_create_database_file(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
