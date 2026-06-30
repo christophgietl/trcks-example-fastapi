@@ -23,6 +23,8 @@ def test_get_engine_reads_engine_from_app_state() -> None:
     app = FastAPI()
     fake_engine = _FakeEngine()
     app.state.engine = fake_engine
+    # Minimal scope is sufficient because get_engine only reads
+    # request.app.state.engine.
     request = Request({"type": "http", "app": app})
 
     assert database.get_engine(request) is fake_engine

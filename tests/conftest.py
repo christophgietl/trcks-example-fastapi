@@ -26,7 +26,10 @@ async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ig
 
 @pytest.fixture
 def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
-    app.dependency_overrides[get_engine] = lambda: _engine
+    def _get_test_engine() -> AsyncEngine:
+        return _engine
+
+    app.dependency_overrides[get_engine] = _get_test_engine
     yield app
     app.dependency_overrides.clear()
 
