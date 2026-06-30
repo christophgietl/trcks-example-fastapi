@@ -203,7 +203,7 @@ Keep them centralized and consistent—changes require updating all match statem
 - All ORM models live in a single file: `app/data_structures/models.py`
 - Internal declarative base: `_BaseModel` (inherits `DeclarativeBase`, `MappedAsDataclass`)
 - SQLite foreign key enforcement is registered per engine via
-  `app/data_structures/models.py#enable_foreign_keys_for_engine`,
+  `app/database.py#enable_foreign_keys_for_engine`,
   which attaches a `connect` event listener that runs `PRAGMA foreign_keys=ON`
   on every DB-API connection (SQLite enforces foreign keys per connection).
   Call it once, right after the engine is created; registration is idempotent.

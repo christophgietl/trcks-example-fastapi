@@ -53,17 +53,15 @@ async def test_foreign_keys_are_enforced_for_request_scoped_session(
         )
         await session.flush()
 
+    subscription = SubscriptionModel(
+        id=uuid7(),
+        is_active=True,
+        product_id=product_id,
+        user_id=nonexistent_user_id,
+    )
+    session.add(subscription)
     with pytest.raises(IntegrityError):
-        async with session.begin():
-            session.add(
-                SubscriptionModel(
-                    id=uuid7(),
-                    is_active=True,
-                    product_id=product_id,
-                    user_id=nonexistent_user_id,
-                )
-            )
-            await session.flush()
+        await session.commit()
 
 
 async def test_on_delete_cascade_removes_subscriptions_for_request_scoped_session(

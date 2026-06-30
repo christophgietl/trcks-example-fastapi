@@ -1,9 +1,8 @@
-from contextlib import closing
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Numeric, event
+from sqlalchemy import ForeignKey, Numeric
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -21,9 +20,7 @@ from app.data_structures.domain.subscription import SubscriptionWithProduct
 from app.data_structures.domain.user import UserWithSubscriptionsWithProducts
 
 if TYPE_CHECKING:
-    from sqlalchemy.engine.interfaces import DBAPIConnection
     from sqlalchemy.ext.asyncio import AsyncEngine
-    from sqlalchemy.pool import ConnectionPoolEntry
 
 
 class _BaseModel(DeclarativeBase, MappedAsDataclass):
@@ -86,28 +83,6 @@ class UserModel(_BaseModel):
             email=self.email,
             subscriptions_with_products=subscriptions_with_products,
         )
-
-
-def _enable_foreign_keys(
-    dbapi_connection: DBAPIConnection, _connection_record: ConnectionPoolEntry
-) -> None:
-    with closing(dbapi_connection.cursor()) as cursor:
-        cursor.execute("PRAGMA foreign_keys=ON")
-
-
-def enable_foreign_keys_for_engine(engine: AsyncEngine) -> None:
-    """Enforce SQLite foreign keys on every connection of `engine`.
-
-    SQLite enforces foreign keys per connection, so `PRAGMA foreign_keys=ON`
-    must run for each DB-API connection rather than only once at startup.
-    Registering a `connect` event listener applies the pragma to every pooled
-    connection, keeping `ON DELETE CASCADE` behavior consistent.
-
-    Call this once, right after the engine is created. The registration is
-    idempotent: repeated calls on the same engine do not stack listeners.
-    """
-    if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
-        event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
 
 
 async def create_all_tables(engine: AsyncEngine) -> None:

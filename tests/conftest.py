@@ -8,11 +8,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.data_structures.models import (
-    create_all_tables,
-    enable_foreign_keys_for_engine,
-)
-from app.database import AsyncSessionDep
+from app.data_structures.models import create_all_tables
+from app.database import AsyncSessionDep, enable_foreign_keys_for_engine
 from app.main import app
 
 if typing.TYPE_CHECKING:
