@@ -8,20 +8,22 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.data_structures.models import set_pragmas_and_create_all_tables
-from app.database import AsyncSessionDep
+from app.database import AsyncSessionDep, initialize_engine
 from app.main import app
 
 if typing.TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
+    from pathlib import Path
 
     from fastapi import FastAPI
 
 
 @pytest.fixture
-async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    engine = create_async_engine("sqlite+aiosqlite://", echo=True)
-    await set_pragmas_and_create_all_tables(engine)
+async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
+    database_file = tmp_path / "database.sqlite3"
+    engine = create_async_engine(f"sqlite+aiosqlite:///{database_file}", echo=True)
+    await initialize_engine(engine)
+    await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
     yield engine
     await engine.dispose()
 

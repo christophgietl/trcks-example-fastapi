@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Numeric, text
+from sqlalchemy import ForeignKey, Numeric
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -85,7 +85,6 @@ class UserModel(_BaseModel):
         )
 
 
-async def set_pragmas_and_create_all_tables(engine: AsyncEngine) -> None:
+async def create_all_tables(engine: AsyncEngine) -> None:
     async with engine.begin() as conn:
-        _ = await conn.execute(text("PRAGMA foreign_keys=ON"))
         await conn.run_sync(_BaseModel.metadata.create_all)
