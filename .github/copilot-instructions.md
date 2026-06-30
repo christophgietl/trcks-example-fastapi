@@ -202,16 +202,17 @@ Keep them centralized and consistent—changes require updating all match statem
 - SQLite via `sqlalchemy[aiosqlite]` driver URL: `sqlite+aiosqlite:///database.sqlite3`
 - All ORM models live in a single file: `app/data_structures/models.py`
 - Internal declarative base: `_BaseModel` (inherits `DeclarativeBase`, `MappedAsDataclass`)
-- SQLite foreign key enforcement is set up per engine via
-  `app/database.py#initialize_engine`,
-  which attaches a `connect` event listener that runs `PRAGMA foreign_keys=ON`
-  on every DB-API connection (SQLite enforces foreign keys per connection)
-  and then creates the tables. It is invoked from the FastAPI `lifespan`
-  context (and from the test engine fixture) before any connection is used;
-  listener registration is idempotent.
-- Table creation occurs at startup inside the FastAPI `lifespan` context
-  (see `app/data_structures/models.py#create_all_tables`,
-  called by `app/database.py#initialize_engine`).
+- The SQLAlchemy async engine is created by `app/database.py#create_engine`
+  (not at import time). `create_engine` attaches a `connect` event listener
+  that runs `PRAGMA foreign_keys=ON` on every DB-API connection
+  (SQLite enforces foreign keys per connection).
+- FastAPI `lifespan` creates the engine, calls `initialize_engine(engine)` to
+  create tables (`app/data_structures/models.py#create_all_tables`), stores the
+  engine on `app.state.engine`, and disposes it on shutdown.
+- Session lifecycle is defined once in the public `get_async_session`
+  dependency, which depends on public `get_engine`.
+- Tests override `get_engine` to inject a test engine, so they reuse the
+  production `get_async_session` lifecycle instead of redefining it.
 
 ## Dependency Injection Pattern
 

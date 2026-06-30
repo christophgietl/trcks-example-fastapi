@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager, closing
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, cast
 
-from fastapi import Depends
+from fastapi import Depends, FastAPI, Request
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from app.data_structures.models import create_all_tables
 
@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from sqlalchemy.engine.interfaces import DBAPIConnection
-    from sqlalchemy.ext.asyncio import AsyncEngine
     from sqlalchemy.pool import ConnectionPoolEntry
 
 
@@ -21,31 +20,39 @@ def _enable_foreign_keys(connection: DBAPIConnection, _: ConnectionPoolEntry) ->
 
 
 async def initialize_engine(engine: AsyncEngine) -> None:
-    if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
-        event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
     await create_all_tables(engine)
 
 
-_async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
+def create_engine(url: str = "sqlite+aiosqlite:///database.sqlite3") -> AsyncEngine:
+    engine = create_async_engine(url, echo=True)
+    event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
+    return engine
 
 
 @asynccontextmanager
-async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
-    await initialize_engine(_async_engine)
-    yield
-    await _async_engine.dispose()
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    engine = create_engine()
+    await initialize_engine(engine)
+    app.state.engine = engine
+    try:
+        yield
+    finally:
+        await engine.dispose()
 
 
-_async_sessionmaker = async_sessionmaker(_async_engine, expire_on_commit=False)
+def get_engine(request: Request) -> AsyncEngine:
+    return cast("AsyncEngine", request.app.state.engine)
 
 
-async def _get_async_session() -> AsyncGenerator[AsyncSession]:  # pragma: no cover
+async def get_async_session(
+    engine: Annotated[AsyncEngine, Depends(get_engine)],
+) -> AsyncGenerator[AsyncSession]:
     """Manages the complete lifecycle of the `AsyncSession`.
 
     See: https://docs.sqlalchemy.org/en/20/orm/session_basics.html#when-do-i-construct-a-session-when-do-i-commit-it-and-when-do-i-close-it
     """
-    async with _async_sessionmaker() as async_session, async_session.begin():
+    async with AsyncSession(engine) as async_session, async_session.begin():
         yield async_session
 
 
-type AsyncSessionDep = Annotated[AsyncSession, Depends(_get_async_session)]
+type AsyncSessionDep = Annotated[AsyncSession, Depends(get_async_session)]

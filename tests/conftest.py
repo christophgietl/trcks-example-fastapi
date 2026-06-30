@@ -1,17 +1,13 @@
-import typing
+from typing import TYPE_CHECKING
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.database import AsyncSessionDep, initialize_engine
+from app.database import create_engine, get_engine, initialize_engine
 from app.main import app
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
     from pathlib import Path
 
@@ -21,7 +17,7 @@ if typing.TYPE_CHECKING:
 @pytest.fixture
 async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
     database_file = tmp_path / "database.sqlite3"
-    engine = create_async_engine(f"sqlite+aiosqlite:///{database_file}", echo=True)
+    engine = create_engine(f"sqlite+aiosqlite:///{database_file}")
     await initialize_engine(engine)
     await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
     yield engine
@@ -30,13 +26,7 @@ async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ig
 
 @pytest.fixture
 def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
-    async def get_session() -> AsyncGenerator[AsyncSession]:
-        async with AsyncSession(_engine) as async_session, async_session.begin():
-            yield async_session
-
-    app.dependency_overrides = {
-        typing.get_args(AsyncSessionDep.__value__)[1].dependency: get_session
-    }
+    app.dependency_overrides[get_engine] = lambda: _engine
     yield app
     app.dependency_overrides.clear()
 
