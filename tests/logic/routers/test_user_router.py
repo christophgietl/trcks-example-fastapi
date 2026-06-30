@@ -14,6 +14,26 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
+async def _get_products_from_database(
+    session: AsyncSession,
+) -> Sequence[Row[tuple[UUID]]]:
+    statement = select(ProductModel.id)
+    result = await session.execute(statement)
+    return result.all()
+
+
+async def _get_subscriptions_from_database(
+    session: AsyncSession,
+) -> Sequence[Row[tuple[UUID, UUID, UUID]]]:
+    statement = select(
+        SubscriptionModel.id,
+        SubscriptionModel.product_id,
+        SubscriptionModel.user_id,
+    )
+    result = await session.execute(statement)
+    return result.all()
+
+
 async def _get_users_from_database(
     session: AsyncSession,
 ) -> Sequence[Row[tuple[UUID, str]]]:
@@ -122,6 +142,60 @@ async def test_delete_user_with_nonexistent_id_fails(
     async with session.begin():
         users_in_database = await _get_users_from_database(session)
     assert users_in_database == [user]
+
+
+async def test_delete_user_also_removes_subscriptions_but_keeps_products(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    product1_id, product2_id = uuid7(), uuid7()
+    user1_id, user2_id = uuid7(), uuid7()
+    subscription1_id, subscription2_id = uuid7(), uuid7()
+    async with session.begin():
+        session.add_all(
+            [
+                ProductModel(
+                    id=product1_id,
+                    monthly_fee_in_euros=Decimal("9.99"),
+                    name="Product 1",
+                    status="published",
+                ),
+                ProductModel(
+                    id=product2_id,
+                    monthly_fee_in_euros=Decimal("19.99"),
+                    name="Product 2",
+                    status="published",
+                ),
+                UserModel(id=user1_id, email="user1@example.com"),
+                UserModel(id=user2_id, email="user2@example.com"),
+                SubscriptionModel(
+                    id=subscription1_id,
+                    is_active=True,
+                    product_id=product1_id,
+                    user_id=user1_id,
+                ),
+                SubscriptionModel(
+                    id=subscription2_id,
+                    is_active=True,
+                    product_id=product2_id,
+                    user_id=user2_id,
+                ),
+            ]
+        )
+        await session.flush()
+
+    response = await client.delete(f"/users/{user1_id}")
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert response.content == b""
+
+    async with session.begin():
+        users_in_database = await _get_users_from_database(session)
+        subscriptions_in_database = await _get_subscriptions_from_database(session)
+        products_in_database = await _get_products_from_database(session)
+
+    assert users_in_database == [(user2_id, "user2@example.com")]
+    assert subscriptions_in_database == [(subscription2_id, product2_id, user2_id)]
+    assert {row[0] for row in products_in_database} == {product1_id, product2_id}
 
 
 async def test_read_user_by_email_returns_user(
