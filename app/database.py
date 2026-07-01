@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.data_structures.models import create_all_tables
 
@@ -36,15 +36,15 @@ async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
     await _async_engine.dispose()
 
 
-_async_sessionmaker = async_sessionmaker(_async_engine, expire_on_commit=False)
-
-
 async def _get_async_session() -> AsyncGenerator[AsyncSession]:  # pragma: no cover
     """Manages the complete lifecycle of the `AsyncSession`.
 
     See: https://docs.sqlalchemy.org/en/20/orm/session_basics.html#when-do-i-construct-a-session-when-do-i-commit-it-and-when-do-i-close-it
     """
-    async with _async_sessionmaker() as async_session, async_session.begin():
+    async with (
+        AsyncSession(_async_engine, expire_on_commit=False) as async_session,
+        async_session.begin(),
+    ):
         yield async_session
 
 
