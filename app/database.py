@@ -14,34 +14,23 @@ if TYPE_CHECKING:
     from sqlalchemy.engine.interfaces import DBAPIConnection
 
 
-def _enable_foreign_keys(connection: DBAPIConnection, _: object) -> None:
-    with closing(connection.cursor()) as cursor:
-        cursor.execute("PRAGMA foreign_keys=ON")
+async def create_and_initialize_engine() -> AsyncEngine:
+    def enable_foreign_keys(connection: DBAPIConnection, _: object) -> None:
+        with closing(connection.cursor()) as cursor:
+            cursor.execute("PRAGMA foreign_keys=ON")
 
-
-async def initialize_engine(engine: AsyncEngine) -> None:
-    if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
-        event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
-    await create_all_tables(engine)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None]:  # pragma: no cover
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.sqlite3")
     async_engine = create_async_engine(database_url, echo=True)
-    await initialize_engine(async_engine)
-    app.state.async_engine = async_engine
-    yield
-    await async_engine.dispose()
+
+    if not event.contains(async_engine.sync_engine, "connect", enable_foreign_keys):
+        event.listen(async_engine.sync_engine, "connect", enable_foreign_keys)
+
+    await create_all_tables(async_engine)
+
+    return async_engine
 
 
-async def _get_async_session(
-    request: Request,
-) -> AsyncGenerator[AsyncSession]:  # pragma: no cover
-    """Manages the complete lifecycle of the `AsyncSession`.
-
-    See: https://docs.sqlalchemy.org/en/20/orm/session_basics.html#when-do-i-construct-a-session-when-do-i-commit-it-and-when-do-i-close-it
-    """
+async def get_async_session(request: Request) -> AsyncGenerator[AsyncSession]:
     async with (
         AsyncSession(
             request.app.state.async_engine, expire_on_commit=False
@@ -51,4 +40,12 @@ async def _get_async_session(
         yield async_session
 
 
-type AsyncSessionDep = Annotated[AsyncSession, Depends(_get_async_session)]
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    async_engine = await create_and_initialize_engine()
+    app.state.async_engine = async_engine
+    yield
+    await async_engine.dispose()
+
+
+type AsyncSessionDep = Annotated[AsyncSession, Depends(get_async_session)]

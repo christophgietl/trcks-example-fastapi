@@ -1,15 +1,10 @@
-import os
 import typing
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.database import AsyncSessionDep, initialize_engine
+from app.database import create_and_initialize_engine, get_async_session
 from app.main import app
 
 if typing.TYPE_CHECKING:
@@ -27,9 +22,7 @@ def _set_database_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None: 
 
 @pytest.fixture
 async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.sqlite3")
-    engine = create_async_engine(database_url, echo=True)
-    await initialize_engine(engine)
+    engine = await create_and_initialize_engine()
     await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
     yield engine
     await engine.dispose()
@@ -41,9 +34,7 @@ def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportU
         async with AsyncSession(_engine) as async_session, async_session.begin():
             yield async_session
 
-    app.dependency_overrides = {
-        typing.get_args(AsyncSessionDep.__value__)[1].dependency: get_session
-    }
+    app.dependency_overrides = {get_async_session: get_session}
     yield app
     app.dependency_overrides.clear()
 
