@@ -4,7 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.database import create_and_initialize_engine
+from app.database import create_and_initialize_async_engine
 from app.main import app
 
 if TYPE_CHECKING:
@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
-    app.state.async_engine = _engine
+    app.state.engine = _engine
     yield app
-    del app.state.async_engine
+    del app.state.engine
 
 
 @pytest.fixture(autouse=True)
@@ -30,7 +30,7 @@ def _database_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  # p
 
 @pytest.fixture
 async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    engine = await create_and_initialize_engine()
+    engine = await create_and_initialize_async_engine()
     await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
     yield engine
     await engine.dispose()
