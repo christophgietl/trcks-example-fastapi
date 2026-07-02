@@ -4,7 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.database import create_and_initialize_engine, get_async_session
+from app.database import create_and_initialize_engine, get_async_engine
 from app.main import app
 
 if typing.TYPE_CHECKING:
@@ -30,11 +30,7 @@ async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnu
 
 @pytest.fixture
 def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
-    async def get_session() -> AsyncGenerator[AsyncSession]:
-        async with AsyncSession(_engine) as async_session, async_session.begin():
-            yield async_session
-
-    app.dependency_overrides = {get_async_session: get_session}
+    app.dependency_overrides = {get_async_engine: lambda: _engine}
     yield app
     app.dependency_overrides.clear()
 

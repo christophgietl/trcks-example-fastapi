@@ -30,22 +30,27 @@ async def create_and_initialize_engine() -> AsyncEngine:
     return async_engine
 
 
-async def get_async_session(request: Request) -> AsyncGenerator[AsyncSession]:
+def get_async_engine(request: Request) -> AsyncEngine:  # pragma: no cover
+    return request.app.state.async_engine
+
+
+async def get_async_session(
+    async_engine: AsyncEngineDep,
+) -> AsyncGenerator[AsyncSession]:  # pragma: no cover
     async with (
-        AsyncSession(
-            request.app.state.async_engine, expire_on_commit=False
-        ) as async_session,
+        AsyncSession(async_engine, expire_on_commit=False) as async_session,
         async_session.begin(),
     ):
         yield async_session
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:  # pragma: no cover
     async_engine = await create_and_initialize_engine()
     app.state.async_engine = async_engine
     yield
     await async_engine.dispose()
 
 
+type AsyncEngineDep = Annotated[AsyncEngine, Depends(get_async_engine)]
 type AsyncSessionDep = Annotated[AsyncSession, Depends(get_async_session)]
