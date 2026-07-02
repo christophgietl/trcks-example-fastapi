@@ -30,9 +30,8 @@ def _database_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  # p
 
 @pytest.fixture
 async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    engine = await create_and_initialize_async_engine()
-    await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
-    yield engine
+engine = await create_and_initialize_async_engine()
+await engine.dispose()  # avoids reusing the connection used by `create_and_initialize_async_engine`
     await engine.dispose()
 
 
