@@ -38,6 +38,10 @@ def _get_async_engine(request: Request) -> AsyncEngine:  # pragma: no cover
 async def _get_async_session(
     engine: _AsyncEngineDep,
 ) -> AsyncGenerator[AsyncSession]:  # pragma: no cover
+    """Manages the complete lifecycle of the `AsyncSession`.
+
+    See: https://docs.sqlalchemy.org/en/20/orm/session_basics.html#when-do-i-construct-a-session-when-do-i-commit-it-and-when-do-i-close-it
+    """
     async with AsyncSession(engine, expire_on_commit=False) as session, session.begin():
         yield session
 
