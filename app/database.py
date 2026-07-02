@@ -19,13 +19,14 @@ def _create_async_engine() -> AsyncEngine:
     return create_async_engine(database_url, echo=True)
 
 
-def _enable_foreign_keys(engine: AsyncEngine) -> None:
-    def enable_fks_for_connection(connection: DBAPIConnection, _: object) -> None:
-        with closing(connection.cursor()) as cursor:
-            cursor.execute("PRAGMA foreign_keys=ON")
+def _enable_fks_for_connection(connection: "DBAPIConnection", _: object) -> None:
+    with closing(connection.cursor()) as cursor:
+        cursor.execute("PRAGMA foreign_keys=ON")
 
-    if not event.contains(engine.sync_engine, "connect", enable_fks_for_connection):
-        event.listen(engine.sync_engine, "connect", enable_fks_for_connection)
+
+def _enable_foreign_keys(engine: AsyncEngine) -> None:
+    if not event.contains(engine.sync_engine, "connect", _enable_fks_for_connection):
+        event.listen(engine.sync_engine, "connect", _enable_fks_for_connection)
 
 
 def _get_async_engine(request: Request) -> AsyncEngine:  # pragma: no cover
