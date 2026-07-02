@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager, closing
 from typing import TYPE_CHECKING, Annotated
 
@@ -26,11 +27,14 @@ async def initialize_engine(engine: AsyncEngine) -> None:
     await create_all_tables(engine)
 
 
-_async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
+_async_engine: AsyncEngine
 
 
 @asynccontextmanager
 async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
+    database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.sqlite3")
+    global _async_engine  # noqa: PLW0603
+    _async_engine = create_async_engine(database_url, echo=True)
     await initialize_engine(_async_engine)
     yield
     await _async_engine.dispose()

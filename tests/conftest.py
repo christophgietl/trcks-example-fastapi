@@ -1,3 +1,4 @@
+import os
 import typing
 
 import pytest
@@ -18,10 +19,16 @@ if typing.TYPE_CHECKING:
     from fastapi import FastAPI
 
 
+@pytest.fixture(autouse=True)
+def _set_database_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  # pyright: ignore[reportUnusedFunction]
+    database_file = tmp_path / "database.sqlite"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{database_file}")
+
+
 @pytest.fixture
-async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    database_file = tmp_path / "database.sqlite3"
-    engine = create_async_engine(f"sqlite+aiosqlite:///{database_file}", echo=True)
+async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
+    database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.sqlite3")
+    engine = create_async_engine(database_url, echo=True)
     await initialize_engine(engine)
     await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
     yield engine
