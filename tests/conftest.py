@@ -1,17 +1,13 @@
-import typing
+from typing import TYPE_CHECKING
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.database import AsyncSessionDep, initialize_engine
+from app.database import create_and_initialize_async_engine
 from app.main import app
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
     from pathlib import Path
 
@@ -19,30 +15,32 @@ if typing.TYPE_CHECKING:
 
 
 @pytest.fixture
-async def _engine(tmp_path: Path) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    database_file = tmp_path / "database.sqlite3"
-    engine = create_async_engine(f"sqlite+aiosqlite:///{database_file}", echo=True)
-    await initialize_engine(engine)
-    await engine.dispose()  # avoids reusing the connection used by `initialize_engine`
+def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
+    app.state.engine = _engine
+    yield app
+    del app.state.engine
+
+
+@pytest.fixture(autouse=True)
+def _database_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  # pyright: ignore[reportUnusedFunction]
+    file = tmp_path / "database.sqlite"
+    url = f"sqlite+aiosqlite:///{file}"
+    monkeypatch.setenv("DATABASE_URL", url)
+
+
+@pytest.fixture
+async def _engine(_database_url: None) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
+    engine = await create_and_initialize_async_engine()
+    await engine.dispose()  # makes the tests start with new and unused connections
     yield engine
     await engine.dispose()
 
 
 @pytest.fixture
-def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
-    async def get_session() -> AsyncGenerator[AsyncSession]:
-        async with AsyncSession(_engine) as async_session, async_session.begin():
-            yield async_session
-
-    app.dependency_overrides = {
-        typing.get_args(AsyncSessionDep.__value__)[1].dependency: get_session
-    }
-    yield app
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture
 async def client(_app: FastAPI) -> AsyncGenerator[AsyncClient]:
+    # The database setup logic for `app` lives in its `lifespan` function.
+    # Unfortunately, `ASGITransport` and `AsyncClient` do not run `lifespan` events.
+    # Therefore, we use the `_app` fixture which takes care of the database setup.
     transport = ASGITransport(_app)
     async with AsyncClient(
         base_url="http://test", follow_redirects=True, transport=transport
@@ -52,5 +50,5 @@ async def client(_app: FastAPI) -> AsyncGenerator[AsyncClient]:
 
 @pytest.fixture
 async def session(_engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
-    async with AsyncSession(_engine) as async_session:
-        yield async_session
+    async with AsyncSession(_engine) as session:
+        yield session
