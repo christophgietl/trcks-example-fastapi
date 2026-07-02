@@ -1,6 +1,6 @@
 [dependency-groups]
 dev = [
-    "anyio==4.14.0", # provides pytest plugin for testing async code
+    "anyio==4.14.1", # provides pytest plugin for testing async code
     "httpx==0.28.1", # provides ASGITransport and AsyncClient used for testing
     "import-linter==2.12",
     "pre-commit==4.6.0",
