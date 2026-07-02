@@ -29,7 +29,7 @@ def _database_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  # p
 
 
 @pytest.fixture
-async def _engine() -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
+async def _engine(_database_url: None) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
     engine = await create_and_initialize_async_engine()
     await engine.dispose()  # makes the tests start with new and unused connections
     yield engine
