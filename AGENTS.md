@@ -26,9 +26,9 @@
 
 - Use `trcks.Result` and `trcks.AwaitableResult` for explicit success or
   failure return types.
-- Routers pattern-match on `Result` values, mapping `Failure` errors to
-  `HTTPException`s and returning `Success` payloads with an appropriate
-  HTTP status code.
+- Routers pattern-match on `Result` values in `match` statements, which
+  are tuples, matching `("failure", ...)` to `HTTPException`s and
+  `("success", ...)` to payloads with an appropriate HTTP status code.
 - ORM models provide `to_*` instance methods to convert ORM models to
   domain models.
 - Schemas translate between the HTTP interface and domain models: request
