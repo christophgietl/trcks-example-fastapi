@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
     from sqlalchemy.engine.interfaces import DBAPIConnection
 
+__docformat__ = "google"
+
 
 def _enable_foreign_keys(engine: AsyncEngine) -> None:
     if not event.contains(
@@ -40,6 +42,17 @@ async def _get_async_session(
         yield session
 
 
+@asynccontextmanager
+async def async_engine_lifespan(
+    app: FastAPI,
+) -> AsyncGenerator[None]:  # pragma: no cover
+    engine = await create_and_initialize_async_engine()
+    app.state.engine = engine
+    yield
+    del app.state.engine
+    await engine.dispose()
+
+
 async def create_and_initialize_async_engine(
     url: str = "sqlite+aiosqlite:///database.sqlite3",
 ) -> AsyncEngine:
@@ -47,15 +60,6 @@ async def create_and_initialize_async_engine(
     _enable_foreign_keys(engine)
     await create_all_tables(engine)
     return engine
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None]:  # pragma: no cover
-    engine = await create_and_initialize_async_engine()
-    app.state.engine = engine
-    yield
-    del app.state.engine
-    await engine.dispose()
 
 
 type _AsyncEngineDep = Annotated[AsyncEngine, Depends(_get_async_engine)]
