@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager, closing
 from typing import TYPE_CHECKING, Annotated
 
-from fastapi import Depends
+from fastapi import Depends, FastAPI, Request
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from app.data_structures.models import create_all_tables
 
@@ -11,41 +11,56 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from sqlalchemy.engine.interfaces import DBAPIConnection
-    from sqlalchemy.ext.asyncio import AsyncEngine
-    from sqlalchemy.pool import ConnectionPoolEntry
+
+__docformat__ = "google"
 
 
-def _enable_foreign_keys(connection: DBAPIConnection, _: ConnectionPoolEntry) -> None:
+def _enable_foreign_keys(engine: AsyncEngine) -> None:
+    if not event.contains(
+        engine.sync_engine, "connect", _enable_foreign_keys_for_connection
+    ):
+        event.listen(engine.sync_engine, "connect", _enable_foreign_keys_for_connection)
+
+
+def _enable_foreign_keys_for_connection(connection: DBAPIConnection, _: object) -> None:
     with closing(connection.cursor()) as cursor:
         cursor.execute("PRAGMA foreign_keys=ON")
 
 
-async def initialize_engine(engine: AsyncEngine) -> None:
-    if not event.contains(engine.sync_engine, "connect", _enable_foreign_keys):
-        event.listen(engine.sync_engine, "connect", _enable_foreign_keys)
-    await create_all_tables(engine)
+def _get_async_engine(request: Request) -> AsyncEngine:  # pragma: no cover
+    return request.app.state.engine
 
 
-_async_engine = create_async_engine("sqlite+aiosqlite:///database.sqlite3", echo=True)
-
-
-@asynccontextmanager
-async def lifespan(_: object) -> AsyncGenerator[None]:  # pragma: no cover
-    await initialize_engine(_async_engine)
-    yield
-    await _async_engine.dispose()
-
-
-_async_sessionmaker = async_sessionmaker(_async_engine, expire_on_commit=False)
-
-
-async def _get_async_session() -> AsyncGenerator[AsyncSession]:  # pragma: no cover
+async def _get_async_session(
+    engine: _AsyncEngineDep,
+) -> AsyncGenerator[AsyncSession]:  # pragma: no cover
     """Manages the complete lifecycle of the `AsyncSession`.
 
     See: https://docs.sqlalchemy.org/en/20/orm/session_basics.html#when-do-i-construct-a-session-when-do-i-commit-it-and-when-do-i-close-it
     """
-    async with _async_sessionmaker() as async_session, async_session.begin():
-        yield async_session
+    async with AsyncSession(engine, expire_on_commit=False) as session, session.begin():
+        yield session
 
 
+@asynccontextmanager
+async def async_engine_lifespan(
+    app: FastAPI,
+) -> AsyncGenerator[None]:  # pragma: no cover
+    engine = await create_and_initialize_async_engine()
+    app.state.engine = engine
+    yield
+    del app.state.engine
+    await engine.dispose()
+
+
+async def create_and_initialize_async_engine(
+    url: str = "sqlite+aiosqlite:///database.sqlite3",
+) -> AsyncEngine:
+    engine = create_async_engine(url, echo=True)
+    _enable_foreign_keys(engine)
+    await create_all_tables(engine)
+    return engine
+
+
+type _AsyncEngineDep = Annotated[AsyncEngine, Depends(_get_async_engine)]
 type AsyncSessionDep = Annotated[AsyncSession, Depends(_get_async_session)]
