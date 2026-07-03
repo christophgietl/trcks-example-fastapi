@@ -22,15 +22,14 @@ def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportU
 
 
 @pytest.fixture(autouse=True)
-def _database_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  # pyright: ignore[reportUnusedFunction]
+def _database_url(tmp_path: Path) -> str:  # pyright: ignore[reportUnusedFunction]
     file = tmp_path / "database.sqlite"
-    url = f"sqlite+aiosqlite:///{file}"
-    monkeypatch.setenv("DATABASE_URL", url)
+    return f"sqlite+aiosqlite:///{file}"
 
 
 @pytest.fixture
-async def _engine(_database_url: None) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
-    engine = await create_and_initialize_async_engine()
+async def _engine(_database_url: str) -> AsyncGenerator[AsyncEngine]:  # pyright: ignore[reportUnusedFunction]
+    engine = await create_and_initialize_async_engine(_database_url)
     await engine.dispose()  # makes the tests start with new and unused connections
     yield engine
     await engine.dispose()

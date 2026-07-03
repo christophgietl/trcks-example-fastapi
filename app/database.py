@@ -1,4 +1,3 @@
-import os
 from contextlib import asynccontextmanager, closing
 from typing import TYPE_CHECKING, Annotated
 
@@ -12,11 +11,6 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from sqlalchemy.engine.interfaces import DBAPIConnection
-
-
-def _create_async_engine() -> AsyncEngine:
-    database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.sqlite3")
-    return create_async_engine(database_url, echo=True)
 
 
 def _enable_foreign_keys(engine: AsyncEngine) -> None:
@@ -46,8 +40,10 @@ async def _get_async_session(
         yield session
 
 
-async def create_and_initialize_async_engine() -> AsyncEngine:
-    engine = _create_async_engine()
+async def create_and_initialize_async_engine(
+    url: str = "sqlite+aiosqlite:///database.sqlite3",
+) -> AsyncEngine:
+    engine = create_async_engine(url, echo=True)
     _enable_foreign_keys(engine)
     await create_all_tables(engine)
     return engine
