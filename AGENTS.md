@@ -75,12 +75,6 @@ uv run import-linter lint
 ```
 
 ## Testing strategy
-
-- Use pytest with async tests (`anyio_mode = "auto"`).
-- Maintain 100% test coverage (`--cov-fail-under=100`).
-- Cover both the success case and each distinct failure literal for new
-  operations.
-
 ## Documentation requirements
 
 - Keep `AGENTS.md`, `CONTRIBUTING.md`, and `README.md` up to date when
