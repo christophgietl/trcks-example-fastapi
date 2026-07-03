@@ -33,26 +33,5 @@ Please follow these steps to set up your development environment:
 
 ### Usage
 
-Run unit tests and doctests:
-
-```shell
-uv run pytest
-```
-
-Run static type checks:
-
-```shell
-uv run pyright
-```
-
-Enforce rules for the imports within and between Python packages:
-
-```shell
-uv run import-linter lint
-```
-
-Run pre-commit hooks:
-
-```shell
-uv run pre-commit run --all-files
-```
+Check [the section "Development tools" in `AGENTS.md`](AGENTS.md#development-tools)
+for instructions on how to use the development tools.
