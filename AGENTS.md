@@ -3,9 +3,10 @@
 ## Project requirements
 
 - `trcks-example-fastapi` is an example FastAPI application.
-- It follows FastAPI best practices.
-- It demonstrates type-safe railway-oriented programming (ROP) with `trcks`.
-- It returns domain errors instead of raising them.
+  It follows FastAPI best practices.
+- `trcks-example-fastapi` demonstrates type-safe railway-oriented
+  programming (ROP) with `trcks`.
+  It returns domain errors instead of raising them.
 
 ## Architecture decisions
 
@@ -18,12 +19,8 @@
 - Domain objects (`app/data_structures/domain/`) are immutable domain
   models.
 - ORM models live in `app/data_structures/models.py`.
-
-  A layer may import only itself or lower layers. Import-linter contracts
-  in `pyproject.toml` enforce this order and additional guards, such as
-  `app.database` being importable only by `app.main` and
-  `app.logic.repositories`, and `app.data_structures.schemas` only by
-  `app.logic.routers`.
+- A layer may import only itself or lower layers. Import-linter contracts
+  in `pyproject.toml` enforce this order.
 
 ### Core patterns
 
@@ -40,11 +37,6 @@
 - Domain models are frozen, immutable dataclasses.
 - Tuples are the preferred collection type for domain and response values
   (e.g. `tuple[SubscriptionWithProduct, ...]`).
-- Failure literals are `Literal` string values returned by repositories and
-  services; match them in routers and update every match when adding or
-  changing one (e.g. `"User does not exist"`, `"Email already exists"`).
-- Dependencies use `Annotated[T, Depends(...)]` type aliases
-  (e.g. `UserServiceDep`).
 
 ## Code style
 
@@ -52,8 +44,8 @@
 
 ## Language style
 
-  Apply these rules in prose such as docstrings, documentation, and
-  comments, but not in code, paths, URLs, commands, or identifiers:
+Apply these rules in prose such as docstrings, documentation, and
+comments, but not in code, paths, URLs, commands, or identifiers:
 
 - Prefer short sentences over long sentences.
 - Use the Oxford comma in lists of three or more items (e.g. "red, green,
@@ -67,20 +59,20 @@
 
 ## Development tools
 
-  `trcks-example-fastapi` uses `uv` for managing dependencies and tools.
+`trcks-example-fastapi` uses `uv` for managing dependencies and tools.
 
-  ```shell
-  # Run the development server:
-  uv run fastapi dev
-  # Run linting and code formatting:
-  uv run pre-commit run --all-files
-  # Run static type checks:
-  uv run pyright
-  # Run unit tests:
-  uv run pytest
-  # Enforce rules for the imports within and between Python packages:
-  uv run import-linter lint
-  ```
+```shell
+# Run the development server:
+uv run fastapi dev
+# Run linting and code formatting:
+uv run pre-commit run --all-files
+# Run static type checks:
+uv run pyright
+# Run unit tests:
+uv run pytest
+# Enforce rules for the imports within and between Python packages:
+uv run import-linter lint
+```
 
 ## Testing strategy
 
@@ -93,4 +85,3 @@
 
 - Keep `AGENTS.md`, `CONTRIBUTING.md`, and `README.md` up to date when
   architecture, tooling, or features change.
-- `.github/copilot-instructions.md` is a symlink to this file.
