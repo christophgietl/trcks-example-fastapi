@@ -73,6 +73,8 @@ modules = [
     "app.logic.services.*",
 ]
 
+# Repositories are intentionally not independent; they collaborate with each other.
+
 [[tool.importlinter.contracts]]
 name = "Protection of domain"
 type = "protected"

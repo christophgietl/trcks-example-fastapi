@@ -21,6 +21,10 @@
 - ORM models live in `app/data_structures/models.py`.
 - A layer may import only itself or lower layers. Import-linter contracts
   in `pyproject.toml` enforce this order.
+- Layer contracts define the broad direction of dependencies between layers.
+  Protection contracts then narrow specific modules to a small allow-list of
+  callers. This keeps the architecture strict while still allowing safe
+  collaboration inside a layer.
 
 ### Core patterns
 
