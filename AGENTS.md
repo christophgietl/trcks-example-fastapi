@@ -38,12 +38,16 @@ this layer order and additional protections:
 - Routers pattern-match on `Result` values:
   map `Failure` errors to `HTTPException`s and
   return `Success` payloads with an appropriate HTTP status code.
-- ORM models provide bidirectional conversion:
-  `from_*` static methods (domain to ORM) and
-  `to_*` instance methods (ORM to domain).
+- ORM models provide `to_*` instance methods
+  that convert ORM models to domain models.
+- Schemas convert between the HTTP interface and domain models:
+  request schemas provide `to_*` instance methods (schema to domain), and
+  response schemas provide `from_*` static methods (domain to schema).
 - Domain models are frozen, immutable dataclasses;
-  collections use immutable tuples (e.g. `Users`, `Products`).
-- Failure literals are centralized strings
+  collections use immutable tuples
+  (e.g. `tuple[SubscriptionWithProduct, ...]`).
+- Failure literals are `Literal` string types
+  returned by repositories and services, and matched in routers
   (e.g. `"User does not exist"`, `"Email already exists"`).
   Update every match statement when adding or changing a failure literal.
 - Dependencies are injected via
@@ -81,7 +85,7 @@ uv run fastapi dev
 uv run pre-commit run --all-files
 # Run static type checks:
 uv run pyright
-# Run unit tests and doctests:
+# Run unit tests:
 uv run pytest
 # Enforce rules for the imports within and between Python packages:
 uv run import-linter lint
