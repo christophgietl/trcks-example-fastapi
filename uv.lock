@@ -779,11 +779,11 @@ wheels = [
 
 [[package]]
 name = "trcks"
-version = "0.5.0"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b8/0a/9ae5f94fe1d1ef032e11780bbbcb0b80b5e806f6480526e1b045e93686a4/trcks-0.5.0.tar.gz", hash = "sha256:2e8fa86508f7efe5609e1c463bab3664065c4cabee64189692f77ca4eb80c12e", size = 57219, upload-time = "2026-06-15T19:03:39.148Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cb/fe/7e75b3d09256f0a426760fa7f368c644186d1bb9ac83915b68cad61953c7/trcks-0.6.0.tar.gz", hash = "sha256:65168a903236d5ba82219d5da55fc663b7584579f8fa5f6e2d0714f314feac65", size = 57935, upload-time = "2026-06-25T21:17:27.39Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/b2/e0517fcb9e5d2c8713834e5762fc827e805b62c856b40d9e9ddb8d438af6/trcks-0.5.0-py3-none-any.whl", hash = "sha256:4a6b9dde8764f7a2315e62f7d382daf338d320403b44fa73f5d6ddca709ee99e", size = 68348, upload-time = "2026-06-15T19:03:38.103Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/82/e968702039973fc3a0f0558b3c22a9fef95517b94e28aaf5582d91333e45/trcks-0.6.0-py3-none-any.whl", hash = "sha256:50768514b826f0bf0b991293b2a28ea962cfd7e716cf15ece6a9d7fd2d04f559", size = 69027, upload-time = "2026-06-25T21:17:26.348Z" },
 ]
 
 [package.optional-dependencies]
@@ -818,7 +818,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = "==0.138.0" },
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "sqlalchemy", extras = ["aiosqlite"], specifier = "==2.0.51" },
-    { name = "trcks", specifier = "==0.5.0" },
+    { name = "trcks", specifier = "==0.6.0" },
 ]
 
 [package.metadata.requires-dev]
