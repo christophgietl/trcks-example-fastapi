@@ -2,11 +2,11 @@
 
 ## Project requirements
 
-- `trcks-example-fastapi` is an example FastAPI application.
-  It follows FastAPI best practices.
+- `trcks-example-fastapi` is an example FastAPI application that follows
+  FastAPI best practices.
 - `trcks-example-fastapi` demonstrates type-safe railway-oriented
-  programming (ROP) with `trcks`.
-  It returns domain errors instead of raising them.
+  programming (ROP) with `trcks` and returns domain errors instead of
+  raising them.
 
 ## Architecture decisions
 
