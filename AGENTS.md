@@ -74,7 +74,6 @@ uv run pytest
 uv run import-linter lint
 ```
 
-## Testing strategy
 ## Documentation requirements
 
 - Keep `AGENTS.md`, `CONTRIBUTING.md`, and `README.md` up to date when
