@@ -76,6 +76,34 @@ modules = [
 # Repositories are intentionally not independent; they collaborate with each other.
 
 [[tool.importlinter.contracts]]
+name = "Purity of domain"
+type = "forbidden"
+source_modules = ["app.data_structures.domain"]
+forbidden_modules = ["fastapi", "pydantic", "sqlalchemy", "starlette", "trcks"]
+
+[[tool.importlinter.contracts]]
+name = "Isolation of schemas from persistence and the web framework"
+type = "forbidden"
+source_modules = ["app.data_structures.schemas"]
+forbidden_modules = ["fastapi", "sqlalchemy", "starlette"]
+
+[[tool.importlinter.contracts]]
+name = "Isolation of models from the web framework"
+type = "forbidden"
+source_modules = ["app.data_structures.models"]
+forbidden_modules = ["fastapi", "pydantic", "starlette"]
+
+[[tool.importlinter.contracts]]
+name = "Direct persistence access limited to repositories and database"
+type = "protected"
+protected_modules = ["sqlalchemy"]
+allowed_importers = [
+    "app.data_structures.models",
+    "app.logic.database",
+    "app.logic.repositories",
+]
+
+[[tool.importlinter.contracts]]
 name = "Protection of domain"
 type = "protected"
 protected_modules = ["app.data_structures.domain"]
