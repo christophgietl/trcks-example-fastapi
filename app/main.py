@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.database import async_engine_lifespan
+from app.logic.database import async_engine_lifespan
 from app.logic.routers.health_router import health_router
 from app.logic.routers.product_router import product_router
 from app.logic.routers.subscription_router import subscription_router

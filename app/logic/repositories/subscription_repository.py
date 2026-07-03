@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.models import SubscriptionModel
-from app.database import AsyncSessionDep  # noqa: TC001
+from app.logic.database import AsyncSessionDep  # noqa: TC001
 from app.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
 )

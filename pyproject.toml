@@ -27,52 +27,103 @@ include_external_packages = true
 root_package = "app"
 
 [[tool.importlinter.contracts]]
-name = "No dependency cycles between siblings"
-type = "acyclic_siblings"
-ancestors = ["app"]
-
-[[tool.importlinter.contracts]]
-name = "Main, routers, services and repositories can only import from layers below them"
+name = "Root layers"
 type = "layers"
+containers = ["app"]
+exhaustive = true
 layers = [
-    "app.main",
-    "app.logic.routers",
-    "app.logic.services",
-    "app.logic.repositories",
-    "app.data_structures",
+    "main",
+    "logic",
+    "data_structures",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Database can only be imported from main and repositories"
+name = "Data structures sublayers"
+type = "layers"
+containers = ["app.data_structures"]
+exhaustive = true
+layers = [
+    "models | schemas",
+    "domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Logic sublayers"
+type = "layers"
+containers = ["app.logic"]
+exhaustive = true
+layers = [
+    "routers",
+    "services",
+    "repositories",
+    "database",
+]
+
+[[tool.importlinter.contracts]]
+name = "Independence of routers"
+type = "independence"
+modules = [
+    "app.logic.routers.*",
+]
+
+[[tool.importlinter.contracts]]
+name = "Independence of services"
+type = "independence"
+modules = [
+    "app.logic.services.*",
+]
+
+# Repositories are intentionally not independent; they collaborate with each other.
+
+[[tool.importlinter.contracts]]
+name = "Purity of domain"
+type = "forbidden"
+source_modules = ["app.data_structures.domain"]
+forbidden_modules = ["fastapi", "pydantic", "sqlalchemy", "starlette", "trcks"]
+
+[[tool.importlinter.contracts]]
+name = "Isolation of schemas from persistence and the web framework"
+type = "forbidden"
+source_modules = ["app.data_structures.schemas"]
+forbidden_modules = ["fastapi", "sqlalchemy", "starlette"]
+
+[[tool.importlinter.contracts]]
+name = "Isolation of models from the web framework"
+type = "forbidden"
+source_modules = ["app.data_structures.models"]
+forbidden_modules = ["fastapi", "pydantic", "starlette"]
+
+[[tool.importlinter.contracts]]
+name = "Direct persistence access limited to repositories and database"
 type = "protected"
-protected_modules = ["app.database"]
+protected_modules = ["sqlalchemy"]
 allowed_importers = [
-    "app.main",
+    "app.data_structures.models",
+    "app.logic.database",
     "app.logic.repositories",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Domain can only be imported from models, repositories, schemas and services"
+name = "Protection of domain"
 type = "protected"
 protected_modules = ["app.data_structures.domain"]
 allowed_importers = [
-    "app.data_structures.models",
-    "app.data_structures.schemas",
+    "app.data_structures",
     "app.logic.repositories",
     "app.logic.services",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Models can only be imported from database and repositories"
+name = "Protection of models"
 type = "protected"
 protected_modules = ["app.data_structures.models"]
 allowed_importers = [
-    "app.database",
+    "app.logic.database",
     "app.logic.repositories",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Schemas can only be imported from routers"
+name = "Protection of schemas"
 type = "protected"
 protected_modules = ["app.data_structures.schemas"]
 allowed_importers = [
@@ -80,18 +131,34 @@ allowed_importers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Routers are independent"
-type = "independence"
-modules = [
-    "app.logic.routers.*",
+name = "Protection of database"
+type = "protected"
+protected_modules = ["app.logic.database"]
+allowed_importers = [
+    "app.main",
+    "app.logic.repositories",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Services are independent"
-type = "independence"
-modules = [
-    "app.logic.services.*",
+name = "Protection of repositories"
+type = "protected"
+protected_modules = ["app.logic.repositories"]
+allowed_importers = [
+    "app.logic.services",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Protection of services"
+type = "protected"
+protected_modules = ["app.logic.services"]
+allowed_importers = [
+    "app.logic.routers",
+]
+
+[[tool.importlinter.contracts]]
+name = "Acyclic siblings"
+type = "acyclic_siblings"
+ancestors = ["app"]
 
 [tool.pyright]
 deprecateTypingAliases = true

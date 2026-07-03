@@ -4,7 +4,7 @@ from typing import Annotated, final
 from fastapi import Depends
 from sqlalchemy import Integer, literal_column, select
 
-from app.database import AsyncSessionDep  # noqa: TC001
+from app.logic.database import AsyncSessionDep  # noqa: TC001
 
 type DummyRepositoryDep = Annotated[DummyRepository, Depends()]
 
