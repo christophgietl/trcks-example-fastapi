@@ -45,7 +45,7 @@ layers = [
 [[tool.importlinter.contracts]]
 name = "Database can only be imported from main and repositories"
 type = "protected"
-protected_modules = ["app.database"]
+protected_modules = ["app.logic.database"]
 allowed_importers = [
     "app.main",
     "app.logic.repositories",
@@ -67,7 +67,7 @@ name = "Models can only be imported from database and repositories"
 type = "protected"
 protected_modules = ["app.data_structures.models"]
 allowed_importers = [
-    "app.database",
+    "app.logic.database",
     "app.logic.repositories",
 ]
 

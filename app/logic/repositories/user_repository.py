@@ -9,7 +9,7 @@ from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.domain.user import UserWithSubscriptionsWithProducts
 from app.data_structures.models import SubscriptionModel, UserModel
-from app.database import AsyncSessionDep  # noqa: TC001
+from app.logic.database import AsyncSessionDep  # noqa: TC001
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
