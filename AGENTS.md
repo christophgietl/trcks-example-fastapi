@@ -60,14 +60,14 @@ Apply these rules in prose such as docstrings, documentation, and
 comments, but not in code, paths, URLs, commands, or identifiers:
 
 - Prefer short sentences over long sentences.
-- Use the Oxford comma in lists of three or more items (e.g. "red, green,
-  and blue" instead of "red, green and blue").
-- Prefer "and" over slashes to express combinations (e.g. "red and blue"
-  instead of "red/blue").
-- Prefer "or" over slashes to express alternatives (e.g. "success or
-  failure" instead of "success/failure").
-- Prefer "or" over "and/or" (e.g. "success or failure" instead of
-  "success and/or failure").
+- Use the Oxford comma in lists of three or more items
+  (e.g. "red, green, and blue" instead of "red, green and blue").
+- Prefer "and" over slashes to express combinations
+  (e.g. "red and blue" instead of "red/blue").
+- Prefer "or" over slashes to express alternatives
+  (e.g. "success or failure" instead of "success/failure").
+- Prefer "or" over "and/or"
+  (e.g. "success or failure" instead of "success and/or failure").
 
 ## Development tools
 
