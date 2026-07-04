@@ -87,6 +87,14 @@ uv run pytest
 uv run import-linter lint
 ```
 
+## Testing strategy
+
+- Integration tests exercise routers.
+  They assert on HTTP responses and on database side effects.
+- Data-structure tests exercise ORM models directly
+  (e.g. foreign key constraints and cascade deletes).
+- Test coverage must stay at 100% (`--cov-fail-under=100`).
+
 ## Documentation requirements
 
 - Keep `AGENTS.md`, `CONTRIBUTING.md`, and `README.md` up to date when
