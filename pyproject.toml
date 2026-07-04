@@ -21,6 +21,9 @@ dynamic = ["version"]
 name = "trcks-example-fastapi"
 requires-python = "==3.14.*"
 
+[tool.fastapi]
+entrypoint = "app.logic.main:app"
+
 [tool.importlinter]
 exclude_type_checking_imports = false
 include_external_packages = true
@@ -32,7 +35,6 @@ type = "layers"
 containers = ["app"]
 exhaustive = true
 layers = [
-    "main",
     "logic",
     "data_structures",
 ]
@@ -53,6 +55,7 @@ type = "layers"
 containers = ["app.logic"]
 exhaustive = true
 layers = [
+    "main",
     "routers",
     "services",
     "repositories",
@@ -135,7 +138,7 @@ name = "Protection of database"
 type = "protected"
 protected_modules = ["app.logic.database"]
 allowed_importers = [
-    "app.main",
+    "app.logic.main",
     "app.logic.repositories",
 ]
 
