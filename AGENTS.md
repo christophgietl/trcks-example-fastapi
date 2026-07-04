@@ -10,37 +10,45 @@
 
 ## Architecture decisions
 
-### Layers
+### Application layers
 
-- Routers (`app/logic/routers/`) define HTTP endpoints.
-- Schemas (`app/data_structures/schemas/`) model the HTTP interface.
-- Services (`app/logic/services/`) orchestrate business logic.
-- Repositories (`app/logic/repositories/`) encapsulate data access.
-- Domain objects (`app/data_structures/domain/`) are immutable domain
-  models.
-- ORM models live in `app/data_structures/models.py`.
-- A layer may import only itself or lower layers. Import-linter contracts
-  in `pyproject.toml` enforce this order.
-- Layer contracts define the broad direction of dependencies between layers.
-  Protection contracts then narrow specific modules to a small allow-list of
-  callers. This keeps the architecture strict while still allowing safe
-  collaboration inside a layer.
+- The package `app` has two layers: `data_structures` and `logic`.
+- `app.data_structures` contains data classes and models.
+  It has two sublayers: ORM models and API schemas (at the same level),
+  and domain classes below them.
+- `app.logic` contains business logic and data access.
+  It has five sublayers: the app entry point, routers, services,
+  repositories, and the database.
 
-### Core patterns
+### Data structures
 
-- Use `trcks.Result` and `trcks.AwaitableResult` for explicit success or
-  failure return types.
-- Routers pattern-match on `Result` values in `match` statements, which
-  are tuples, matching `("failure", ...)` to `HTTPException`s and
-  `("success", ...)` to payloads with an appropriate HTTP status code.
-- ORM models provide `to_*` instance methods to convert ORM models to
-  domain models.
-- Schemas translate between the HTTP interface and domain models: request
-  schemas provide `to_*` instance methods, and response schemas provide
-  `from_*` static methods.
-- Domain models are frozen, immutable dataclasses.
-- Tuples are the preferred collection type for domain and response values
-  (e.g. `tuple[SubscriptionWithProduct, ...]`).
+- Collections of values are tuples (e.g. `tuple[SubscriptionWithProduct, ...]`).
+- Domain models are frozen, immutable, and final data classes.
+- ORM models and request schemas provide `to_*` methods
+  that convert them to domain models.
+- Response schemas provide `from_*` methods
+  that convert domain models to response schemas.
+
+### Business logic
+
+- Public methods of repository and service classes return `trcks.AwaitableResult`
+  or `trcks.AwaitableTuple` values (except for the `dummy` repository and service).
+- Routers await service methods and handle the resulting `trcks.Result`:
+  - `trcks.Success` values are returned with
+    an appropriate HTTP success status code.
+  - `trcks.Failure` payloads are mapped to an appropriate HTTP exception
+    and raised.
+
+### Import contracts
+
+`tool.importlinter.contracts` in `pyproject.toml` must contain at least:
+
+- `layers` contracts that restrict each layer to importing only
+  the layers below it.
+- `protected` contracts that restrict which modules in the same layer or
+  a higher layer may import specific modules.
+- `protected` contracts that restrict which internal modules may import
+  specific external packages.
 
 ## Code style
 
