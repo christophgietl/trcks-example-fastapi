@@ -1,7 +1,7 @@
 # trcks-example-fastapi
 
-This is an example FastAPI application that demonstrates
-how to use the `trcks` library for railway-oriented programming.
+`trcks-example-fastapi` is an example FastAPI application.
+It demonstrates how to use the `trcks` library for railway-oriented programming.
 
 ## Running the example application
 
@@ -9,22 +9,24 @@ how to use the `trcks` library for railway-oriented programming.
 2. Clone the `trcks-example-fastapi` repository and `cd` into it.
 3. Start the development server by running `uv run fastapi dev`.
 
+*Note:* The repository includes a pre-configured SQLite database.
+No additional setup is required.
+
 ## Project structure
 
-The directory [`app/logic/repositories/`](app/logic/repositories/) contains
-repository classes with async CRUD methods
-that usually return `trcks.Result` values.
+The package [`app.logic.repositories`](app/logic/repositories/) contains repository classes
+with public CRUD methods.
+These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
 
-The directory [`app/logic/services/`](app/logic/services/) contains
-service classes that implement business logic on top of the repository classes.
-Their methods usually return `trcks.AwaitableResult` values.
+The package [`app.logic.services`](app/logic/services/) contains service classes
+that implement business logic on top of the repository classes.
+Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
 
-The directory [`app/logic/routers/`](app/logic/routers/) contains
-FastAPI routers.
-They call and await the service class methods and
-pattern-match on the resulting `trcks.Result` values:
+The package [`app.logic.routers`](app/logic/routers/) contains FastAPI routers
+that call and await the service class methods.
+Awaited values of type `trcks.Result` are then handled as follows:
 
-1. The payload of `trcks.Success` values is usually returned to the client
-   with an appropriate HTTP success status code (e.g., 200, 201, 204).
-2. The error of `trcks.Failure` values is mapped to an appropriate
+1. The payload of `trcks.Success` values is returned to the client
+   with an appropriate HTTP success status code (e.g. 200, 201, and 204).
+2. The payload of `trcks.Failure` values is mapped to an appropriate
    HTTP exception and raised.
