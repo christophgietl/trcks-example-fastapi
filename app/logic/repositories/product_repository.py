@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.models import ProductModel
-from app.logic.database import AsyncSessionDep
+from app.logic.database import AsyncSessionDep  # noqa: TC001
 
 if TYPE_CHECKING:
     from uuid import UUID

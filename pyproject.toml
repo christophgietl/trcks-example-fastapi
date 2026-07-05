@@ -212,7 +212,6 @@ runtime-evaluated-base-classes = [
     "sqlalchemy.orm.DeclarativeBase",
 ]
 runtime-evaluated-decorators = [
-    "dataclasses.dataclass",
     "fastapi.APIRouter.delete",
     "fastapi.APIRouter.get",
     "fastapi.APIRouter.post",

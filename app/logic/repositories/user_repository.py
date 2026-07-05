@@ -1,4 +1,3 @@
-from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
 
@@ -6,16 +5,17 @@ from fastapi import Depends
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
-from sqlalchemy.orm.interfaces import LoaderOption
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from app.data_structures.domain.user import UserWithSubscriptionsWithProducts
 from app.data_structures.models import SubscriptionModel, UserModel
-from app.logic.database import AsyncSessionDep
+from app.logic.database import AsyncSessionDep  # noqa: TC001
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
     from uuid import UUID
 
+    from sqlalchemy.orm.interfaces import LoaderOption
     from trcks import AwaitableResult, AwaitableTuple, Result
 
     from app.data_structures.domain.user import User

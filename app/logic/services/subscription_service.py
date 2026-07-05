@@ -4,8 +4,12 @@ from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
-from app.logic.repositories.product_repository import ProductRepositoryDep
-from app.logic.repositories.subscription_repository import SubscriptionRepositoryDep
+from app.logic.repositories.product_repository import (
+    ProductRepositoryDep,  # noqa: TC001
+)
+from app.logic.repositories.subscription_repository import (
+    SubscriptionRepositoryDep,  # noqa: TC001
+)
 
 if TYPE_CHECKING:
     from uuid import UUID

@@ -5,14 +5,16 @@ from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
-from app.logic.repositories.product_repository import ProductRepositoryDep
+from app.logic.repositories.product_repository import (
+    ProductRepositoryDep,  # noqa: TC001
+)
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from trcks import AwaitableResult, AwaitableTuple, Result
 
-from app.data_structures.domain.product import Product
+    from app.data_structures.domain.product import Product
 
 type _AwaitableReadProductResult = AwaitableResult[_ProductDoesNotExistLiteral, Product]
 type _CannotDeleteProductLiteral = _ProductDoesNotExistLiteral | _ProductStatusLiteral

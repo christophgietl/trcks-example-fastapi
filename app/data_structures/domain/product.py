@@ -1,7 +1,9 @@
 import dataclasses
-from decimal import Decimal
-from typing import Literal, final
-from uuid import UUID
+from typing import TYPE_CHECKING, Literal, final
+
+if TYPE_CHECKING:
+    from decimal import Decimal
+    from uuid import UUID
 
 type ProductStatus = Literal["draft", "published", "deprecated"]
 
