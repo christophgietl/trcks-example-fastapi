@@ -1,3 +1,4 @@
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Literal, final
 
@@ -10,7 +11,6 @@ from app.data_structures.models import ProductModel
 from app.logic.database import AsyncSessionDep
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from uuid import UUID
 
     from trcks import AwaitableResult, AwaitableTuple, Result
