@@ -52,7 +52,15 @@
 
 ## Code style
 
-- Use `id_` for function parameters to avoid shadowing the built-in `id`.
+- Sort type aliases alphabetically within each module.
+- Sort methods alphabetically within each class.
+- Suppress `ruff` rule `TC001` when importing a `*Dep` type:
+
+  ```python
+  from app.logic.repositories.product_repository import (
+      ProductRepositoryDep,  # noqa: TC001
+  )
+  ```
 
 ## Language style
 
