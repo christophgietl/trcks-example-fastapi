@@ -40,7 +40,7 @@
 - Public methods of repository and service classes take
   `str` values, `uuid.UUID` values, domain models, or no arguments.
   They return domain models wrapped in `trcks.AwaitableResult` or `trcks.AwaitableTuple`
-  (except for the `Dummy` repository and service).
+  (except for the `DummyRepository` and `DummyService`).
 - Routers await service methods. They handle awaited `trcks.Result` as follows:
   - `trcks.Success` values are returned with
     an appropriate HTTP success status code.

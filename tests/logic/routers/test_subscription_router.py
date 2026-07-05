@@ -500,7 +500,7 @@ async def test_read_subscription_by_id_returns_404_when_subscription_does_not_ex
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {
-        "detail": f"Subscription with ID {subscription_id} does not exist"
+        "detail": f"Subscription with ID {subscription_id} does not exist."
     }
 
 
