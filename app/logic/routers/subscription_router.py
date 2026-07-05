@@ -111,7 +111,8 @@ async def read_subscription_by_id(
     match result:
         case ("failure", "Subscription does not exist"):
             raise HTTPException(
-                status_code=404, detail=f"Subscription with ID {id_} does not exist"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Subscription with ID {id_} does not exist",
             )
         case ("success", payload):
             return SubscriptionResponse.from_subscription_with_product(payload)
