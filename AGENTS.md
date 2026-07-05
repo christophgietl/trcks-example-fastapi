@@ -14,8 +14,8 @@
 
 - The package `app` has two layers: `data_structures` and `logic`.
 - `app.data_structures` contains data classes and models.
-  It has two sublayers: ORM models and API schemas (at the same level),
-  and domain classes below them.
+  It has two sublayers: ORM models and API schemas at one level,
+  and domain classes at the level below.
 - `app.logic` contains business logic and data access.
   It has five sublayers: the app entry point, routers, services,
   repositories, and the database.
@@ -23,21 +23,29 @@
 ### Data structures
 
 - Collections of values are tuples (e.g. `tuple[SubscriptionWithProduct, ...]`).
-- Domain models are frozen, immutable, and final data classes.
+- Public domain models are frozen, immutable, and final data classes.
+- ORM models use SQLAlchemy's declarative dataclass mapping style
+  (i.e. `DeclarativeBase` combined with `MappedAsDataclass`).
 - ORM models and request schemas provide `to_*` methods
   that convert them to domain models.
-- Response schemas provide `from_*` methods
+- Response schemas provide `from_*` methods (except for `HealthResponse`)
   that convert domain models to response schemas.
 
-### Business logic
+### Logic
 
-- Public methods of repository and service classes return `trcks.AwaitableResult`
-  or `trcks.AwaitableTuple` values (except for the `dummy` repository and service).
-- Routers await service methods and handle the resulting `trcks.Result`:
+- Repository classes handle all database operations.
+  They use SQLAlchemy's ORM-enabled delete, insert, select, and update methods
+  as well as `AsyncSession.get` (except for `DummyRepository`).
+- Service classes handle all business logic.
+- Public methods of repository and service classes take
+  `str` values, `uuid.UUID` values, domain models, or no arguments.
+  They return domain models wrapped in `trcks.AwaitableResult` or `trcks.AwaitableTuple`
+  (except for the `DummyRepository` and `DummyService`).
+- Routers await service methods. They handle awaited `trcks.Result` as follows:
   - `trcks.Success` values are returned with
     an appropriate HTTP success status code.
-  - `trcks.Failure` payloads are mapped to an appropriate HTTP exception
-    and raised.
+  - `trcks.Failure` payloads are mapped to an appropriate HTTP exception,
+    which is then raised.
 
 ### Import contracts
 
@@ -52,7 +60,15 @@
 
 ## Code style
 
-- Use `id_` for function parameters to avoid shadowing the built-in `id`.
+- Sort type aliases alphabetically within each module.
+- Sort methods alphabetically within each class.
+- Suppress `ruff` rule `TC001` when importing a `*Dep` type:
+
+  ```python
+  from app.logic.repositories.product_repository import (
+      ProductRepositoryDep,  # noqa: TC001
+  )
+  ```
 
 ## Language style
 
@@ -89,8 +105,8 @@ uv run import-linter lint
 
 ## Testing strategy
 
-- Integration tests exercise routers.
-  They assert on HTTP responses and on database side effects.
+- Prefer integration tests. They must cover every router and endpoint,
+  asserting on HTTP responses and, where applicable, database side effects.
 - Data-structure tests exercise ORM models directly
   (e.g. foreign key constraints and cascade deletes).
 - Test coverage must stay at 100% (`--cov-fail-under=100`).
