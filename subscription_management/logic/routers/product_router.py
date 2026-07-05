@@ -4,12 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from app.data_structures.schemas.product_schemas import (
+from subscription_management.data_structures.schemas.product_schemas import (
     PostProductRequest,
     ProductResponse,
     PutProductRequest,
 )
-from app.logic.services.product_service import ProductServiceDep
+from subscription_management.logic.services.product_service import ProductServiceDep
 
 product_router = APIRouter(prefix="/products", tags=["Products"])
 

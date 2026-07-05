@@ -5,7 +5,11 @@ from uuid import UUID, uuid7
 from fastapi import status
 from sqlalchemy import Row, select
 
-from app.data_structures.models import ProductModel, SubscriptionModel, UserModel
+from subscription_management.data_structures.models import (
+    ProductModel,
+    SubscriptionModel,
+    UserModel,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

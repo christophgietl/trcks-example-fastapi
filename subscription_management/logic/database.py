@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
-from app.data_structures.models import create_all_tables
+from subscription_management.data_structures.models import create_all_tables
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator

@@ -7,15 +7,15 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from app.data_structures.models import ProductModel
-from app.logic.database import AsyncSessionDep  # noqa: TC001
+from subscription_management.data_structures.models import ProductModel
+from subscription_management.logic.database import AsyncSessionDep  # noqa: TC001
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from trcks import AwaitableResult, AwaitableTuple, Result
 
-    from app.data_structures.domain.product import Product
+    from subscription_management.data_structures.domain.product import Product
 
 type _AwaitableBaseProductResult = Awaitable[_BaseProductResult]
 type _BaseProductResult = Result[Literal["Product does not exist"], Product]

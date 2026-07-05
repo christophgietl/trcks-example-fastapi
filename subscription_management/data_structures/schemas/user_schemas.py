@@ -6,8 +6,13 @@ from uuid import UUID
 from pydantic import BaseModel
 from trcks.oop import TupleWrapper
 
-from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
-from app.data_structures.schemas.subscription_schemas import SubscriptionResponse
+from subscription_management.data_structures.domain.user import (
+    User,
+    UserWithSubscriptionsWithProducts,
+)
+from subscription_management.data_structures.schemas.subscription_schemas import (
+    SubscriptionResponse,
+)
 
 
 class _UserSchemaWithoutId(BaseModel, frozen=True):

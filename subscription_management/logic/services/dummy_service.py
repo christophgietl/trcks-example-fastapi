@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING, Annotated, final
 
 from fastapi import Depends
 
-from app.logic.repositories.dummy_repository import DummyRepositoryDep  # noqa: TC001
+from subscription_management.logic.repositories.dummy_repository import (
+    DummyRepositoryDep,  # noqa: TC001
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable

@@ -14,16 +14,20 @@ No additional setup is required.
 
 ## Project structure
 
-The package [`app.logic.repositories`](app/logic/repositories/) contains repository classes
-with public CRUD methods.
+The package
+[`subscription_management.logic.repositories`](subscription_management/logic/repositories/)
+contains repository classes with public CRUD methods.
 These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
 
-The package [`app.logic.services`](app/logic/services/) contains service classes
-that implement business logic on top of the repository classes.
+The package
+[`subscription_management.logic.services`](subscription_management/logic/services/)
+contains service classes that implement business logic on top of the repository
+classes.
 Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
 
-The package [`app.logic.routers`](app/logic/routers/) contains FastAPI routers
-that call and await the service class methods.
+The package
+[`subscription_management.logic.routers`](subscription_management/logic/routers/)
+contains FastAPI routers that call and await the service class methods.
 Awaited values of type `trcks.Result` are then handled as follows:
 
 1. The payload of `trcks.Success` values is returned to the client

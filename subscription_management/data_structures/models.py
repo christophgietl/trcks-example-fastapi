@@ -12,12 +12,16 @@ from sqlalchemy.orm import (
 )
 from trcks.oop import TupleWrapper
 
-from app.data_structures.domain.product import (
+from subscription_management.data_structures.domain.product import (
     Product,
     ProductStatus,
 )
-from app.data_structures.domain.subscription import SubscriptionWithProduct
-from app.data_structures.domain.user import UserWithSubscriptionsWithProducts
+from subscription_management.data_structures.domain.subscription import (
+    SubscriptionWithProduct,
+)
+from subscription_management.data_structures.domain.user import (
+    UserWithSubscriptionsWithProducts,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine

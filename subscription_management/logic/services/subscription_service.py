@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
-from app.logic.repositories.product_repository import (
+from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
 )
-from app.logic.repositories.subscription_repository import (
+from subscription_management.logic.repositories.subscription_repository import (
     SubscriptionRepositoryDep,  # noqa: TC001
 )
 
@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
     from trcks import AwaitableResult, AwaitableTuple, Result
 
-    from app.data_structures.domain.product import Product
-    from app.data_structures.domain.subscription import (
+    from subscription_management.data_structures.domain.product import Product
+    from subscription_management.data_structures.domain.subscription import (
         SubscriptionWithProduct,
         SubscriptionWithUserIdAndProductId,
     )

@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.data_structures.models import (
+from subscription_management.data_structures.models import (
     ProductModel,
     SubscriptionModel,
     UserModel,

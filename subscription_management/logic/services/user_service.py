@@ -3,14 +3,19 @@ from typing import TYPE_CHECKING, Annotated, Literal, final
 
 from fastapi import Depends
 
-from app.logic.repositories.user_repository import UserRepositoryDep  # noqa: TC001
+from subscription_management.logic.repositories.user_repository import (
+    UserRepositoryDep,  # noqa: TC001
+)
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from trcks import AwaitableResult, AwaitableTuple
 
-    from app.data_structures.domain.user import User, UserWithSubscriptionsWithProducts
+    from subscription_management.data_structures.domain.user import (
+        User,
+        UserWithSubscriptionsWithProducts,
+    )
 
 type _AwaitableDeleteOrReadUserResult = AwaitableResult[
     Literal["User does not exist"], UserWithSubscriptionsWithProducts
