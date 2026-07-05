@@ -1,10 +1,8 @@
 import dataclasses
-from typing import TYPE_CHECKING, final
+from typing import final
+from uuid import UUID
 
-if TYPE_CHECKING:
-    from uuid import UUID
-
-    from app.data_structures.domain.subscription import SubscriptionWithProduct
+from app.data_structures.domain.subscription import SubscriptionWithProduct
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)

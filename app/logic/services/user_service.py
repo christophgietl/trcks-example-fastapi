@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Annotated, Literal, final
 
 from fastapi import Depends
 
-from app.logic.repositories.user_repository import UserRepositoryDep  # noqa: TC001
+from app.logic.repositories.user_repository import UserRepositoryDep
 
 if TYPE_CHECKING:
     from uuid import UUID
