@@ -198,6 +198,18 @@ standard-no-fastapi-cloud-cli = [
 ]
 
 [[package]]
+name = "fastapi-dependency"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/15/39/f1109599a8acab58622734a51762446c84a42a96831bcccc8d63b94e6e8f/fastapi_dependency-0.1.0.tar.gz", hash = "sha256:97e001f9dd12e8c64939dd237689e7b32da36faf9fef400147e3462e33ec8cff", size = 6510, upload-time = "2023-03-01T17:57:42.713Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/c9/634a1a662db56880a9dc7d69b4e24fe1137653e449aaf49de2a02e8d8850/fastapi_dependency-0.1.0-py3-none-any.whl", hash = "sha256:a954f4f57b2b222591c66f6ee894f583fd898e8d370630daf0647b8c88635b67", size = 4293, upload-time = "2023-03-01T17:57:39.535Z" },
+]
+
+[[package]]
 name = "filelock"
 version = "3.29.1"
 source = { registry = "https://pypi.org/simple" }
@@ -796,6 +808,7 @@ name = "trcks-example-fastapi"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },
+    { name = "fastapi-dependency" },
     { name = "pydantic" },
     { name = "sqlalchemy", extra = ["aiosqlite"] },
     { name = "trcks" },
@@ -816,6 +829,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = "==0.138.1" },
+    { name = "fastapi-dependency", specifier = "==0.1.0" },
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "sqlalchemy", extras = ["aiosqlite"], specifier = "==2.0.51" },
     { name = "trcks", specifier = "==0.6.0" },

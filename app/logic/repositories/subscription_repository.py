@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
 
-from fastapi import Depends
+from fastapi_dependency import Depends
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload

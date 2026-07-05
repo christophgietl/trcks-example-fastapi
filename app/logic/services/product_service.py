@@ -2,7 +2,7 @@ import dataclasses
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
 
-from fastapi import Depends
+from fastapi_dependency import Depends
 from trcks.oop import Wrapper
 
 from app.logic.repositories.product_repository import (

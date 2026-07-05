@@ -12,6 +12,7 @@ dev = [
 
 [project]
 dependencies = [
+    "fastapi-dependency==0.1.0",
     "fastapi[standard-no-fastapi-cloud-cli]==0.138.1",
     "pydantic==2.13.4",
     "sqlalchemy[aiosqlite]==2.0.51",
@@ -90,6 +91,7 @@ ignore_imports = [
     "** -> datetime",
     "** -> decimal",
     "** -> fastapi",
+    "** -> fastapi_dependency",
     "** -> pydantic",
     "** -> sqlalchemy",
     "** -> trcks",
@@ -101,6 +103,14 @@ ignore_imports = [
 name = "Only app.logic can import fastapi"
 type = "protected"
 protected_modules = ["fastapi"]
+allowed_importers = [
+    "app.logic",
+]
+
+[[tool.importlinter.contracts]]
+name = "Only app.logic can import fastapi_dependency"
+type = "protected"
+protected_modules = ["fastapi_dependency"]
 allowed_importers = [
     "app.logic",
 ]

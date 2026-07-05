@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Literal, final
 
-from fastapi import Depends
+from fastapi_dependency import Depends
 
 from app.logic.repositories.user_repository import UserRepositoryDep  # noqa: TC001
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Annotated, final
 
-from fastapi import Depends
+from fastapi_dependency import Depends
 from sqlalchemy import Integer, literal_column, select
 
 from app.logic.database import AsyncSessionDep  # noqa: TC001

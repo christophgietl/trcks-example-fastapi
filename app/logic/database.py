@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager, closing
 from typing import TYPE_CHECKING, Annotated
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request  # noqa: TC002
+from fastapi_dependency import Depends
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
@@ -62,5 +63,9 @@ async def create_and_initialize_async_engine(
     return engine
 
 
-type _AsyncEngineDep = Annotated[AsyncEngine, Depends(_get_async_engine)]
-type AsyncSessionDep = Annotated[AsyncSession, Depends(_get_async_session)]
+type _AsyncEngineDep = Annotated[
+    AsyncEngine, Depends(_get_async_engine, run_in_threadpool=True)
+]
+type AsyncSessionDep = Annotated[
+    AsyncSession, Depends(_get_async_session, run_in_threadpool=True)
+]
