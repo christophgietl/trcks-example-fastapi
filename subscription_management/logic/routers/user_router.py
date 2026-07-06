@@ -42,15 +42,15 @@ async def create_user(
         .core
     )
     match result:
-        case ("failure", UserEmailAlreadyExistsError()):
+        case ("failure", UserEmailAlreadyExistsError() as err):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email {post_user_request.email} already exists.",
+                detail=f"User with email {err.email} already exists.",
             )
-        case ("failure", UserIdAlreadyExistsError()):
+        case ("failure", UserIdAlreadyExistsError() as err):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with ID {post_user_request.id} already exists.",
+                detail=f"User with ID {err.id} already exists.",
             )
         case ("success", user_response):
             return user_response
@@ -67,10 +67,10 @@ async def create_user(
 async def delete_user(id_: UUID, user_service: UserServiceDep) -> None:
     result = await user_service.delete_user(id_)
     match result:
-        case ("failure", UserDoesNotExistError()):
+        case ("failure", UserDoesNotExistError() as err):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_} does not exist.",
+                detail=f"User with ID {err.id} does not exist.",
             )
         case ("success", _):
             return
@@ -91,10 +91,10 @@ async def read_user_by_email(email: str, user_service: UserServiceDep) -> UserRe
         .core
     )
     match result:
-        case ("failure", UserDoesNotExistError()):
+        case ("failure", UserDoesNotExistError() as err):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with email {email} does not exist.",
+                detail=f"User with email {err.email} does not exist.",
             )
         case ("success", user_response):
             return user_response
@@ -115,10 +115,10 @@ async def read_user_by_id(id_: UUID, user_service: UserServiceDep) -> UserRespon
         .core
     )
     match result:
-        case ("failure", UserDoesNotExistError()):
+        case ("failure", UserDoesNotExistError() as err):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_} does not exist.",
+                detail=f"User with ID {err.id} does not exist.",
             )
         case ("success", user_response):
             return user_response
@@ -159,15 +159,15 @@ async def update_user(
         .core
     )
     match result:
-        case ("failure", UserDoesNotExistError()):
+        case ("failure", UserDoesNotExistError() as err):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_} does not exist.",
+                detail=f"User with ID {err.id} does not exist.",
             )
-        case ("failure", UserEmailAlreadyExistsError()):
+        case ("failure", UserEmailAlreadyExistsError() as err):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email {put_user_request.email} already exists.",
+                detail=f"User with email {err.email} already exists.",
             )
         case ("success", user_response):
             return user_response

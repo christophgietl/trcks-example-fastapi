@@ -97,9 +97,14 @@ class UserRepository:
         return tuple(scalars.all())
 
     @staticmethod
-    def _to_base_user_result(user_model: UserModel | None) -> _BaseUserResult:
+    def _to_base_user_result(
+        user_model: UserModel | None,
+        *,
+        id_: UUID | None = None,
+        email: str | None = None,
+    ) -> _BaseUserResult:
         if user_model is None:
-            return "failure", UserDoesNotExistError()
+            return "failure", UserDoesNotExistError(id=id_, email=email)
         return "success", user_model.to_user_with_subscriptions_with_products()
 
     async def _update_user_model(
@@ -140,7 +145,7 @@ class UserRepository:
         return (
             Wrapper(id_)
             .map_to_awaitable(self._delete_user_model)
-            .map(self._to_base_user_result)
+            .map(lambda user_model: self._to_base_user_result(user_model, id_=id_))
             .core
         )
 
@@ -148,7 +153,7 @@ class UserRepository:
         return (
             Wrapper(email)
             .map_to_awaitable(self._read_user_model_by_email)
-            .map(self._to_base_user_result)
+            .map(lambda user_model: self._to_base_user_result(user_model, email=email))
             .core
         )
 
@@ -156,7 +161,7 @@ class UserRepository:
         return (
             Wrapper(id_)
             .map_to_awaitable(self._read_user_model_by_id)
-            .map(self._to_base_user_result)
+            .map(lambda user_model: self._to_base_user_result(user_model, id_=id_))
             .core
         )
 
@@ -176,6 +181,8 @@ class UserRepository:
         return (
             Wrapper(user)
             .map_to_awaitable_result(self._update_user_model)
-            .map_success_to_result(self._to_base_user_result)
+            .map_success_to_result(
+                lambda user_model: self._to_base_user_result(user_model, id_=user.id)
+            )
             .core
         )

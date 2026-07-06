@@ -120,9 +120,11 @@ class SubscriptionRepository:
     @staticmethod
     def _to_base_subscription_result(
         subscription_model: SubscriptionModel | None,
+        *,
+        id_: UUID | None = None,
     ) -> _BaseSubscriptionResult:
         if subscription_model is None:
-            return "failure", SubscriptionDoesNotExistError()
+            return "failure", SubscriptionDoesNotExistError(id=id_)
         return "success", subscription_model.to_subscription_with_product()
 
     async def _update_subscription_model(
@@ -163,7 +165,11 @@ class SubscriptionRepository:
         return (
             Wrapper(id_)
             .map_to_awaitable(self._delete_subscription_model)
-            .map(self._to_base_subscription_result)
+            .map(
+                lambda subscription_model: self._to_base_subscription_result(
+                    subscription_model, id_=id_
+                )
+            )
             .core
         )
 
@@ -171,7 +177,11 @@ class SubscriptionRepository:
         return (
             Wrapper(id_)
             .map_to_awaitable(self._read_subscription_model_by_id)
-            .map(self._to_base_subscription_result)
+            .map(
+                lambda subscription_model: self._to_base_subscription_result(
+                    subscription_model, id_=id_
+                )
+            )
             .core
         )
 
@@ -196,6 +206,10 @@ class SubscriptionRepository:
             # in order to provide more specific `Failure`s:
             .tap_to_awaitable_result(self._check_that_product_and_user_exist)
             .map_success_to_awaitable(self._update_subscription_model)
-            .map_success_to_result(self._to_base_subscription_result)
+            .map_success_to_result(
+                lambda subscription_model: self._to_base_subscription_result(
+                    subscription_model, id_=subscription.id
+                )
+            )
             .core
         )

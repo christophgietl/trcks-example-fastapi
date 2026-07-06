@@ -82,9 +82,12 @@ class ProductRepository:
     @staticmethod
     def _to_base_product_result(
         product_model: ProductModel | None,
+        *,
+        id_: UUID | None = None,
+        name: str | None = None,
     ) -> _BaseProductResult:
         if product_model is None:
-            return "failure", ProductDoesNotExistError()
+            return "failure", ProductDoesNotExistError(id=id_, name=name)
         return "success", product_model.to_product()
 
     async def _update_product_model(
@@ -127,7 +130,11 @@ class ProductRepository:
         return (
             Wrapper(id_)
             .map_to_awaitable(self._delete_product_model)
-            .map(self._to_base_product_result)
+            .map(
+                lambda product_model: self._to_base_product_result(
+                    product_model, id_=id_
+                )
+            )
             .core
         )
 
@@ -135,7 +142,11 @@ class ProductRepository:
         return (
             Wrapper(id_)
             .map_to_awaitable(self._read_product_model_by_id)
-            .map(self._to_base_product_result)
+            .map(
+                lambda product_model: self._to_base_product_result(
+                    product_model, id_=id_
+                )
+            )
             .core
         )
 
@@ -143,7 +154,11 @@ class ProductRepository:
         return (
             Wrapper(name)
             .map_to_awaitable(self._read_product_model_by_name)
-            .map(self._to_base_product_result)
+            .map(
+                lambda product_model: self._to_base_product_result(
+                    product_model, name=name
+                )
+            )
             .core
         )
 
@@ -162,6 +177,10 @@ class ProductRepository:
         return (
             Wrapper(product)
             .map_to_awaitable_result(self._update_product_model)
-            .map_success_to_result(self._to_base_product_result)
+            .map_success_to_result(
+                lambda product_model: self._to_base_product_result(
+                    product_model, id_=product.id
+                )
+            )
             .core
         )
