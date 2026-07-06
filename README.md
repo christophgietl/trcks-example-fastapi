@@ -16,6 +16,7 @@ No additional setup is required.
 
 The package [`subscription_management`](subscription_management/) contains a
 toy backend for subscription management.
+It serves as an example for a FastAPI application built with `trcks`.
 
 The package
 [`subscription_management.logic.repositories`](subscription_management/logic/repositories/)
