@@ -226,4 +226,5 @@ convention = "google"
 
 [tool.uv]
 add-bounds = "exact"
+package = false
 required-version = "~=0.11.0"
