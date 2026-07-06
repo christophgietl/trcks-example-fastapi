@@ -10,8 +10,7 @@
 
 ## Project decisions
 
-- Subscription management serves as the example domain to illustrate
-  railway-oriented programming in FastAPI.
+- The example domain _subscription management_ illustrates ROP in FastAPI.
 
 ## Architecture decisions
 
