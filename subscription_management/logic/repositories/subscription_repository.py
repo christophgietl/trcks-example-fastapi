@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, final
 
 from fastapi import Depends
 from sqlalchemy import delete, insert, select, update
@@ -7,6 +7,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
+from subscription_management.data_structures.domain.errors import (
+    ProductDoesNotExistError,
+    SubscriptionDoesNotExistError,
+    SubscriptionIdAlreadyExistsError,
+    UserDoesNotExistError,
+)
 from subscription_management.data_structures.models import SubscriptionModel
 from subscription_management.logic.database import AsyncSessionDep  # noqa: TC001
 from subscription_management.logic.repositories.product_repository import (
@@ -30,11 +36,9 @@ if TYPE_CHECKING:
 
 type _AwaitableBaseSubscriptionResult = Awaitable[_BaseSubscriptionResult]
 type _BaseSubscriptionResult = Result[
-    Literal["Subscription does not exist"], SubscriptionWithProduct
+    SubscriptionDoesNotExistError, SubscriptionWithProduct
 ]
-type _ProductOrUserDoesNotExist = Literal[
-    "Product does not exist", "User does not exist"
-]
+type _ProductOrUserDoesNotExist = ProductDoesNotExistError | UserDoesNotExistError
 
 type SubscriptionRepositoryDep = Annotated[SubscriptionRepository, Depends()]
 
@@ -67,7 +71,7 @@ class SubscriptionRepository:
 
     async def _create_subscription_model(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> Result[Literal["ID already exists"], SubscriptionModel]:
+    ) -> Result[SubscriptionIdAlreadyExistsError, SubscriptionModel]:
         statement = (
             insert(SubscriptionModel)
             .values(
@@ -84,7 +88,9 @@ class SubscriptionRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: subscription.id":
-                    return "failure", "ID already exists"
+                    return "failure", SubscriptionIdAlreadyExistsError(
+                        id=subscription.id
+                    )
                 case _:  # pragma: no cover
                     raise
         else:
@@ -116,7 +122,7 @@ class SubscriptionRepository:
         subscription_model: SubscriptionModel | None,
     ) -> _BaseSubscriptionResult:
         if subscription_model is None:
-            return "failure", "Subscription does not exist"
+            return "failure", SubscriptionDoesNotExistError()
         return "success", subscription_model.to_subscription_with_product()
 
     async def _update_subscription_model(
@@ -138,7 +144,7 @@ class SubscriptionRepository:
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["ID already exists"] | _ProductOrUserDoesNotExist,
+        SubscriptionIdAlreadyExistsError | _ProductOrUserDoesNotExist,
         SubscriptionWithProduct,
     ]:
         return (
@@ -179,7 +185,7 @@ class SubscriptionRepository:
     def update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["Subscription does not exist"] | _ProductOrUserDoesNotExist,
+        SubscriptionDoesNotExistError | _ProductOrUserDoesNotExist,
         SubscriptionWithProduct,
     ]:
         return (

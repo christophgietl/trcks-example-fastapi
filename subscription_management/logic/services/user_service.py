@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, final
+from typing import TYPE_CHECKING, Annotated, final
 
 from fastapi import Depends
 
@@ -12,13 +12,18 @@ if TYPE_CHECKING:
 
     from trcks import AwaitableResult, AwaitableTuple
 
+    from subscription_management.data_structures.domain.errors import (
+        UserDoesNotExistError,
+        UserEmailAlreadyExistsError,
+        UserIdAlreadyExistsError,
+    )
     from subscription_management.data_structures.domain.user import (
         User,
         UserWithSubscriptionsWithProducts,
     )
 
 type _AwaitableDeleteOrReadUserResult = AwaitableResult[
-    Literal["User does not exist"], UserWithSubscriptionsWithProducts
+    UserDoesNotExistError, UserWithSubscriptionsWithProducts
 ]
 
 type UserServiceDep = Annotated[UserService, Depends()]
@@ -32,7 +37,7 @@ class UserService:
     def create_user(
         self, user: User
     ) -> AwaitableResult[
-        Literal["Email already exists", "ID already exists"],
+        UserEmailAlreadyExistsError | UserIdAlreadyExistsError,
         UserWithSubscriptionsWithProducts,
     ]:
         return self._user_repository.create_user(user)
@@ -52,7 +57,7 @@ class UserService:
     def update_user(
         self, user: User
     ) -> AwaitableResult[
-        Literal["User does not exist", "Email already exists"],
+        UserDoesNotExistError | UserEmailAlreadyExistsError,
         UserWithSubscriptionsWithProducts,
     ]:
         return self._user_repository.update_user(user)

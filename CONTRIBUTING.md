@@ -30,6 +30,25 @@ Please follow these steps to set up your development environment:
    pre-commit installed at .git/hooks/pre-commit
    ```
 
+## Conventions
+
+### Adding a new failure reason
+
+To add a new failure reason, create a new Error subclass in
+`subscription_management/data_structures/domain/errors.py`.
+Each concrete error class must:
+
+- Subclass the appropriate entity base class
+  (`UserError`, `ProductError`, or `SubscriptionError`).
+- Use `@final` and `@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)`.
+- Declare a `reason` field typed as a narrowed `Literal[...]`,
+  defaulted to the reason string.
+- Carry the relevant identifier as a field
+  (e.g. `id: UUID`, `email: str`, or `name: str`).
+
+Return the error as a failure payload in the repository or service,
+and add a matching `case` arm in the router.
+
 ### Usage
 
 Check [the section "Development tools" in `AGENTS.md`](AGENTS.md#development-tools)

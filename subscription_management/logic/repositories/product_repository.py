@@ -1,12 +1,17 @@
 from collections.abc import Awaitable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, final
+from typing import TYPE_CHECKING, Annotated, final
 
 from fastapi import Depends
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
+from subscription_management.data_structures.domain.errors import (
+    ProductDoesNotExistError,
+    ProductIdAlreadyExistsError,
+    ProductNameAlreadyExistsError,
+)
 from subscription_management.data_structures.models import ProductModel
 from subscription_management.logic.database import AsyncSessionDep  # noqa: TC001
 
@@ -18,7 +23,7 @@ if TYPE_CHECKING:
     from subscription_management.data_structures.domain.product import Product
 
 type _AwaitableBaseProductResult = Awaitable[_BaseProductResult]
-type _BaseProductResult = Result[Literal["Product does not exist"], Product]
+type _BaseProductResult = Result[ProductDoesNotExistError, Product]
 
 type ProductRepositoryDep = Annotated[ProductRepository, Depends()]
 
@@ -30,7 +35,9 @@ class ProductRepository:
 
     async def _create_product_model(
         self, product: Product
-    ) -> Result[Literal["ID already exists", "Name already exists"], ProductModel]:
+    ) -> Result[
+        ProductIdAlreadyExistsError | ProductNameAlreadyExistsError, ProductModel
+    ]:
         statement = (
             insert(ProductModel)
             .values(
@@ -46,9 +53,9 @@ class ProductRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: product.id":
-                    return "failure", "ID already exists"
+                    return "failure", ProductIdAlreadyExistsError(id=product.id)
                 case "UNIQUE constraint failed: product.name":
-                    return "failure", "Name already exists"
+                    return "failure", ProductNameAlreadyExistsError(name=product.name)
                 case _:  # pragma: no cover
                     raise
         else:
@@ -77,12 +84,12 @@ class ProductRepository:
         product_model: ProductModel | None,
     ) -> _BaseProductResult:
         if product_model is None:
-            return "failure", "Product does not exist"
+            return "failure", ProductDoesNotExistError()
         return "success", product_model.to_product()
 
     async def _update_product_model(
         self, product: Product
-    ) -> Result[Literal["Name already exists"], ProductModel | None]:
+    ) -> Result[ProductNameAlreadyExistsError, ProductModel | None]:
         statement = (
             update(ProductModel)
             .where(ProductModel.id == product.id)
@@ -98,7 +105,7 @@ class ProductRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: product.name":
-                    return "failure", "Name already exists"
+                    return "failure", ProductNameAlreadyExistsError(name=product.name)
                 case _:  # pragma: no cover
                     raise
         else:
@@ -106,7 +113,9 @@ class ProductRepository:
 
     def create_product(
         self, product: Product
-    ) -> AwaitableResult[Literal["ID already exists", "Name already exists"], Product]:
+    ) -> AwaitableResult[
+        ProductIdAlreadyExistsError | ProductNameAlreadyExistsError, Product
+    ]:
         return (
             Wrapper(product)
             .map_to_awaitable_result(self._create_product_model)
@@ -148,7 +157,7 @@ class ProductRepository:
     def update_product(
         self, product: Product
     ) -> AwaitableResult[
-        Literal["Name already exists", "Product does not exist"], Product
+        ProductDoesNotExistError | ProductNameAlreadyExistsError, Product
     ]:
         return (
             Wrapper(product)

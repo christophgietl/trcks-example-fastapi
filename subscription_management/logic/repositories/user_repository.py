@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, final
 
 from fastapi import Depends
 from sqlalchemy import delete, insert, select, update
@@ -7,6 +7,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
+from subscription_management.data_structures.domain.errors import (
+    UserDoesNotExistError,
+    UserEmailAlreadyExistsError,
+    UserIdAlreadyExistsError,
+)
 from subscription_management.data_structures.domain.user import (
     UserWithSubscriptionsWithProducts,
 )
@@ -23,9 +28,7 @@ if TYPE_CHECKING:
     from subscription_management.data_structures.domain.user import User
 
 type _AwaitableBaseUserResult = Awaitable[_BaseUserResult]
-type _BaseUserResult = Result[
-    Literal["User does not exist"], UserWithSubscriptionsWithProducts
-]
+type _BaseUserResult = Result[UserDoesNotExistError, UserWithSubscriptionsWithProducts]
 
 type UserRepositoryDep = Annotated[UserRepository, Depends()]
 
@@ -42,7 +45,7 @@ class UserRepository:
     async def _create_user_model(
         self, user: User
     ) -> Result[
-        Literal["Email already exists", "ID already exists"],
+        UserEmailAlreadyExistsError | UserIdAlreadyExistsError,
         UserModel,
     ]:
         statement = (
@@ -56,9 +59,9 @@ class UserRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: user.id":
-                    return "failure", "ID already exists"
+                    return "failure", UserIdAlreadyExistsError(id=user.id)
                 case "UNIQUE constraint failed: user.email":
-                    return "failure", "Email already exists"
+                    return "failure", UserEmailAlreadyExistsError(email=user.email)
                 case _:  # pragma: no cover
                     raise
         else:
@@ -96,12 +99,12 @@ class UserRepository:
     @staticmethod
     def _to_base_user_result(user_model: UserModel | None) -> _BaseUserResult:
         if user_model is None:
-            return "failure", "User does not exist"
+            return "failure", UserDoesNotExistError()
         return "success", user_model.to_user_with_subscriptions_with_products()
 
     async def _update_user_model(
         self, user: User
-    ) -> Result[Literal["Email already exists"], UserModel | None]:
+    ) -> Result[UserEmailAlreadyExistsError, UserModel | None]:
         statement = (
             update(UserModel)
             .where(UserModel.id == user.id)
@@ -114,7 +117,7 @@ class UserRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: user.email":
-                    return "failure", "Email already exists"
+                    return "failure", UserEmailAlreadyExistsError(email=user.email)
                 case _:  # pragma: no cover
                     raise
         else:
@@ -123,7 +126,7 @@ class UserRepository:
     def create_user(
         self, user: User
     ) -> AwaitableResult[
-        Literal["Email already exists", "ID already exists"],
+        UserEmailAlreadyExistsError | UserIdAlreadyExistsError,
         UserWithSubscriptionsWithProducts,
     ]:
         return (
@@ -167,7 +170,7 @@ class UserRepository:
     def update_user(
         self, user: User
     ) -> AwaitableResult[
-        Literal["Email already exists", "User does not exist"],
+        UserDoesNotExistError | UserEmailAlreadyExistsError,
         UserWithSubscriptionsWithProducts,
     ]:
         return (

@@ -4,6 +4,15 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
+from subscription_management.data_structures.domain.errors import (
+    ProductDoesNotExistError,
+    ProductIdAlreadyExistsError,
+    ProductNameAlreadyExistsError,
+    ProductPayloadUpdateError,
+    ProductStatusDeprecatedError,
+    ProductStatusPublishedError,
+    ProductStatusUpdateError,
+)
 from subscription_management.data_structures.schemas.product_schemas import (
     PostProductRequest,
     ProductResponse,
@@ -41,12 +50,12 @@ async def create_product(
         .core
     )
     match result:
-        case ("failure", "Name already exists"):
+        case ("failure", ProductNameAlreadyExistsError()):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with name {post_product_request.name} already exists.",
             )
-        case ("failure", "ID already exists"):
+        case ("failure", ProductIdAlreadyExistsError()):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {post_product_request.id} already exists.",
@@ -73,17 +82,17 @@ async def create_product(
 async def delete_product(id_: UUID, product_service: ProductServiceDep) -> None:
     result = await product_service.delete_product(id_)
     match result:
-        case ("failure", "Product does not exist"):
+        case ("failure", ProductDoesNotExistError()):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with ID {id_} does not exist.",
             )
-        case ("failure", "Product status is published"):
+        case ("failure", ProductStatusPublishedError()):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=_get_product_cannot_be_deleted_detail(id_, "published"),
             )
-        case ("failure", "Product status is deprecated"):
+        case ("failure", ProductStatusDeprecatedError()):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=_get_product_cannot_be_deleted_detail(id_, "deprecated"),
@@ -108,7 +117,7 @@ async def read_product_by_name(
         .core
     )
     match result:
-        case ("failure", "Product does not exist"):
+        case ("failure", ProductDoesNotExistError()):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with name {name} does not exist.",
@@ -133,7 +142,7 @@ async def read_product_by_id(
         .core
     )
     match result:
-        case ("failure", "Product does not exist"):
+        case ("failure", ProductDoesNotExistError()):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with ID {id_} does not exist.",
@@ -180,12 +189,12 @@ async def update_product(
         .core
     )
     match result:
-        case ("failure", "Product does not exist"):
+        case ("failure", ProductDoesNotExistError()):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Product with ID {id_} does not exist.",
             )
-        case ("failure", "Name already exists"):
+        case ("failure", ProductNameAlreadyExistsError()):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -194,13 +203,9 @@ async def update_product(
             )
         case (
             "failure",
-            "Cannot change status from published to draft"
-            | "Cannot change status from deprecated to draft"
-            | "Cannot change status from deprecated to published"
-            | "Cannot modify non-status attributes of a published product"
-            | "Cannot modify non-status attributes of a deprecated product" as detail,
+            ProductStatusUpdateError() | ProductPayloadUpdateError() as err,
         ):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=err.reason)
         case ("success", product_response):
             return product_response
         case _:  # pragma: no cover
