@@ -8,7 +8,7 @@ from subscription_management.logic.routers.subscription_router import (
 )
 from subscription_management.logic.routers.user_router import user_router
 
-app = FastAPI(lifespan=async_engine_lifespan, title="trcks-example-fastapi")
+app = FastAPI(lifespan=async_engine_lifespan, title="subscription-management")
 app.include_router(health_router)
 app.include_router(product_router)
 app.include_router(subscription_router)
