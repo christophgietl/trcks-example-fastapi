@@ -31,8 +31,10 @@
 - Domain errors are frozen dataclasses defined alongside their entity
   (e.g. `ProductDoesNotExistError` in
   `subscription_management.data_structures.domain.product`).
-  Each error carries a `reason: Literal[...]` field and
-  the relevant identifier (`id`, `email`, or `name`).
+  Each error carries the relevant identifier (`id`, `email`, or `name`).
+  Errors with more than one possible cause
+  (e.g. `ProductStatusUpdateError`) also carry
+  a `reason: Literal[...]` field.
   Repositories and services return errors as failure payloads.
   Routers match on error classes to map failures to HTTP exceptions.
 - ORM models use SQLAlchemy's declarative dataclass mapping style

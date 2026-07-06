@@ -15,7 +15,6 @@ from subscription_management.data_structures.domain.product import (
 
 def test_product_does_not_exist_error_defaults() -> None:
     error = ProductDoesNotExistError()
-    assert error.reason == "Product does not exist"
     assert error.id is None
     assert error.name is None
 
@@ -23,7 +22,6 @@ def test_product_does_not_exist_error_defaults() -> None:
 def test_product_does_not_exist_error_with_id() -> None:
     product_id = uuid7()
     error = ProductDoesNotExistError(id=product_id)
-    assert error.reason == "Product does not exist"
     assert error.id == product_id
     assert error.name is None
 
@@ -31,39 +29,33 @@ def test_product_does_not_exist_error_with_id() -> None:
 def test_product_id_already_exists_error() -> None:
     product_id = uuid7()
     error = ProductIdAlreadyExistsError(id=product_id)
-    assert error.reason == "ID already exists"
     assert error.id == product_id
 
 
 def test_product_in_deprecated_status_error_defaults() -> None:
     error = ProductInDeprecatedStatusError()
-    assert error.reason == "Product is in deprecated status"
     assert error.id is None
 
 
 def test_product_in_deprecated_status_error_with_id() -> None:
     product_id = uuid7()
     error = ProductInDeprecatedStatusError(id=product_id)
-    assert error.reason == "Product is in deprecated status"
     assert error.id == product_id
 
 
 def test_product_in_draft_status_error_defaults() -> None:
     error = ProductInDraftStatusError()
-    assert error.reason == "Product is in draft status"
     assert error.id is None
 
 
 def test_product_in_draft_status_error_with_id() -> None:
     product_id = uuid7()
     error = ProductInDraftStatusError(id=product_id)
-    assert error.reason == "Product is in draft status"
     assert error.id == product_id
 
 
 def test_product_name_already_exists_error() -> None:
     error = ProductNameAlreadyExistsError(name="My Product")
-    assert error.reason == "Name already exists"
     assert error.name == "My Product"
 
 
@@ -87,27 +79,23 @@ def test_product_payload_update_error_published() -> None:
 
 def test_product_status_deprecated_error_defaults() -> None:
     error = ProductStatusDeprecatedError()
-    assert error.reason == "Product status is deprecated"
     assert error.id is None
 
 
 def test_product_status_deprecated_error_with_id() -> None:
     product_id = uuid7()
     error = ProductStatusDeprecatedError(id=product_id)
-    assert error.reason == "Product status is deprecated"
     assert error.id == product_id
 
 
 def test_product_status_published_error_defaults() -> None:
     error = ProductStatusPublishedError()
-    assert error.reason == "Product status is published"
     assert error.id is None
 
 
 def test_product_status_published_error_with_id() -> None:
     product_id = uuid7()
     error = ProductStatusPublishedError(id=product_id)
-    assert error.reason == "Product status is published"
     assert error.id == product_id
 
 

@@ -41,10 +41,10 @@ relevant entity
 Each concrete error class must:
 
 - Use `@final` and `@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)`.
-- Declare a `reason` field typed as a narrowed `Literal[...]`,
-  defaulted to the reason string.
 - Carry the relevant identifier as a field
   (e.g. `id: UUID`, `email: str`, or `name: str`).
+- Declare a `reason` field typed as a narrowed `Literal[...]`
+  only if the error can occur for more than one reason.
 
 Return the error as a failure payload in the repository or service,
 and add a matching `case` arm in the router.

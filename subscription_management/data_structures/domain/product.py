@@ -32,7 +32,6 @@ type _ProductStatusUpdateErrorReason = Literal[
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductDoesNotExistError:
-    reason: Literal["Product does not exist"] = "Product does not exist"
     id: UUID | None = None
     name: str | None = None
 
@@ -40,30 +39,24 @@ class ProductDoesNotExistError:
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductIdAlreadyExistsError:
-    reason: Literal["ID already exists"] = "ID already exists"
     id: UUID
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductInDeprecatedStatusError:
-    reason: Literal["Product is in deprecated status"] = (
-        "Product is in deprecated status"
-    )
     id: UUID | None = None
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductInDraftStatusError:
-    reason: Literal["Product is in draft status"] = "Product is in draft status"
     id: UUID | None = None
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductNameAlreadyExistsError:
-    reason: Literal["Name already exists"] = "Name already exists"
     name: str
 
 
@@ -77,14 +70,12 @@ class ProductPayloadUpdateError:
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductStatusDeprecatedError:
-    reason: Literal["Product status is deprecated"] = "Product status is deprecated"
     id: UUID | None = None
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductStatusPublishedError:
-    reason: Literal["Product status is published"] = "Product status is published"
     id: UUID | None = None
 
 

@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING, Literal, final
+from typing import TYPE_CHECKING, final
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -29,12 +29,10 @@ class SubscriptionWithUserIdAndProductId(_Subscription):
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionDoesNotExistError:
-    reason: Literal["Subscription does not exist"] = "Subscription does not exist"
     id: UUID | None = None
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionIdAlreadyExistsError:
-    reason: Literal["ID already exists"] = "ID already exists"
     id: UUID
