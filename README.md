@@ -15,9 +15,7 @@ No additional setup is required.
 ## Project structure
 
 The package [`subscription_management`](subscription_management/) contains a
-subscription management backend.
-It serves as an example of a FastAPI application built on railway-oriented
-programming with `trcks`.
+toy backend for subscription management.
 
 The package
 [`subscription_management.logic.repositories`](subscription_management/logic/repositories/)
