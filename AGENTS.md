@@ -8,6 +8,11 @@
   railway-oriented programming (ROP) with `trcks`.
   It returns domain errors instead of raising them.
 
+## Project decisions
+
+Subscription management has been chosen as an example to illustrate
+railway-oriented programming in FastAPI.
+
 ## Architecture decisions
 
 ### Application layers
