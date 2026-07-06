@@ -32,9 +32,9 @@ The package
 contains FastAPI routers that call and await the service class methods.
 Awaited values of type `trcks.Result` are then handled as follows:
 The payload of `trcks.Success` values is returned.
-The payload of `trcks.Failure` values is a frozen Error dataclass defined
+The payload of `trcks.Failure` values is a frozen dataclass defined
    alongside its entity in
    [`subscription_management.data_structures.domain`](subscription_management/data_structures/domain/)
-   (e.g. `ProductError` in `product.py`).
+   (e.g. `ProductDoesNotExistError` in `product.py`).
    Routers match on error classes to map each failure to an appropriate
    HTTP exception and raise it.

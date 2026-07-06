@@ -29,9 +29,8 @@
 - Collections of values are tuples (e.g. `tuple[SubscriptionWithProduct, ...]`).
 - Public domain models are frozen, immutable, and final data classes.
 - Domain errors are frozen dataclasses defined alongside their entity
-  (e.g. `ProductError` in `subscription_management.data_structures.domain.product`).
-  The common base class `Error` lives in
-  `subscription_management.data_structures.domain.errors`.
+  (e.g. `ProductDoesNotExistError` in
+  `subscription_management.data_structures.domain.product`).
   Each error carries a `reason: Literal[...]` field and
   the relevant identifier (`id`, `email`, or `name`).
   Repositories and services return errors as failure payloads.
@@ -57,7 +56,7 @@
   - `trcks.Success` values are returned with
     an appropriate HTTP success status code.
   - `trcks.Failure` payloads are matched on **error classes**
-    from `subscription_management.data_structures.domain.errors`
+    from `subscription_management.data_structures.domain`
     and mapped to an appropriate HTTP exception, which is then raised.
 
 ### Import contracts

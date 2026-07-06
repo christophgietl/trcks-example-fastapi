@@ -3,7 +3,6 @@ from uuid import uuid7
 from subscription_management.data_structures.domain.user import (
     UserDoesNotExistError,
     UserEmailAlreadyExistsError,
-    UserError,
     UserIdAlreadyExistsError,
 )
 
@@ -34,11 +33,6 @@ def test_user_email_already_exists_error() -> None:
     error = UserEmailAlreadyExistsError(email="test@example.com")
     assert error.reason == "Email already exists"
     assert error.email == "test@example.com"
-
-
-def test_user_error_stores_reason() -> None:
-    error = UserError(reason="User does not exist")
-    assert error.reason == "User does not exist"
 
 
 def test_user_id_already_exists_error() -> None:

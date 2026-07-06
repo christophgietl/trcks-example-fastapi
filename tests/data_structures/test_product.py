@@ -2,7 +2,6 @@ from uuid import uuid7
 
 from subscription_management.data_structures.domain.product import (
     ProductDoesNotExistError,
-    ProductError,
     ProductIdAlreadyExistsError,
     ProductInDeprecatedStatusError,
     ProductInDraftStatusError,
@@ -27,11 +26,6 @@ def test_product_does_not_exist_error_with_id() -> None:
     assert error.reason == "Product does not exist"
     assert error.id == product_id
     assert error.name is None
-
-
-def test_product_error_stores_reason() -> None:
-    error = ProductError(reason="Product does not exist")
-    assert error.reason == "Product does not exist"
 
 
 def test_product_id_already_exists_error() -> None:
