@@ -31,7 +31,6 @@ The package
 [`subscription_management.logic.routers`](subscription_management/logic/routers/)
 contains FastAPI routers that call and await the service class methods.
 Awaited values of type `trcks.Result` are then handled as follows:
-
-1. The payload of `trcks.Success` values is returned.
-2. The payload of `trcks.Failure` values is mapped to an appropriate
+The payload of `trcks.Success` values is returned.
+The payload of `trcks.Failure` values is mapped to an appropriate
    HTTP exception and raised.
