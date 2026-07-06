@@ -8,15 +8,19 @@
   railway-oriented programming (ROP) with `trcks`.
   It returns domain errors instead of raising them.
 
+## Project decisions
+
+- The example domain _subscription management_ illustrates ROP in FastAPI.
+
 ## Architecture decisions
 
 ### Application layers
 
-- The package `app` has two layers: `data_structures` and `logic`.
-- `app.data_structures` contains data classes and models.
+- The package `subscription_management` has two layers: `data_structures` and `logic`.
+- `subscription_management.data_structures` contains data classes and models.
   It has two sublayers: ORM models and API schemas at one level,
   and domain classes at the level below.
-- `app.logic` contains business logic and data access.
+- `subscription_management.logic` contains business logic and data access.
   It has five sublayers: the app entry point, routers, services,
   repositories, and the database.
 
@@ -65,7 +69,7 @@
 - Suppress `ruff` rule `TC001` when importing a `*Dep` type:
 
   ```python
-  from app.logic.repositories.product_repository import (
+  from subscription_management.logic.repositories.product_repository import (
       ProductRepositoryDep,  # noqa: TC001
   )
   ```

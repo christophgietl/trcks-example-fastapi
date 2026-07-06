@@ -6,7 +6,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.data_structures.domain.product import Product, ProductStatus
+from subscription_management.data_structures.domain.product import (
+    Product,
+    ProductStatus,
+)
 
 
 class _ProductSchemaWithoutId(BaseModel, frozen=True):

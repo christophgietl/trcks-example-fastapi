@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING, final
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from app.data_structures.domain.subscription import SubscriptionWithProduct
+    from subscription_management.data_structures.domain.subscription import (
+        SubscriptionWithProduct,
+    )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)

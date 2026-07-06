@@ -6,8 +6,8 @@ import pytest
 from fastapi import status
 from sqlalchemy import Row, select
 
-from app.data_structures.domain.product import ProductStatus
-from app.data_structures.models import ProductModel
+from subscription_management.data_structures.domain.product import ProductStatus
+from subscription_management.data_structures.models import ProductModel
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

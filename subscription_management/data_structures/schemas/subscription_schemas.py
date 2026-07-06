@@ -5,11 +5,17 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.data_structures.domain.subscription import SubscriptionWithUserIdAndProductId
-from app.data_structures.schemas.product_schemas import ProductResponse
+from subscription_management.data_structures.domain.subscription import (
+    SubscriptionWithUserIdAndProductId,
+)
+from subscription_management.data_structures.schemas.product_schemas import (
+    ProductResponse,
+)
 
 if TYPE_CHECKING:
-    from app.data_structures.domain.subscription import SubscriptionWithProduct
+    from subscription_management.data_structures.domain.subscription import (
+        SubscriptionWithProduct,
+    )
 
 
 class _SubscriptionSchemaWithoutId(BaseModel, frozen=True):

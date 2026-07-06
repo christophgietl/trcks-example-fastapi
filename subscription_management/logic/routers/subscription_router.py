@@ -4,12 +4,14 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from app.data_structures.schemas.subscription_schemas import (
+from subscription_management.data_structures.schemas.subscription_schemas import (
     PostSubscriptionRequest,
     PutSubscriptionRequest,
     SubscriptionResponse,
 )
-from app.logic.services.subscription_service import SubscriptionServiceDep
+from subscription_management.logic.services.subscription_service import (
+    SubscriptionServiceDep,
+)
 
 subscription_router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 

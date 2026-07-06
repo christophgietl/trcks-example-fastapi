@@ -4,12 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from app.data_structures.schemas.user_schemas import (
+from subscription_management.data_structures.schemas.user_schemas import (
     PostUserRequest,
     PutUserRequest,
     UserResponse,
 )
-from app.logic.services.user_service import UserServiceDep
+from subscription_management.logic.services.user_service import UserServiceDep
 
 user_router = APIRouter(prefix="/users", tags=["Users"])
 

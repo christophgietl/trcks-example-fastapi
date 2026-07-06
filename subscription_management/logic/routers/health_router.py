@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 
-from app.data_structures.schemas.health_schemas import HealthResponse
-from app.logic.services.dummy_service import DummyServiceDep
+from subscription_management.data_structures.schemas.health_schemas import (
+    HealthResponse,
+)
+from subscription_management.logic.services.dummy_service import DummyServiceDep
 
 health_router = APIRouter(prefix="/health", tags=["Health"])
 

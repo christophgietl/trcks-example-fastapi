@@ -18,21 +18,21 @@ dependencies = [
     "trcks==0.6.0",
 ]
 dynamic = ["version"]
-name = "trcks-example-fastapi"
+name = "subscription-management"
 requires-python = "==3.14.*"
 
 [tool.fastapi]
-entrypoint = "app.logic.main:app"
+entrypoint = "subscription_management.logic.main:app"
 
 [tool.importlinter]
 exclude_type_checking_imports = false
 include_external_packages = true
-root_package = "app"
+root_package = "subscription_management"
 
 [[tool.importlinter.contracts]]
-name = "app has exactly two layers"
+name = "subscription_management has exactly two layers"
 type = "layers"
-containers = ["app"]
+containers = ["subscription_management"]
 exhaustive = true
 layers = [
     "logic",
@@ -40,9 +40,9 @@ layers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "app.data_structures has exactly two sublayers"
+name = "subscription_management.data_structures has exactly two sublayers"
 type = "layers"
-containers = ["app.data_structures"]
+containers = ["subscription_management.data_structures"]
 exhaustive = true
 layers = [
     "models | schemas",
@@ -50,9 +50,9 @@ layers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "app.logic has exactly five sublayers"
+name = "subscription_management.logic has exactly five sublayers"
 type = "layers"
-containers = ["app.logic"]
+containers = ["subscription_management.logic"]
 exhaustive = true
 layers = [
     "main",
@@ -63,17 +63,17 @@ layers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Modules in app.logic.routers are independent"
+name = "Modules in subscription_management.logic.routers are independent"
 type = "independence"
 modules = [
-    "app.logic.routers.*",
+    "subscription_management.logic.routers.*",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Modules in app.logic.services are independent"
+name = "Modules in subscription_management.logic.services are independent"
 type = "independence"
 modules = [
-    "app.logic.services.*",
+    "subscription_management.logic.services.*",
 ]
 
 # Repositories are intentionally not independent; they collaborate with each other.
@@ -98,87 +98,87 @@ ignore_imports = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.logic can import fastapi"
+name = "Only subscription_management.logic can import fastapi"
 type = "protected"
 protected_modules = ["fastapi"]
 allowed_importers = [
-    "app.logic",
+    "subscription_management.logic",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.data_structures.schemas can import pydantic"
+name = "Only subscription_management.data_structures.schemas can import pydantic"
 type = "protected"
 protected_modules = ["pydantic"]
 allowed_importers = [
-    "app.data_structures.schemas",
+    "subscription_management.data_structures.schemas",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.data_structures.models, app.logic.database, and app.logic.repositories can import sqlalchemy"
+name = "Only subscription_management.data_structures.models, subscription_management.logic.database, and subscription_management.logic.repositories can import sqlalchemy"
 type = "protected"
 protected_modules = ["sqlalchemy"]
 allowed_importers = [
-    "app.data_structures.models",
-    "app.logic.database",
-    "app.logic.repositories",
+    "subscription_management.data_structures.models",
+    "subscription_management.logic.database",
+    "subscription_management.logic.repositories",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.data_structures, app.logic.repositories, and app.logic.services can import app.data_structures.domain"
+name = "Only subscription_management.data_structures, subscription_management.logic.repositories, and subscription_management.logic.services can import subscription_management.data_structures.domain"
 type = "protected"
-protected_modules = ["app.data_structures.domain"]
+protected_modules = ["subscription_management.data_structures.domain"]
 allowed_importers = [
-    "app.data_structures",
-    "app.logic.repositories",
-    "app.logic.services",
+    "subscription_management.data_structures",
+    "subscription_management.logic.repositories",
+    "subscription_management.logic.services",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.logic.database and app.logic.repositories can import app.data_structures.models"
+name = "Only subscription_management.logic.database and subscription_management.logic.repositories can import subscription_management.data_structures.models"
 type = "protected"
-protected_modules = ["app.data_structures.models"]
+protected_modules = ["subscription_management.data_structures.models"]
 allowed_importers = [
-    "app.logic.database",
-    "app.logic.repositories",
+    "subscription_management.logic.database",
+    "subscription_management.logic.repositories",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.logic.routers can import app.data_structures.schemas"
+name = "Only subscription_management.logic.routers can import subscription_management.data_structures.schemas"
 type = "protected"
-protected_modules = ["app.data_structures.schemas"]
+protected_modules = ["subscription_management.data_structures.schemas"]
 allowed_importers = [
-    "app.logic.routers",
+    "subscription_management.logic.routers",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.logic.main and app.logic.repositories can import app.logic.database"
+name = "Only subscription_management.logic.main and subscription_management.logic.repositories can import subscription_management.logic.database"
 type = "protected"
-protected_modules = ["app.logic.database"]
+protected_modules = ["subscription_management.logic.database"]
 allowed_importers = [
-    "app.logic.main",
-    "app.logic.repositories",
+    "subscription_management.logic.main",
+    "subscription_management.logic.repositories",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.logic.services can import app.logic.repositories"
+name = "Only subscription_management.logic.services can import subscription_management.logic.repositories"
 type = "protected"
-protected_modules = ["app.logic.repositories"]
+protected_modules = ["subscription_management.logic.repositories"]
 allowed_importers = [
-    "app.logic.services",
+    "subscription_management.logic.services",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only app.logic.routers can import app.logic.services"
+name = "Only subscription_management.logic.routers can import subscription_management.logic.services"
 type = "protected"
-protected_modules = ["app.logic.services"]
+protected_modules = ["subscription_management.logic.services"]
 allowed_importers = [
-    "app.logic.routers",
+    "subscription_management.logic.routers",
 ]
 
 [[tool.importlinter.contracts]]
 name = "Dependency cycles between siblings are forbidden"
 type = "acyclic_siblings"
-ancestors = ["app"]
+ancestors = ["subscription_management"]
 
 [tool.pyright]
 deprecateTypingAliases = true
@@ -194,7 +194,7 @@ reportUnusedCallResult = true
 typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
-addopts = "--cov=app --cov-fail-under=100 --cov-report=term-missing --import-mode=importlib"
+addopts = "--cov=subscription_management --cov-fail-under=100 --cov-report=term-missing --import-mode=importlib"
 anyio_mode = "auto"
 filterwarnings = ["error"]
 pythonpath = ["."]

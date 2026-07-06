@@ -7,9 +7,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from app.data_structures.domain.user import UserWithSubscriptionsWithProducts
-from app.data_structures.models import SubscriptionModel, UserModel
-from app.logic.database import AsyncSessionDep  # noqa: TC001
+from subscription_management.data_structures.domain.user import (
+    UserWithSubscriptionsWithProducts,
+)
+from subscription_management.data_structures.models import SubscriptionModel, UserModel
+from subscription_management.logic.database import AsyncSessionDep  # noqa: TC001
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm.interfaces import LoaderOption
     from trcks import AwaitableResult, AwaitableTuple, Result
 
-    from app.data_structures.domain.user import User
+    from subscription_management.data_structures.domain.user import User
 
 type _AwaitableBaseUserResult = Awaitable[_BaseUserResult]
 type _BaseUserResult = Result[

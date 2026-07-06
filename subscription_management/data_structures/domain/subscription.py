@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, final
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from app.data_structures.domain.product import Product
+    from subscription_management.data_structures.domain.product import Product
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)

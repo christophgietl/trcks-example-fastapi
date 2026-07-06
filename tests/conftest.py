@@ -4,8 +4,8 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.logic.database import create_and_initialize_async_engine
-from app.logic.main import app
+from subscription_management.logic.database import create_and_initialize_async_engine
+from subscription_management.logic.main import app
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
