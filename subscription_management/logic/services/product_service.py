@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
-from subscription_management.data_structures.domain.errors import (
+from subscription_management.data_structures.domain.product import (
     ProductDoesNotExistError,
     ProductIdAlreadyExistsError,
     ProductNameAlreadyExistsError,

@@ -12,13 +12,11 @@ if TYPE_CHECKING:
 
     from trcks import AwaitableResult, AwaitableTuple
 
-    from subscription_management.data_structures.domain.errors import (
+    from subscription_management.data_structures.domain.user import (
+        User,
         UserDoesNotExistError,
         UserEmailAlreadyExistsError,
         UserIdAlreadyExistsError,
-    )
-    from subscription_management.data_structures.domain.user import (
-        User,
         UserWithSubscriptionsWithProducts,
     )
 

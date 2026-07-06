@@ -7,7 +7,7 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from subscription_management.data_structures.domain.errors import (
+from subscription_management.data_structures.domain.product import (
     ProductDoesNotExistError,
     ProductIdAlreadyExistsError,
     ProductNameAlreadyExistsError,

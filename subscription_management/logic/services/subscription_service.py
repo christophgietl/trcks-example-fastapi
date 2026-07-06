@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
-from subscription_management.data_structures.domain.errors import (
+from subscription_management.data_structures.domain.product import (
     ProductDoesNotExistError,
     ProductInDeprecatedStatusError,
     ProductInDraftStatusError,
+)
+from subscription_management.data_structures.domain.subscription import (
     SubscriptionDoesNotExistError,
     SubscriptionIdAlreadyExistsError,
-    UserDoesNotExistError,
 )
 from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
@@ -28,6 +29,9 @@ if TYPE_CHECKING:
     from subscription_management.data_structures.domain.subscription import (
         SubscriptionWithProduct,
         SubscriptionWithUserIdAndProductId,
+    )
+    from subscription_management.data_structures.domain.user import (
+        UserDoesNotExistError,
     )
 
 type _AwaitableDeleteOrReadSubscriptionResult = AwaitableResult[

@@ -7,12 +7,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from subscription_management.data_structures.domain.errors import (
+from subscription_management.data_structures.domain.user import (
     UserDoesNotExistError,
     UserEmailAlreadyExistsError,
     UserIdAlreadyExistsError,
-)
-from subscription_management.data_structures.domain.user import (
     UserWithSubscriptionsWithProducts,
 )
 from subscription_management.data_structures.models import SubscriptionModel, UserModel

@@ -7,12 +7,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from subscription_management.data_structures.domain.errors import (
+from subscription_management.data_structures.domain.product import (
     ProductDoesNotExistError,
+)
+from subscription_management.data_structures.domain.subscription import (
     SubscriptionDoesNotExistError,
     SubscriptionIdAlreadyExistsError,
-    UserDoesNotExistError,
 )
+from subscription_management.data_structures.domain.user import UserDoesNotExistError
 from subscription_management.data_structures.models import SubscriptionModel
 from subscription_management.logic.database import AsyncSessionDep  # noqa: TC001
 from subscription_management.logic.repositories.product_repository import (

@@ -4,14 +4,16 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from subscription_management.data_structures.domain.errors import (
+from subscription_management.data_structures.domain.product import (
     ProductDoesNotExistError,
     ProductInDeprecatedStatusError,
     ProductInDraftStatusError,
+)
+from subscription_management.data_structures.domain.subscription import (
     SubscriptionDoesNotExistError,
     SubscriptionIdAlreadyExistsError,
-    UserDoesNotExistError,
 )
+from subscription_management.data_structures.domain.user import UserDoesNotExistError
 from subscription_management.data_structures.schemas.subscription_schemas import (
     PostSubscriptionRequest,
     PutSubscriptionRequest,

@@ -34,8 +34,10 @@ Please follow these steps to set up your development environment:
 
 ### Adding a new failure reason
 
-To add a new failure reason, create a new Error subclass in
-`subscription_management/data_structures/domain/errors.py`.
+To add a new failure reason, create a new Error subclass in the module of the
+relevant entity
+(`subscription_management/data_structures/domain/user.py`,
+`.../product.py`, or `.../subscription.py`).
 Each concrete error class must:
 
 - Subclass the appropriate entity base class
