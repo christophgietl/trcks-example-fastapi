@@ -18,7 +18,7 @@ dependencies = [
     "trcks==0.6.0",
 ]
 dynamic = ["version"]
-name = "trcks-example-fastapi"
+name = "subscription-management"
 requires-python = "==3.14.*"
 
 [tool.fastapi]

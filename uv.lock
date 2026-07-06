@@ -778,21 +778,7 @@ wheels = [
 ]
 
 [[package]]
-name = "trcks"
-version = "0.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cb/fe/7e75b3d09256f0a426760fa7f368c644186d1bb9ac83915b68cad61953c7/trcks-0.6.0.tar.gz", hash = "sha256:65168a903236d5ba82219d5da55fc663b7584579f8fa5f6e2d0714f314feac65", size = 57935, upload-time = "2026-06-25T21:17:27.39Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/82/e968702039973fc3a0f0558b3c22a9fef95517b94e28aaf5582d91333e45/trcks-0.6.0-py3-none-any.whl", hash = "sha256:50768514b826f0bf0b991293b2a28ea962cfd7e716cf15ece6a9d7fd2d04f559", size = 69027, upload-time = "2026-06-25T21:17:26.348Z" },
-]
-
-[package.optional-dependencies]
-pyright = [
-    { name = "pyright" },
-]
-
-[[package]]
-name = "trcks-example-fastapi"
+name = "subscription-management"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },
@@ -831,6 +817,20 @@ dev = [
     { name = "pytest", specifier = "==9.1.1" },
     { name = "pytest-cov", specifier = "==7.1.0" },
     { name = "trcks", extras = ["pyright"] },
+]
+
+[[package]]
+name = "trcks"
+version = "0.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cb/fe/7e75b3d09256f0a426760fa7f368c644186d1bb9ac83915b68cad61953c7/trcks-0.6.0.tar.gz", hash = "sha256:65168a903236d5ba82219d5da55fc663b7584579f8fa5f6e2d0714f314feac65", size = 57935, upload-time = "2026-06-25T21:17:27.39Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/82/e968702039973fc3a0f0558b3c22a9fef95517b94e28aaf5582d91333e45/trcks-0.6.0-py3-none-any.whl", hash = "sha256:50768514b826f0bf0b991293b2a28ea962cfd7e716cf15ece6a9d7fd2d04f559", size = 69027, upload-time = "2026-06-25T21:17:26.348Z" },
+]
+
+[package.optional-dependencies]
+pyright = [
+    { name = "pyright" },
 ]
 
 [[package]]
