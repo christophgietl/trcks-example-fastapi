@@ -9,10 +9,6 @@ from subscription_management.data_structures.domain.product_error import (
     ProductInDraftStatusError,
     ProductWithIdDoesNotExistError,
 )
-from subscription_management.data_structures.domain.subscription_error import (
-    SubscriptionWithIdAlreadyExistsError,
-    SubscriptionWithIdDoesNotExistError,
-)
 from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
 )
@@ -30,18 +26,16 @@ if TYPE_CHECKING:
         SubscriptionWithProduct,
         SubscriptionWithUserIdAndProductId,
     )
+    from subscription_management.data_structures.domain.subscription_error import (
+        SubscriptionWithIdAlreadyExistsError,
+        SubscriptionWithIdDoesNotExistError,
+    )
     from subscription_management.data_structures.domain.user_error import (
         UserWithIdDoesNotExistError,
     )
 
-type _AwaitableDeleteOrReadSubscriptionResult = AwaitableResult[
-    SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct
-]
-type _ProductNotSubscribableError = (
-    ProductWithIdDoesNotExistError
-    | ProductInDeprecatedStatusError
-    | ProductInDraftStatusError
-)
+type _ProductStatusError = ProductInDeprecatedStatusError | ProductInDraftStatusError
+type _ProductNotSubscribableError = _ProductStatusError | ProductWithIdDoesNotExistError
 
 type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
@@ -53,9 +47,7 @@ class SubscriptionService:
     _subscription_repository: SubscriptionRepositoryDep
 
     @staticmethod
-    def _check_product_status(
-        product: Product,
-    ) -> Result[ProductInDeprecatedStatusError | ProductInDraftStatusError, None]:
+    def _check_product_status(product: Product) -> Result[_ProductStatusError, None]:
         match product.status:
             case "draft":
                 return "failure", ProductInDraftStatusError(id=product.id)
@@ -95,12 +87,12 @@ class SubscriptionService:
 
     def delete_subscription(
         self, id_: UUID
-    ) -> _AwaitableDeleteOrReadSubscriptionResult:
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
         return self._subscription_repository.delete_subscription(id_)
 
     def read_subscription_by_id(
         self, id_: UUID
-    ) -> _AwaitableDeleteOrReadSubscriptionResult:
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
         return self._subscription_repository.read_subscription_by_id(id_)
 
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
