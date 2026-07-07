@@ -160,15 +160,15 @@ async def update_user(
         .core
     )
     match result:
-        case ("failure", UserWithIdDoesNotExistError(id=id_from_err)):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_from_err} does not exist.",
-            )
         case ("failure", UserWithEmailAlreadyExistsError(email=email)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"User with email {email} already exists.",
+            )
+        case ("failure", UserWithIdDoesNotExistError(id=id_from_err)):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {id_from_err} does not exist.",
             )
         case ("success", user_response):
             return user_response

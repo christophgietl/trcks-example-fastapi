@@ -47,15 +47,15 @@ async def create_product(
         .core
     )
     match result:
-        case ("failure", ProductWithNameAlreadyExistsError(name=name)):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with name {name} already exists.",
-            )
         case ("failure", ProductWithIdAlreadyExistsError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {id_} already exists.",
+            )
+        case ("failure", ProductWithNameAlreadyExistsError(name=name)):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Product with name {name} already exists.",
             )
         case ("success", product_response):
             return product_response
