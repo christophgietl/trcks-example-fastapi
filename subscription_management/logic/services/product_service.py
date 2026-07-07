@@ -5,14 +5,15 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
-from subscription_management.data_structures.domain.product import (
-    ProductDoesNotExistError,
-    ProductIdAlreadyExistsError,
-    ProductNameAlreadyExistsError,
+from subscription_management.data_structures.domain.product_error import (
     ProductPayloadUpdateError,
     ProductStatusDeprecatedError,
     ProductStatusPublishedError,
     ProductStatusUpdateError,
+    ProductWithIdAlreadyExistsError,
+    ProductWithIdDoesNotExistError,
+    ProductWithNameAlreadyExistsError,
+    ProductWithNameDoesNotExistError,
 )
 from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
@@ -25,16 +26,21 @@ if TYPE_CHECKING:
 
     from subscription_management.data_structures.domain.product import Product
 
-type _AwaitableReadProductResult = AwaitableResult[ProductDoesNotExistError, Product]
+type _AwaitableReadProductByIdResult = AwaitableResult[
+    ProductWithIdDoesNotExistError, Product
+]
+type _AwaitableReadProductByNameResult = AwaitableResult[
+    ProductWithNameDoesNotExistError, Product
+]
 type _CannotDeleteProductError = (
-    ProductDoesNotExistError
+    ProductWithIdDoesNotExistError
     | ProductStatusDeprecatedError
     | ProductStatusPublishedError
 )
 type _CannotUpdateProductError = (
     _CannotUpdateProductPayloadError
     | _CannotUpdateProductStatusError
-    | ProductDoesNotExistError
+    | ProductWithIdDoesNotExistError
 )
 type _CannotUpdateProductPayloadError = ProductPayloadUpdateError
 type _CannotUpdateProductStatusError = ProductStatusUpdateError
@@ -56,7 +62,7 @@ class ProductService:
 
     def _add_old_product(
         self, new_product: Product
-    ) -> AwaitableResult[ProductDoesNotExistError, _ProductUpdate]:
+    ) -> AwaitableResult[ProductWithIdDoesNotExistError, _ProductUpdate]:
         return (
             Wrapper(new_product.id)
             .map_to_awaitable_result(self.read_product_by_id)
@@ -184,7 +190,7 @@ class ProductService:
     def create_product(
         self, product: Product
     ) -> AwaitableResult[
-        ProductIdAlreadyExistsError | ProductNameAlreadyExistsError, Product
+        ProductWithIdAlreadyExistsError | ProductWithNameAlreadyExistsError, Product
     ]:
         return self._product_repository.create_product(product)
 
@@ -198,10 +204,10 @@ class ProductService:
             .core
         )
 
-    def read_product_by_id(self, id_: UUID) -> _AwaitableReadProductResult:
+    def read_product_by_id(self, id_: UUID) -> _AwaitableReadProductByIdResult:
         return self._product_repository.read_product_by_id(id_)
 
-    def read_product_by_name(self, name: str) -> _AwaitableReadProductResult:
+    def read_product_by_name(self, name: str) -> _AwaitableReadProductByNameResult:
         return self._product_repository.read_product_by_name(name)
 
     def read_products(self) -> AwaitableTuple[Product]:
@@ -210,7 +216,7 @@ class ProductService:
     def update_product(
         self, product: Product
     ) -> AwaitableResult[
-        _CannotUpdateProductError | ProductNameAlreadyExistsError,
+        _CannotUpdateProductError | ProductWithNameAlreadyExistsError,
         Product,
     ]:
         return (

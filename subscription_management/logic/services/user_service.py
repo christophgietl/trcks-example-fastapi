@@ -14,14 +14,20 @@ if TYPE_CHECKING:
 
     from subscription_management.data_structures.domain.user import (
         User,
-        UserDoesNotExistError,
-        UserEmailAlreadyExistsError,
-        UserIdAlreadyExistsError,
         UserWithSubscriptionsWithProducts,
     )
+    from subscription_management.data_structures.domain.user_error import (
+        UserWithEmailAlreadyExistsError,
+        UserWithEmailDoesNotExistError,
+        UserWithIdAlreadyExistsError,
+        UserWithIdDoesNotExistError,
+    )
 
-type _AwaitableDeleteOrReadUserResult = AwaitableResult[
-    UserDoesNotExistError, UserWithSubscriptionsWithProducts
+type _AwaitableDeleteOrReadUserByIdResult = AwaitableResult[
+    UserWithIdDoesNotExistError, UserWithSubscriptionsWithProducts
+]
+type _AwaitableDeleteOrReadUserByEmailResult = AwaitableResult[
+    UserWithEmailDoesNotExistError, UserWithSubscriptionsWithProducts
 ]
 
 type UserServiceDep = Annotated[UserService, Depends()]
@@ -35,18 +41,18 @@ class UserService:
     def create_user(
         self, user: User
     ) -> AwaitableResult[
-        UserEmailAlreadyExistsError | UserIdAlreadyExistsError,
+        UserWithEmailAlreadyExistsError | UserWithIdAlreadyExistsError,
         UserWithSubscriptionsWithProducts,
     ]:
         return self._user_repository.create_user(user)
 
-    def delete_user(self, id_: UUID) -> _AwaitableDeleteOrReadUserResult:
+    def delete_user(self, id_: UUID) -> _AwaitableDeleteOrReadUserByIdResult:
         return self._user_repository.delete_user(id_)
 
-    def read_user_by_email(self, email: str) -> _AwaitableDeleteOrReadUserResult:
+    def read_user_by_email(self, email: str) -> _AwaitableDeleteOrReadUserByEmailResult:
         return self._user_repository.read_user_by_email(email)
 
-    def read_user_by_id(self, id_: UUID) -> _AwaitableDeleteOrReadUserResult:
+    def read_user_by_id(self, id_: UUID) -> _AwaitableDeleteOrReadUserByIdResult:
         return self._user_repository.read_user_by_id(id_)
 
     def read_users(self) -> AwaitableTuple[UserWithSubscriptionsWithProducts]:
@@ -55,7 +61,7 @@ class UserService:
     def update_user(
         self, user: User
     ) -> AwaitableResult[
-        UserDoesNotExistError | UserEmailAlreadyExistsError,
+        UserWithIdDoesNotExistError | UserWithEmailAlreadyExistsError,
         UserWithSubscriptionsWithProducts,
     ]:
         return self._user_repository.update_user(user)

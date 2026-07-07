@@ -1,4 +1,3 @@
-from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, final
 
@@ -7,10 +6,11 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from subscription_management.data_structures.domain.product import (
-    ProductDoesNotExistError,
-    ProductIdAlreadyExistsError,
-    ProductNameAlreadyExistsError,
+from subscription_management.data_structures.domain.product_error import (
+    ProductWithIdAlreadyExistsError,
+    ProductWithIdDoesNotExistError,
+    ProductWithNameAlreadyExistsError,
+    ProductWithNameDoesNotExistError,
 )
 from subscription_management.data_structures.models import ProductModel
 from subscription_management.logic.database import AsyncSessionDep  # noqa: TC001
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 
     from subscription_management.data_structures.domain.product import Product
 
-type _AwaitableBaseProductResult = Awaitable[_BaseProductResult]
-type _BaseProductResult = Result[ProductDoesNotExistError, Product]
+type _ProductByIdResult = Result[ProductWithIdDoesNotExistError, Product]
+type _ProductByNameResult = Result[ProductWithNameDoesNotExistError, Product]
 
 type ProductRepositoryDep = Annotated[ProductRepository, Depends()]
 
@@ -36,7 +36,8 @@ class ProductRepository:
     async def _create_product_model(
         self, product: Product
     ) -> Result[
-        ProductIdAlreadyExistsError | ProductNameAlreadyExistsError, ProductModel
+        ProductWithIdAlreadyExistsError | ProductWithNameAlreadyExistsError,
+        ProductModel,
     ]:
         statement = (
             insert(ProductModel)
@@ -53,46 +54,67 @@ class ProductRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: product.id":
-                    return "failure", ProductIdAlreadyExistsError(id=product.id)
+                    return "failure", ProductWithIdAlreadyExistsError(id=product.id)
                 case "UNIQUE constraint failed: product.name":
-                    return "failure", ProductNameAlreadyExistsError(name=product.name)
+                    return "failure", ProductWithNameAlreadyExistsError(
+                        name=product.name
+                    )
                 case _:  # pragma: no cover
                     raise
         else:
             return "success", scalars.one()
-
-    async def _delete_product_model(self, id_: UUID) -> ProductModel | None:
-        statement = (
-            delete(ProductModel).where(ProductModel.id == id_).returning(ProductModel)
-        )
-        return await self._session.scalar(statement=statement)
-
-    async def _read_product_model_by_id(self, id_: UUID) -> ProductModel | None:
-        return await self._session.get(ProductModel, id_)
-
-    async def _read_product_model_by_name(self, name: str) -> ProductModel | None:
-        statement = select(ProductModel).where(ProductModel.name == name)
-        return await self._session.scalar(statement=statement)
 
     async def _read_product_models(self) -> tuple[ProductModel, ...]:
         statement = select(ProductModel)
         scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 
-    @staticmethod
-    def _to_base_product_result(
-        product_model: ProductModel | None,
-        *,
-        id_: UUID | None = None,
-        name: str | None = None,
-    ) -> _BaseProductResult:
+    def create_product(
+        self, product: Product
+    ) -> AwaitableResult[
+        ProductWithIdAlreadyExistsError | ProductWithNameAlreadyExistsError, Product
+    ]:
+        return (
+            Wrapper(product)
+            .map_to_awaitable_result(self._create_product_model)
+            .map_success(ProductModel.to_product)
+            .core
+        )
+
+    async def delete_product(self, id_: UUID) -> _ProductByIdResult:
+        statement = (
+            delete(ProductModel).where(ProductModel.id == id_).returning(ProductModel)
+        )
+        product_model = await self._session.scalar(statement=statement)
         if product_model is None:
-            return "failure", ProductDoesNotExistError(id=id_, name=name)
+            return "failure", ProductWithIdDoesNotExistError(id=id_)  # pragma: no cover
         return "success", product_model.to_product()
 
-    async def _update_product_model(
+    async def read_product_by_id(self, id_: UUID) -> _ProductByIdResult:
+        product_model = await self._session.get(ProductModel, id_)
+        if product_model is None:
+            return "failure", ProductWithIdDoesNotExistError(id=id_)
+        return "success", product_model.to_product()
+
+    async def read_product_by_name(self, name: str) -> _ProductByNameResult:
+        statement = select(ProductModel).where(ProductModel.name == name)
+        product_model = await self._session.scalar(statement=statement)
+        if product_model is None:
+            return "failure", ProductWithNameDoesNotExistError(name=name)
+        return "success", product_model.to_product()
+
+    def read_products(self) -> AwaitableTuple[Product]:
+        return (
+            AwaitableTupleWrapper(self._read_product_models())
+            .map(ProductModel.to_product)
+            .core
+        )
+
+    async def update_product(
         self, product: Product
-    ) -> Result[ProductNameAlreadyExistsError, ProductModel | None]:
+    ) -> Result[
+        ProductWithIdDoesNotExistError | ProductWithNameAlreadyExistsError, Product
+    ]:
         statement = (
             update(ProductModel)
             .where(ProductModel.id == product.id)
@@ -108,79 +130,14 @@ class ProductRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: product.name":
-                    return "failure", ProductNameAlreadyExistsError(name=product.name)
+                    return "failure", ProductWithNameAlreadyExistsError(
+                        name=product.name
+                    )
                 case _:  # pragma: no cover
                     raise
         else:
-            return "success", updated_product_model
-
-    def create_product(
-        self, product: Product
-    ) -> AwaitableResult[
-        ProductIdAlreadyExistsError | ProductNameAlreadyExistsError, Product
-    ]:
-        return (
-            Wrapper(product)
-            .map_to_awaitable_result(self._create_product_model)
-            .map_success(ProductModel.to_product)
-            .core
-        )
-
-    def delete_product(self, id_: UUID) -> _AwaitableBaseProductResult:
-        return (
-            Wrapper(id_)
-            .map_to_awaitable(self._delete_product_model)
-            .map(
-                lambda product_model: self._to_base_product_result(
-                    product_model, id_=id_
-                )
-            )
-            .core
-        )
-
-    def read_product_by_id(self, id_: UUID) -> _AwaitableBaseProductResult:
-        return (
-            Wrapper(id_)
-            .map_to_awaitable(self._read_product_model_by_id)
-            .map(
-                lambda product_model: self._to_base_product_result(
-                    product_model, id_=id_
-                )
-            )
-            .core
-        )
-
-    def read_product_by_name(self, name: str) -> _AwaitableBaseProductResult:
-        return (
-            Wrapper(name)
-            .map_to_awaitable(self._read_product_model_by_name)
-            .map(
-                lambda product_model: self._to_base_product_result(
-                    product_model, name=name
-                )
-            )
-            .core
-        )
-
-    def read_products(self) -> AwaitableTuple[Product]:
-        return (
-            AwaitableTupleWrapper(self._read_product_models())
-            .map(ProductModel.to_product)
-            .core
-        )
-
-    def update_product(
-        self, product: Product
-    ) -> AwaitableResult[
-        ProductDoesNotExistError | ProductNameAlreadyExistsError, Product
-    ]:
-        return (
-            Wrapper(product)
-            .map_to_awaitable_result(self._update_product_model)
-            .map_success_to_result(
-                lambda product_model: self._to_base_product_result(
-                    product_model, id_=product.id
-                )
-            )
-            .core
-        )
+            if updated_product_model is None:
+                return "failure", ProductWithIdDoesNotExistError(
+                    id=product.id
+                )  # pragma: no cover
+            return "success", updated_product_model.to_product()

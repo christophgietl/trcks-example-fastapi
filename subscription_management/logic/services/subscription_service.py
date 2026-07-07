@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
-from subscription_management.data_structures.domain.product import (
-    ProductDoesNotExistError,
+from subscription_management.data_structures.domain.product_error import (
     ProductInDeprecatedStatusError,
     ProductInDraftStatusError,
+    ProductWithIdDoesNotExistError,
 )
-from subscription_management.data_structures.domain.subscription import (
-    SubscriptionDoesNotExistError,
-    SubscriptionIdAlreadyExistsError,
+from subscription_management.data_structures.domain.subscription_error import (
+    SubscriptionWithIdAlreadyExistsError,
+    SubscriptionWithIdDoesNotExistError,
 )
 from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
@@ -30,15 +30,15 @@ if TYPE_CHECKING:
         SubscriptionWithProduct,
         SubscriptionWithUserIdAndProductId,
     )
-    from subscription_management.data_structures.domain.user import (
-        UserDoesNotExistError,
+    from subscription_management.data_structures.domain.user_error import (
+        UserWithIdDoesNotExistError,
     )
 
 type _AwaitableDeleteOrReadSubscriptionResult = AwaitableResult[
-    SubscriptionDoesNotExistError, SubscriptionWithProduct
+    SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct
 ]
 type _ProductNotSubscribableError = (
-    ProductDoesNotExistError
+    ProductWithIdDoesNotExistError
     | ProductInDeprecatedStatusError
     | ProductInDraftStatusError
 )
@@ -80,8 +80,8 @@ class SubscriptionService:
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
         _ProductNotSubscribableError
-        | SubscriptionIdAlreadyExistsError
-        | UserDoesNotExistError,
+        | SubscriptionWithIdAlreadyExistsError
+        | UserWithIdDoesNotExistError,
         SubscriptionWithProduct,
     ]:
         return (
@@ -110,8 +110,8 @@ class SubscriptionService:
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
         _ProductNotSubscribableError
-        | SubscriptionDoesNotExistError
-        | UserDoesNotExistError,
+        | SubscriptionWithIdDoesNotExistError
+        | UserWithIdDoesNotExistError,
         SubscriptionWithProduct,
     ]:
         return (

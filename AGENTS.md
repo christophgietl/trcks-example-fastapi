@@ -28,9 +28,9 @@
 
 - Collections of values are tuples (e.g. `tuple[SubscriptionWithProduct, ...]`).
 - Public domain models are frozen, immutable, and final data classes.
-- Domain errors are frozen dataclasses defined alongside their entity
-  (e.g. `ProductDoesNotExistError` in
-  `subscription_management.data_structures.domain.product`).
+- Domain errors are frozen dataclasses defined in a dedicated `*_error`
+  module next to their entity (e.g. `ProductWithIdDoesNotExistError` in
+  `subscription_management.data_structures.domain.product_error`).
   Each error carries the relevant identifier (`id`, `email`, or `name`).
   Errors with more than one possible cause
   (e.g. `ProductStatusUpdateError`) also carry

@@ -35,6 +35,6 @@ The payload of `trcks.Success` values is returned.
 The payload of `trcks.Failure` values is a frozen dataclass defined
    alongside its entity in
    [`subscription_management.data_structures.domain`](subscription_management/data_structures/domain/)
-   (e.g. `ProductDoesNotExistError` in `product.py`).
+   (e.g. `ProductWithIdDoesNotExistError` in `product.py`).
    Routers match on error classes to map each failure to an appropriate
    HTTP exception and raise it.
