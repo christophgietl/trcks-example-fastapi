@@ -11,6 +11,9 @@ dev = [
 ]
 
 [project]
+classifiers = [
+    "Private :: Do Not Upload",
+]
 dependencies = [
     "fastapi[standard-no-fastapi-cloud-cli]==0.138.2",
     "pydantic==2.13.4",
