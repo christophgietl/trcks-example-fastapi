@@ -37,10 +37,7 @@ if TYPE_CHECKING:
         SubscriptionWithUserIdAndProductId,
     )
 
-type _BaseSubscriptionResult = Result[
-    SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct
-]
-type _ProductOrUserDoesNotExist = (
+type _ProductOrUserDoesNotExistError = (
     ProductWithIdDoesNotExistError | UserWithIdDoesNotExistError
 )
 
@@ -60,7 +57,7 @@ class SubscriptionRepository:
 
     def _check_that_product_and_user_exist(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> AwaitableResult[_ProductOrUserDoesNotExist, None]:
+    ) -> AwaitableResult[_ProductOrUserDoesNotExistError, None]:
         return (
             Wrapper(subscription)
             .tap_to_awaitable_result(
@@ -73,7 +70,7 @@ class SubscriptionRepository:
             .core
         )
 
-    async def _create_subscription_model(
+    async def _create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> Result[SubscriptionWithIdAlreadyExistsError, SubscriptionModel]:
         statement = (
@@ -100,30 +97,9 @@ class SubscriptionRepository:
         else:
             return "success", scalars.one()
 
-    async def _read_subscription_models(self) -> tuple[SubscriptionModel, ...]:
-        statement = select(SubscriptionModel).options(self._LOADER_OPTION)
-        scalars = await self._session.scalars(statement=statement)
-        return tuple(scalars.all())
-
-    def create_subscription(
-        self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> AwaitableResult[
-        SubscriptionWithIdAlreadyExistsError | _ProductOrUserDoesNotExist,
-        SubscriptionWithProduct,
-    ]:
-        return (
-            Wrapper(subscription)
-            # Foreign key errors from SQLite do not contain any indication
-            # about which foreign key failed.
-            # Therefore, we read the related entities first
-            # in order to provide more specific `Failure`s:
-            .tap_to_awaitable_result(self._check_that_product_and_user_exist)
-            .map_success_to_awaitable_result(self._create_subscription_model)
-            .map_success(SubscriptionModel.to_subscription_with_product)
-            .core
-        )
-
-    async def delete_subscription(self, id_: UUID) -> _BaseSubscriptionResult:
+    async def _delete_subscription(
+        self, id_: UUID
+    ) -> Result[SubscriptionWithIdDoesNotExistError, SubscriptionModel]:
         statement = (
             delete(SubscriptionModel)
             .where(SubscriptionModel.id == id_)
@@ -133,38 +109,26 @@ class SubscriptionRepository:
         subscription_model = await self._session.scalar(statement=statement)
         if subscription_model is None:
             return "failure", SubscriptionWithIdDoesNotExistError(id=id_)
-        return "success", subscription_model.to_subscription_with_product()
+        return "success", subscription_model
 
-    async def read_subscription_by_id(self, id_: UUID) -> _BaseSubscriptionResult:
+    async def _read_subscription_by_id(
+        self, id_: UUID
+    ) -> Result[SubscriptionWithIdDoesNotExistError, SubscriptionModel]:
         subscription_model = await self._session.get(
             SubscriptionModel, id_, options=[self._LOADER_OPTION]
         )
         if subscription_model is None:
             return "failure", SubscriptionWithIdDoesNotExistError(id=id_)
-        return "success", subscription_model.to_subscription_with_product()
+        return "success", subscription_model
 
-    def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
-        return (
-            AwaitableTupleWrapper(self._read_subscription_models())
-            .map(SubscriptionModel.to_subscription_with_product)
-            .core
-        )
+    async def _read_subscriptions(self) -> tuple[SubscriptionModel, ...]:
+        statement = select(SubscriptionModel).options(self._LOADER_OPTION)
+        scalars = await self._session.scalars(statement=statement)
+        return tuple(scalars.all())
 
-    async def update_subscription(
+    async def _update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> Result[
-        SubscriptionWithIdDoesNotExistError | _ProductOrUserDoesNotExist,
-        SubscriptionWithProduct,
-    ]:
-        # Foreign key errors from SQLite do not contain any indication
-        # about which foreign key failed.
-        # Therefore, we read the related entities first
-        # in order to provide more specific `Failure`s:
-        match await self._check_that_product_and_user_exist(subscription):
-            case ("failure", error):
-                return "failure", error
-            case ("success", None):
-                pass
+    ) -> Result[SubscriptionWithIdDoesNotExistError, SubscriptionModel]:
         statement = (
             update(SubscriptionModel)
             .where(SubscriptionModel.id == subscription.id)
@@ -179,4 +143,67 @@ class SubscriptionRepository:
         subscription_model = await self._session.scalar(statement=statement)
         if subscription_model is None:
             return "failure", SubscriptionWithIdDoesNotExistError(id=subscription.id)
-        return "success", subscription_model.to_subscription_with_product()
+        return "success", subscription_model
+
+    def create_subscription(
+        self, subscription: SubscriptionWithUserIdAndProductId
+    ) -> AwaitableResult[
+        _ProductOrUserDoesNotExistError | SubscriptionWithIdAlreadyExistsError,
+        SubscriptionWithProduct,
+    ]:
+        return (
+            Wrapper(subscription)
+            # Foreign key errors from SQLite do not contain any indication
+            # about which foreign key failed.
+            # Therefore, we read the related entities first
+            # in order to provide more specific `Failure`s:
+            .tap_to_awaitable_result(self._check_that_product_and_user_exist)
+            .map_success_to_awaitable_result(self._create_subscription)
+            .map_success(SubscriptionModel.to_subscription_with_product)
+            .core
+        )
+
+    def delete_subscription(
+        self, id_: UUID
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
+        return (
+            Wrapper(id_)
+            .map_to_awaitable_result(self._delete_subscription)
+            .map_success(SubscriptionModel.to_subscription_with_product)
+            .core
+        )
+
+    def read_subscription_by_id(
+        self, id_: UUID
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
+        return (
+            Wrapper(id_)
+            .map_to_awaitable_result(self._read_subscription_by_id)
+            .map_success(SubscriptionModel.to_subscription_with_product)
+            .core
+        )
+
+    def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
+        return (
+            AwaitableTupleWrapper(self._read_subscriptions())
+            .map(SubscriptionModel.to_subscription_with_product)
+            .core
+        )
+
+    def update_subscription(
+        self, subscription: SubscriptionWithUserIdAndProductId
+    ) -> AwaitableResult[
+        _ProductOrUserDoesNotExistError | SubscriptionWithIdDoesNotExistError,
+        SubscriptionWithProduct,
+    ]:
+        return (
+            Wrapper(subscription)
+            # Foreign key errors from SQLite do not contain any indication
+            # about which foreign key failed.
+            # Therefore, we read the related entities first
+            # in order to provide more specific `Failure`s:
+            .tap_to_awaitable_result(self._check_that_product_and_user_exist)
+            .map_success_to_awaitable_result(self._update_subscription)
+            .map_success(SubscriptionModel.to_subscription_with_product)
+            .core
+        )

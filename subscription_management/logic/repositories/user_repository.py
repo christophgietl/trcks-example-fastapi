@@ -7,9 +7,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
-from subscription_management.data_structures.domain.user import (
-    UserWithSubscriptionsWithProducts,
-)
 from subscription_management.data_structures.domain.user_error import (
     UserWithEmailAlreadyExistsError,
     UserWithEmailDoesNotExistError,
@@ -25,14 +22,13 @@ if TYPE_CHECKING:
     from sqlalchemy.orm.interfaces import LoaderOption
     from trcks import AwaitableResult, AwaitableTuple, Result
 
-    from subscription_management.data_structures.domain.user import User
+    from subscription_management.data_structures.domain.user import (
+        User,
+        UserWithSubscriptionsWithProducts,
+    )
 
-type _UserByIdResult = Result[
-    UserWithIdDoesNotExistError, UserWithSubscriptionsWithProducts
-]
-type _UserByEmailResult = Result[
-    UserWithEmailDoesNotExistError, UserWithSubscriptionsWithProducts
-]
+type _CreateUserError = UserWithEmailAlreadyExistsError | UserWithIdAlreadyExistsError
+type _UpdateUserError = UserWithEmailAlreadyExistsError | UserWithIdDoesNotExistError
 
 type UserRepositoryDep = Annotated[UserRepository, Depends()]
 
@@ -46,12 +42,7 @@ class UserRepository:
 
     _session: AsyncSessionDep
 
-    async def _create_user_model(
-        self, user: User
-    ) -> Result[
-        UserWithEmailAlreadyExistsError | UserWithIdAlreadyExistsError,
-        UserModel,
-    ]:
+    async def _create_user(self, user: User) -> Result[_CreateUserError, UserModel]:
         statement = (
             insert(UserModel)
             .values(id=user.id, email=user.email)
@@ -71,25 +62,9 @@ class UserRepository:
         else:
             return "success", scalars.one()
 
-    async def _read_user_models(self) -> tuple[UserModel, ...]:
-        statement = select(UserModel).options(self._LOADER_OPTION)
-        scalars = await self._session.scalars(statement=statement)
-        return tuple(scalars.all())
-
-    def create_user(
-        self, user: User
-    ) -> AwaitableResult[
-        UserWithEmailAlreadyExistsError | UserWithIdAlreadyExistsError,
-        UserWithSubscriptionsWithProducts,
-    ]:
-        return (
-            Wrapper(user)
-            .map_to_awaitable_result(self._create_user_model)
-            .map_success(UserModel.to_user_with_subscriptions_with_products)
-            .core
-        )
-
-    async def delete_user(self, id_: UUID) -> _UserByIdResult:
+    async def _delete_user(
+        self, id_: UUID
+    ) -> Result[UserWithIdDoesNotExistError, UserModel]:
         statement = (
             delete(UserModel)
             .where(UserModel.id == id_)
@@ -99,9 +74,11 @@ class UserRepository:
         user_model = await self._session.scalar(statement=statement)
         if user_model is None:
             return "failure", UserWithIdDoesNotExistError(id=id_)
-        return "success", user_model.to_user_with_subscriptions_with_products()
+        return "success", user_model
 
-    async def read_user_by_email(self, email: str) -> _UserByEmailResult:
+    async def _read_user_by_email(
+        self, email: str
+    ) -> Result[UserWithEmailDoesNotExistError, UserModel]:
         statement = (
             select(UserModel)
             .where(UserModel.email == email)
@@ -110,9 +87,11 @@ class UserRepository:
         user_model = await self._session.scalar(statement=statement)
         if user_model is None:
             return "failure", UserWithEmailDoesNotExistError(email=email)
-        return "success", user_model.to_user_with_subscriptions_with_products()
+        return "success", user_model
 
-    async def read_user_by_id(self, id_: UUID) -> _UserByIdResult:
+    async def _read_user_by_id(
+        self, id_: UUID
+    ) -> Result[UserWithIdDoesNotExistError, UserModel]:
         user_model = await self._session.get(
             UserModel,
             id_,
@@ -120,21 +99,14 @@ class UserRepository:
         )
         if user_model is None:
             return "failure", UserWithIdDoesNotExistError(id=id_)
-        return "success", user_model.to_user_with_subscriptions_with_products()
+        return "success", user_model
 
-    def read_users(self) -> AwaitableTuple[UserWithSubscriptionsWithProducts]:
-        return (
-            AwaitableTupleWrapper(self._read_user_models())
-            .map(UserModel.to_user_with_subscriptions_with_products)
-            .core
-        )
+    async def _read_users(self) -> tuple[UserModel, ...]:
+        statement = select(UserModel).options(self._LOADER_OPTION)
+        scalars = await self._session.scalars(statement=statement)
+        return tuple(scalars.all())
 
-    async def update_user(
-        self, user: User
-    ) -> Result[
-        UserWithIdDoesNotExistError | UserWithEmailAlreadyExistsError,
-        UserWithSubscriptionsWithProducts,
-    ]:
+    async def _update_user(self, user: User) -> Result[_UpdateUserError, UserModel]:
         statement = (
             update(UserModel)
             .where(UserModel.id == user.id)
@@ -143,7 +115,7 @@ class UserRepository:
             .options(self._LOADER_OPTION)
         )
         try:
-            updated_user_model = await self._session.scalar(statement=statement)
+            user_model = await self._session.scalar(statement=statement)
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: user.email":
@@ -151,9 +123,69 @@ class UserRepository:
                 case _:  # pragma: no cover
                     raise
         else:
-            if updated_user_model is None:
+            if user_model is None:
                 return "failure", UserWithIdDoesNotExistError(id=user.id)
-            return (
-                "success",
-                updated_user_model.to_user_with_subscriptions_with_products(),
-            )
+            return "success", user_model
+
+    def create_user(
+        self, user: User
+    ) -> AwaitableResult[_CreateUserError, UserWithSubscriptionsWithProducts]:
+        return (
+            Wrapper(user)
+            .map_to_awaitable_result(self._create_user)
+            .map_success(UserModel.to_user_with_subscriptions_with_products)
+            .core
+        )
+
+    def delete_user(
+        self, id_: UUID
+    ) -> AwaitableResult[
+        UserWithIdDoesNotExistError, UserWithSubscriptionsWithProducts
+    ]:
+        return (
+            Wrapper(id_)
+            .map_to_awaitable_result(self._delete_user)
+            .map_success(UserModel.to_user_with_subscriptions_with_products)
+            .core
+        )
+
+    def read_user_by_email(
+        self, email: str
+    ) -> AwaitableResult[
+        UserWithEmailDoesNotExistError, UserWithSubscriptionsWithProducts
+    ]:
+        return (
+            Wrapper(email)
+            .map_to_awaitable_result(self._read_user_by_email)
+            .map_success(UserModel.to_user_with_subscriptions_with_products)
+            .core
+        )
+
+    def read_user_by_id(
+        self, id_: UUID
+    ) -> AwaitableResult[
+        UserWithIdDoesNotExistError, UserWithSubscriptionsWithProducts
+    ]:
+        return (
+            Wrapper(id_)
+            .map_to_awaitable_result(self._read_user_by_id)
+            .map_success(UserModel.to_user_with_subscriptions_with_products)
+            .core
+        )
+
+    def read_users(self) -> AwaitableTuple[UserWithSubscriptionsWithProducts]:
+        return (
+            AwaitableTupleWrapper(self._read_users())
+            .map(UserModel.to_user_with_subscriptions_with_products)
+            .core
+        )
+
+    def update_user(
+        self, user: User
+    ) -> AwaitableResult[_UpdateUserError, UserWithSubscriptionsWithProducts]:
+        return (
+            Wrapper(user)
+            .map_to_awaitable_result(self._update_user)
+            .map_success(UserModel.to_user_with_subscriptions_with_products)
+            .core
+        )
