@@ -117,8 +117,6 @@ uv run import-linter lint
   asserting on HTTP responses and, where applicable, database side effects.
 - Data-structure tests exercise ORM models directly
   (e.g. foreign key constraints and cascade deletes).
-- Tests live under `tests/subscription_management/` to mirror the package layout
-  under `src/subscription_management/`.
 - Test coverage must stay at 100% (`--cov-fail-under=100`).
 
 ## Documentation requirements

@@ -16,9 +16,6 @@ No additional setup is required.
 
 ## Project structure
 
-Tests mirror the package layout under
-[`tests/subscription_management`](tests/subscription_management/).
-
 The package
 [`subscription_management.logic.repositories`](src/subscription_management/logic/repositories/)
 contains repository classes with public CRUD methods.
