@@ -159,30 +159,30 @@ async def update_subscription(
         .core
     )
     match result:
-        case ("failure", ProductInDeprecatedStatusError(id=id_)):
+        case ("failure", ProductInDeprecatedStatusError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_} is in deprecated status.",
+                detail=f"Product with ID {id_from_err} is in deprecated status.",
             )
-        case ("failure", ProductInDraftStatusError(id=id_)):
+        case ("failure", ProductInDraftStatusError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_} is in draft status.",
+                detail=f"Product with ID {id_from_err} is in draft status.",
             )
-        case ("failure", ProductWithIdDoesNotExistError(id=id_)):
+        case ("failure", ProductWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Product with ID {id_} does not exist.",
+                detail=f"Product with ID {id_from_err} does not exist.",
             )
-        case ("failure", SubscriptionWithIdDoesNotExistError(id=id_)):
+        case ("failure", SubscriptionWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Subscription with ID {id_} does not exist.",
+                detail=f"Subscription with ID {id_from_err} does not exist.",
             )
-        case ("failure", UserWithIdDoesNotExistError(id=id_)):
+        case ("failure", UserWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_} does not exist.",
+                detail=f"User with ID {id_from_err} does not exist.",
             )
         case ("success", subscription_response):
             return subscription_response
