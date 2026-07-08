@@ -73,7 +73,7 @@ class ProductRepository:
         )
         product_model = await self._session.scalar(statement=statement)
         if product_model is None:
-            return "failure", ProductWithIdDoesNotExistError(id=id_)  # pragma: no cover
+            return "failure", ProductWithIdDoesNotExistError(id=id_)
         return "success", product_model
 
     async def _read_product_by_id(
@@ -123,9 +123,7 @@ class ProductRepository:
                     raise
         else:
             if product_model is None:
-                return "failure", ProductWithIdDoesNotExistError(
-                    id=product.id
-                )  # pragma: no cover
+                return "failure", ProductWithIdDoesNotExistError(id=product.id)
             return "success", product_model
 
     def create_product(
