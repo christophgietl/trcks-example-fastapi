@@ -34,10 +34,10 @@ Please follow these steps to set up your development environment:
 
 ### Adding a new failure reason
 
-To add a new failure reason, create a new frozen dataclass in the module of the
-relevant entity
-(`subscription_management/data_structures/domain/user.py`,
-`.../product.py`, or `.../subscription.py`).
+To add a new failure reason, create a new frozen dataclass in the dedicated
+error module of the relevant entity
+(`subscription_management/data_structures/domain/user_error.py`,
+`.../product_error.py`, or `.../subscription_error.py`).
 Each concrete error class must:
 
 - Use `@final` and `@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)`.
