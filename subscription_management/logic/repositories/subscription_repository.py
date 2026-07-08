@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal, final
+from typing import TYPE_CHECKING, Annotated, ClassVar, Final, final
 
 from fastapi import Depends
 from sqlalchemy import delete, insert, select, update
@@ -7,6 +7,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
+from subscription_management.data_structures.domain.product_error import (
+    ProductWithIdDoesNotExistError,
+)
+from subscription_management.data_structures.domain.subscription_error import (
+    SubscriptionWithIdAlreadyExistsError,
+    SubscriptionWithIdDoesNotExistError,
+)
+from subscription_management.data_structures.domain.user_error import (
+    UserWithIdDoesNotExistError,
+)
 from subscription_management.data_structures.models import SubscriptionModel
 from subscription_management.logic.database import AsyncSessionDep  # noqa: TC001
 from subscription_management.logic.repositories.product_repository import (
@@ -17,7 +27,6 @@ from subscription_management.logic.repositories.user_repository import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from uuid import UUID
 
     from sqlalchemy.orm.interfaces import LoaderOption
@@ -28,13 +37,9 @@ if TYPE_CHECKING:
         SubscriptionWithUserIdAndProductId,
     )
 
-type _AwaitableBaseSubscriptionResult = Awaitable[_BaseSubscriptionResult]
-type _BaseSubscriptionResult = Result[
-    Literal["Subscription does not exist"], SubscriptionWithProduct
-]
-type _ProductOrUserDoesNotExist = Literal[
-    "Product does not exist", "User does not exist"
-]
+type _ProductOrUserDoesNotExistError = (
+    ProductWithIdDoesNotExistError | UserWithIdDoesNotExistError
+)
 
 type SubscriptionRepositoryDep = Annotated[SubscriptionRepository, Depends()]
 
@@ -52,7 +57,7 @@ class SubscriptionRepository:
 
     def _check_that_product_and_user_exist(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> AwaitableResult[_ProductOrUserDoesNotExist, None]:
+    ) -> AwaitableResult[_ProductOrUserDoesNotExistError, None]:
         return (
             Wrapper(subscription)
             .tap_to_awaitable_result(
@@ -65,9 +70,9 @@ class SubscriptionRepository:
             .core
         )
 
-    async def _create_subscription_model(
+    async def _create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> Result[Literal["ID already exists"], SubscriptionModel]:
+    ) -> Result[SubscriptionWithIdAlreadyExistsError, SubscriptionModel]:
         statement = (
             insert(SubscriptionModel)
             .values(
@@ -84,44 +89,46 @@ class SubscriptionRepository:
         except IntegrityError as e:
             match str(e.orig):
                 case "UNIQUE constraint failed: subscription.id":
-                    return "failure", "ID already exists"
+                    return "failure", SubscriptionWithIdAlreadyExistsError(
+                        id=subscription.id
+                    )
                 case _:  # pragma: no cover
                     raise
         else:
             return "success", scalars.one()
 
-    async def _delete_subscription_model(self, id_: UUID) -> SubscriptionModel | None:
+    async def _delete_subscription(
+        self, id_: UUID
+    ) -> Result[SubscriptionWithIdDoesNotExistError, SubscriptionModel]:
         statement = (
             delete(SubscriptionModel)
             .where(SubscriptionModel.id == id_)
             .returning(SubscriptionModel)
             .options(self._LOADER_OPTION)
         )
-        return await self._session.scalar(statement=statement)
+        subscription_model = await self._session.scalar(statement=statement)
+        if subscription_model is None:
+            return "failure", SubscriptionWithIdDoesNotExistError(id=id_)
+        return "success", subscription_model
 
-    async def _read_subscription_model_by_id(
+    async def _read_subscription_by_id(
         self, id_: UUID
-    ) -> SubscriptionModel | None:
-        return await self._session.get(
+    ) -> Result[SubscriptionWithIdDoesNotExistError, SubscriptionModel]:
+        subscription_model = await self._session.get(
             SubscriptionModel, id_, options=[self._LOADER_OPTION]
         )
+        if subscription_model is None:
+            return "failure", SubscriptionWithIdDoesNotExistError(id=id_)
+        return "success", subscription_model
 
-    async def _read_subscription_models(self) -> tuple[SubscriptionModel, ...]:
+    async def _read_subscriptions(self) -> tuple[SubscriptionModel, ...]:
         statement = select(SubscriptionModel).options(self._LOADER_OPTION)
         scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 
-    @staticmethod
-    def _to_base_subscription_result(
-        subscription_model: SubscriptionModel | None,
-    ) -> _BaseSubscriptionResult:
-        if subscription_model is None:
-            return "failure", "Subscription does not exist"
-        return "success", subscription_model.to_subscription_with_product()
-
-    async def _update_subscription_model(
+    async def _update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> SubscriptionModel | None:
+    ) -> Result[SubscriptionWithIdDoesNotExistError, SubscriptionModel]:
         statement = (
             update(SubscriptionModel)
             .where(SubscriptionModel.id == subscription.id)
@@ -133,12 +140,15 @@ class SubscriptionRepository:
             .returning(SubscriptionModel)
             .options(self._LOADER_OPTION)
         )
-        return await self._session.scalar(statement=statement)
+        subscription_model = await self._session.scalar(statement=statement)
+        if subscription_model is None:
+            return "failure", SubscriptionWithIdDoesNotExistError(id=subscription.id)
+        return "success", subscription_model
 
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["ID already exists"] | _ProductOrUserDoesNotExist,
+        _ProductOrUserDoesNotExistError | SubscriptionWithIdAlreadyExistsError,
         SubscriptionWithProduct,
     ]:
         return (
@@ -148,30 +158,34 @@ class SubscriptionRepository:
             # Therefore, we read the related entities first
             # in order to provide more specific `Failure`s:
             .tap_to_awaitable_result(self._check_that_product_and_user_exist)
-            .map_success_to_awaitable_result(self._create_subscription_model)
+            .map_success_to_awaitable_result(self._create_subscription)
             .map_success(SubscriptionModel.to_subscription_with_product)
             .core
         )
 
-    def delete_subscription(self, id_: UUID) -> _AwaitableBaseSubscriptionResult:
+    def delete_subscription(
+        self, id_: UUID
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
         return (
             Wrapper(id_)
-            .map_to_awaitable(self._delete_subscription_model)
-            .map(self._to_base_subscription_result)
+            .map_to_awaitable_result(self._delete_subscription)
+            .map_success(SubscriptionModel.to_subscription_with_product)
             .core
         )
 
-    def read_subscription_by_id(self, id_: UUID) -> _AwaitableBaseSubscriptionResult:
+    def read_subscription_by_id(
+        self, id_: UUID
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
         return (
             Wrapper(id_)
-            .map_to_awaitable(self._read_subscription_model_by_id)
-            .map(self._to_base_subscription_result)
+            .map_to_awaitable_result(self._read_subscription_by_id)
+            .map_success(SubscriptionModel.to_subscription_with_product)
             .core
         )
 
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
         return (
-            AwaitableTupleWrapper(self._read_subscription_models())
+            AwaitableTupleWrapper(self._read_subscriptions())
             .map(SubscriptionModel.to_subscription_with_product)
             .core
         )
@@ -179,7 +193,7 @@ class SubscriptionRepository:
     def update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["Subscription does not exist"] | _ProductOrUserDoesNotExist,
+        _ProductOrUserDoesNotExistError | SubscriptionWithIdDoesNotExistError,
         SubscriptionWithProduct,
     ]:
         return (
@@ -189,7 +203,7 @@ class SubscriptionRepository:
             # Therefore, we read the related entities first
             # in order to provide more specific `Failure`s:
             .tap_to_awaitable_result(self._check_that_product_and_user_exist)
-            .map_success_to_awaitable(self._update_subscription_model)
-            .map_success_to_result(self._to_base_subscription_result)
+            .map_success_to_awaitable_result(self._update_subscription)
+            .map_success(SubscriptionModel.to_subscription_with_product)
             .core
         )

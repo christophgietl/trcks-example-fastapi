@@ -1,9 +1,14 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
+from typing import TYPE_CHECKING, Annotated, assert_never, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
 
+from subscription_management.data_structures.domain.product_error import (
+    ProductInDeprecatedStatusError,
+    ProductInDraftStatusError,
+    ProductWithIdDoesNotExistError,
+)
 from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
 )
@@ -21,18 +26,16 @@ if TYPE_CHECKING:
         SubscriptionWithProduct,
         SubscriptionWithUserIdAndProductId,
     )
+    from subscription_management.data_structures.domain.subscription_error import (
+        SubscriptionWithIdAlreadyExistsError,
+        SubscriptionWithIdDoesNotExistError,
+    )
+    from subscription_management.data_structures.domain.user_error import (
+        UserWithIdDoesNotExistError,
+    )
 
-type _AwaitableDeleteOrReadSubscriptionResult = AwaitableResult[
-    _SubscriptionDoesNotExistLiteral, SubscriptionWithProduct
-]
-type _ProductNotSubscribableLiteral = (
-    Literal["Product does not exist"] | _ProductStatusLiteral
-)
-type _ProductStatusLiteral = Literal[
-    "Product is in draft status", "Product is in deprecated status"
-]
-type _SubscriptionDoesNotExistLiteral = Literal["Subscription does not exist"]
-type _UserDoesNotExistLiteral = Literal["User does not exist"]
+type _ProductNotSubscribableError = _ProductStatusError | ProductWithIdDoesNotExistError
+type _ProductStatusError = ProductInDeprecatedStatusError | ProductInDraftStatusError
 
 type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
@@ -44,20 +47,20 @@ class SubscriptionService:
     _subscription_repository: SubscriptionRepositoryDep
 
     @staticmethod
-    def _check_product_status(product: Product) -> Result[_ProductStatusLiteral, None]:
+    def _check_product_status(product: Product) -> Result[_ProductStatusError, None]:
         match product.status:
             case "draft":
-                return "failure", "Product is in draft status"
+                return "failure", ProductInDraftStatusError(id=product.id)
             case "published":
                 return "success", None
             case "deprecated":
-                return "failure", "Product is in deprecated status"
+                return "failure", ProductInDeprecatedStatusError(id=product.id)
             case _:  # pragma: no cover
                 assert_never(product.status)
 
     def _read_product_and_check_status(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> AwaitableResult[_ProductNotSubscribableLiteral, None]:
+    ) -> AwaitableResult[_ProductNotSubscribableError, None]:
         return (
             Wrapper(subscription.product_id)
             .map_to_awaitable_result(self._product_repository.read_product_by_id)
@@ -68,9 +71,9 @@ class SubscriptionService:
     def create_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        Literal["ID already exists"]
-        | _ProductNotSubscribableLiteral
-        | _UserDoesNotExistLiteral,
+        _ProductNotSubscribableError
+        | SubscriptionWithIdAlreadyExistsError
+        | UserWithIdDoesNotExistError,
         SubscriptionWithProduct,
     ]:
         return (
@@ -84,12 +87,12 @@ class SubscriptionService:
 
     def delete_subscription(
         self, id_: UUID
-    ) -> _AwaitableDeleteOrReadSubscriptionResult:
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
         return self._subscription_repository.delete_subscription(id_)
 
     def read_subscription_by_id(
         self, id_: UUID
-    ) -> _AwaitableDeleteOrReadSubscriptionResult:
+    ) -> AwaitableResult[SubscriptionWithIdDoesNotExistError, SubscriptionWithProduct]:
         return self._subscription_repository.read_subscription_by_id(id_)
 
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
@@ -98,9 +101,9 @@ class SubscriptionService:
     def update_subscription(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[
-        _ProductNotSubscribableLiteral
-        | _SubscriptionDoesNotExistLiteral
-        | _UserDoesNotExistLiteral,
+        _ProductNotSubscribableError
+        | SubscriptionWithIdDoesNotExistError
+        | UserWithIdDoesNotExistError,
         SubscriptionWithProduct,
     ]:
         return (

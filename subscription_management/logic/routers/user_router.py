@@ -4,6 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
+from subscription_management.data_structures.domain.user_error import (
+    UserWithEmailAlreadyExistsError,
+    UserWithEmailDoesNotExistError,
+    UserWithIdAlreadyExistsError,
+    UserWithIdDoesNotExistError,
+)
 from subscription_management.data_structures.schemas.user_schemas import (
     PostUserRequest,
     PutUserRequest,
@@ -37,15 +43,15 @@ async def create_user(
         .core
     )
     match result:
-        case ("failure", "Email already exists"):
+        case ("failure", UserWithEmailAlreadyExistsError(email=email)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email {post_user_request.email} already exists.",
+                detail=f"User with email {email} already exists.",
             )
-        case ("failure", "ID already exists"):
+        case ("failure", UserWithIdAlreadyExistsError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with ID {post_user_request.id} already exists.",
+                detail=f"User with ID {id_} already exists.",
             )
         case ("success", user_response):
             return user_response
@@ -62,10 +68,10 @@ async def create_user(
 async def delete_user(id_: UUID, user_service: UserServiceDep) -> None:
     result = await user_service.delete_user(id_)
     match result:
-        case ("failure", "User does not exist"):
+        case ("failure", UserWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_} does not exist.",
+                detail=f"User with ID {id_from_err} does not exist.",
             )
         case ("success", _):
             return
@@ -86,10 +92,10 @@ async def read_user_by_email(email: str, user_service: UserServiceDep) -> UserRe
         .core
     )
     match result:
-        case ("failure", "User does not exist"):
+        case ("failure", UserWithEmailDoesNotExistError(email=email_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with email {email} does not exist.",
+                detail=f"User with email {email_from_err} does not exist.",
             )
         case ("success", user_response):
             return user_response
@@ -110,10 +116,10 @@ async def read_user_by_id(id_: UUID, user_service: UserServiceDep) -> UserRespon
         .core
     )
     match result:
-        case ("failure", "User does not exist"):
+        case ("failure", UserWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_} does not exist.",
+                detail=f"User with ID {id_from_err} does not exist.",
             )
         case ("success", user_response):
             return user_response
@@ -154,15 +160,15 @@ async def update_user(
         .core
     )
     match result:
-        case ("failure", "User does not exist"):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id_} does not exist.",
-            )
-        case ("failure", "Email already exists"):
+        case ("failure", UserWithEmailAlreadyExistsError(email=email)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email {put_user_request.email} already exists.",
+                detail=f"User with email {email} already exists.",
+            )
+        case ("failure", UserWithIdDoesNotExistError(id=id_from_err)):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {id_from_err} does not exist.",
             )
         case ("success", user_response):
             return user_response

@@ -127,12 +127,13 @@ allowed_importers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only subscription_management.data_structures, subscription_management.logic.repositories, and subscription_management.logic.services can import subscription_management.data_structures.domain"
+name = "Only subscription_management.data_structures, subscription_management.logic.repositories, subscription_management.logic.routers, and subscription_management.logic.services can import subscription_management.data_structures.domain"
 type = "protected"
 protected_modules = ["subscription_management.data_structures.domain"]
 allowed_importers = [
     "subscription_management.data_structures",
     "subscription_management.logic.repositories",
+    "subscription_management.logic.routers",
     "subscription_management.logic.services",
 ]
 

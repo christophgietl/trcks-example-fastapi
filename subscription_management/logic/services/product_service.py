@@ -1,10 +1,20 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, assert_never, final
+from typing import TYPE_CHECKING, Annotated, assert_never, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
 
+from subscription_management.data_structures.domain.product_error import (
+    ProductPayloadUpdateError,
+    ProductStatusDeprecatedError,
+    ProductStatusPublishedError,
+    ProductStatusUpdateError,
+    ProductWithIdAlreadyExistsError,
+    ProductWithIdDoesNotExistError,
+    ProductWithNameAlreadyExistsError,
+    ProductWithNameDoesNotExistError,
+)
 from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
 )
@@ -16,26 +26,16 @@ if TYPE_CHECKING:
 
     from subscription_management.data_structures.domain.product import Product
 
-type _AwaitableReadProductResult = AwaitableResult[_ProductDoesNotExistLiteral, Product]
-type _CannotDeleteProductLiteral = _ProductDoesNotExistLiteral | _ProductStatusLiteral
-type _CannotUpdateProductLiteral = (
-    _CannotUpdateProductPayloadLiteral
-    | _CannotUpdateProductStatusLiteral
-    | _ProductDoesNotExistLiteral
+type _DeleteProductError = (
+    ProductStatusDeprecatedError
+    | ProductStatusPublishedError
+    | ProductWithIdDoesNotExistError
 )
-type _CannotUpdateProductPayloadLiteral = Literal[
-    "Cannot modify non-status attributes of a published product",
-    "Cannot modify non-status attributes of a deprecated product",
-]
-type _CannotUpdateProductStatusLiteral = Literal[
-    "Cannot change status from published to draft",
-    "Cannot change status from deprecated to draft",
-    "Cannot change status from deprecated to published",
-]
-type _ProductDoesNotExistLiteral = Literal["Product does not exist"]
-type _ProductStatusLiteral = Literal[
-    "Product status is published", "Product status is deprecated"
-]
+type _UpdateNotAllowedError = (
+    ProductPayloadUpdateError
+    | ProductStatusUpdateError
+    | ProductWithIdDoesNotExistError
+)
 
 type ProductServiceDep = Annotated[ProductService, Depends()]
 
@@ -54,7 +54,7 @@ class ProductService:
 
     def _add_old_product(
         self, new_product: Product
-    ) -> AwaitableResult[_ProductDoesNotExistLiteral, _ProductUpdate]:
+    ) -> AwaitableResult[ProductWithIdDoesNotExistError, _ProductUpdate]:
         return (
             Wrapper(new_product.id)
             .map_to_awaitable_result(self.read_product_by_id)
@@ -68,7 +68,7 @@ class ProductService:
 
     def _check_by_id_that_product_can_be_deleted(
         self, id_: UUID
-    ) -> AwaitableResult[_CannotDeleteProductLiteral, None]:
+    ) -> AwaitableResult[_DeleteProductError, None]:
         return (
             Wrapper(id_)
             .map_to_awaitable_result(self.read_product_by_id)
@@ -79,7 +79,7 @@ class ProductService:
     @staticmethod
     def _check_that_payload_update_is_allowed(
         product_update: _ProductUpdate,
-    ) -> Result[_CannotUpdateProductPayloadLiteral, None]:
+    ) -> Result[ProductPayloadUpdateError, None]:
         payload_is_identical = product_update.before == dataclasses.replace(
             product_update.after, status=product_update.before.status
         )
@@ -89,47 +89,64 @@ class ProductService:
             case False, "draft":
                 return "success", None
             case False, "published":
-                return (
-                    "failure",
-                    "Cannot modify non-status attributes of a published product",
+                reason = "Cannot modify non-status attributes of a published product"
+                error = ProductPayloadUpdateError(
+                    reason=reason, status=product_update.before.status
                 )
+                return "failure", error
             case False, "deprecated":
-                return (
-                    "failure",
-                    "Cannot modify non-status attributes of a deprecated product",
+                reason = "Cannot modify non-status attributes of a deprecated product"
+                error = ProductPayloadUpdateError(
+                    reason=reason, status=product_update.before.status
                 )
+                return "failure", error
             case _ as pair:  # pragma: no cover
                 assert_never(pair)
 
     @staticmethod
     def _check_that_product_can_be_deleted(
         product: Product,
-    ) -> Result[_ProductStatusLiteral, None]:
+    ) -> Result[ProductStatusDeprecatedError | ProductStatusPublishedError, None]:
         match product.status:
             case "draft":
                 return "success", None
             case "published":
-                return "failure", "Product status is published"
+                return "failure", ProductStatusPublishedError(id=product.id)
             case "deprecated":
-                return "failure", "Product status is deprecated"
+                return "failure", ProductStatusDeprecatedError(id=product.id)
             case _:  # pragma: no cover
                 assert_never(product.status)
 
     @staticmethod
     def _check_that_status_update_is_allowed(
         product_update: _ProductUpdate,
-    ) -> Result[_CannotUpdateProductStatusLiteral, None]:
+    ) -> Result[ProductStatusUpdateError, None]:
         match product_update.before.status, product_update.after.status:
             case "draft", "draft" | "published" | "deprecated":
                 return "success", None
             case "published", "draft":
-                return "failure", "Cannot change status from published to draft"
+                error = ProductStatusUpdateError(
+                    reason="Cannot change status from published to draft",
+                    before=product_update.before.status,
+                    after=product_update.after.status,
+                )
+                return "failure", error
             case "published", "published" | "deprecated":
                 return "success", None
             case "deprecated", "draft":
-                return "failure", "Cannot change status from deprecated to draft"
+                error = ProductStatusUpdateError(
+                    reason="Cannot change status from deprecated to draft",
+                    before=product_update.before.status,
+                    after=product_update.after.status,
+                )
+                return "failure", error
             case "deprecated", "published":
-                return "failure", "Cannot change status from deprecated to published"
+                error = ProductStatusUpdateError(
+                    reason="Cannot change status from deprecated to published",
+                    before=product_update.before.status,
+                    after=product_update.after.status,
+                )
+                return "failure", error
             case "deprecated", "deprecated":
                 return "success", None
             case _ as pair:  # pragma: no cover
@@ -137,7 +154,7 @@ class ProductService:
 
     def _check_that_update_is_allowed(
         self, new_product: Product
-    ) -> AwaitableResult[_CannotUpdateProductLiteral, None]:
+    ) -> AwaitableResult[_UpdateNotAllowedError, None]:
         return (
             Wrapper(new_product)
             .map_to_awaitable_result(self._add_old_product)
@@ -149,12 +166,14 @@ class ProductService:
 
     def create_product(
         self, product: Product
-    ) -> AwaitableResult[Literal["Name already exists", "ID already exists"], Product]:
+    ) -> AwaitableResult[
+        ProductWithIdAlreadyExistsError | ProductWithNameAlreadyExistsError, Product
+    ]:
         return self._product_repository.create_product(product)
 
     def delete_product(
         self, id_: UUID
-    ) -> AwaitableResult[_CannotDeleteProductLiteral, Product]:
+    ) -> AwaitableResult[_DeleteProductError, Product]:
         return (
             Wrapper(id_)
             .tap_to_awaitable_result(self._check_by_id_that_product_can_be_deleted)
@@ -162,10 +181,14 @@ class ProductService:
             .core
         )
 
-    def read_product_by_id(self, id_: UUID) -> _AwaitableReadProductResult:
+    def read_product_by_id(
+        self, id_: UUID
+    ) -> AwaitableResult[ProductWithIdDoesNotExistError, Product]:
         return self._product_repository.read_product_by_id(id_)
 
-    def read_product_by_name(self, name: str) -> _AwaitableReadProductResult:
+    def read_product_by_name(
+        self, name: str
+    ) -> AwaitableResult[ProductWithNameDoesNotExistError, Product]:
         return self._product_repository.read_product_by_name(name)
 
     def read_products(self) -> AwaitableTuple[Product]:
@@ -174,7 +197,7 @@ class ProductService:
     def update_product(
         self, product: Product
     ) -> AwaitableResult[
-        _CannotUpdateProductLiteral | Literal["Name already exists"],
+        _UpdateNotAllowedError | ProductWithNameAlreadyExistsError,
         Product,
     ]:
         return (

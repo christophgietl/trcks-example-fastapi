@@ -4,6 +4,18 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
+from subscription_management.data_structures.domain.product_error import (
+    ProductInDeprecatedStatusError,
+    ProductInDraftStatusError,
+    ProductWithIdDoesNotExistError,
+)
+from subscription_management.data_structures.domain.subscription_error import (
+    SubscriptionWithIdAlreadyExistsError,
+    SubscriptionWithIdDoesNotExistError,
+)
+from subscription_management.data_structures.domain.user_error import (
+    UserWithIdDoesNotExistError,
+)
 from subscription_management.data_structures.schemas.subscription_schemas import (
     PostSubscriptionRequest,
     PutSubscriptionRequest,
@@ -43,40 +55,30 @@ async def create_subscription(
         .core
     )
     match result:
-        case ("failure", "ID already exists"):
+        case ("failure", ProductInDeprecatedStatusError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Subscription with ID {
-                    post_subscription_request.id
-                } already exists.",
+                detail=f"Product with ID {id_} is in deprecated status.",
             )
-        case ("failure", "User does not exist"):
+        case ("failure", ProductInDraftStatusError(id=id_)):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Product with ID {id_} is in draft status.",
+            )
+        case ("failure", ProductWithIdDoesNotExistError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {
-                    post_subscription_request.user_id
-                } does not exist.",
+                detail=f"Product with ID {id_} does not exist.",
             )
-        case ("failure", "Product does not exist"):
+        case ("failure", SubscriptionWithIdAlreadyExistsError(id=id_)):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Subscription with ID {id_} already exists.",
+            )
+        case ("failure", UserWithIdDoesNotExistError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Product with ID {
-                    post_subscription_request.product_id
-                } does not exist.",
-            )
-        case ("failure", "Product is in draft status"):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {
-                    post_subscription_request.product_id
-                } is in draft status.",
-            )
-        case ("failure", "Product is in deprecated status"):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {
-                    post_subscription_request.product_id
-                } is in deprecated status.",
+                detail=f"User with ID {id_} does not exist.",
             )
         case ("success", subscription_response):
             return subscription_response
@@ -94,7 +96,7 @@ async def delete_subscription(
 ) -> None:
     result = await subscription_service.delete_subscription(id_)
     match result:
-        case ("failure", "Subscription does not exist"):
+        case ("failure", SubscriptionWithIdDoesNotExistError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Subscription with ID {id_} does not exist.",
@@ -111,7 +113,7 @@ async def read_subscription_by_id(
 ) -> SubscriptionResponse:
     result = await subscription_service.read_subscription_by_id(id_)
     match result:
-        case ("failure", "Subscription does not exist"):
+        case ("failure", SubscriptionWithIdDoesNotExistError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Subscription with ID {id_} does not exist.",
@@ -157,39 +159,30 @@ async def update_subscription(
         .core
     )
     match result:
-        case ("failure", "Subscription does not exist"):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Subscription with ID {id_} does not exist.",
-            )
-        case ("failure", "User does not exist"):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=(
-                    f"User with ID {put_subscription_request.user_id} does not exist."
-                ),
-            )
-        case ("failure", "Product does not exist"):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=(
-                    f"Product with ID {put_subscription_request.product_id} "
-                    "does not exist."
-                ),
-            )
-        case ("failure", "Product is in draft status"):
+        case ("failure", ProductInDeprecatedStatusError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {
-                    put_subscription_request.product_id
-                } is in draft status.",
+                detail=f"Product with ID {id_from_err} is in deprecated status.",
             )
-        case ("failure", "Product is in deprecated status"):
+        case ("failure", ProductInDraftStatusError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {
-                    put_subscription_request.product_id
-                } is in deprecated status.",
+                detail=f"Product with ID {id_from_err} is in draft status.",
+            )
+        case ("failure", ProductWithIdDoesNotExistError(id=id_from_err)):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Product with ID {id_from_err} does not exist.",
+            )
+        case ("failure", SubscriptionWithIdDoesNotExistError(id=id_from_err)):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Subscription with ID {id_from_err} does not exist.",
+            )
+        case ("failure", UserWithIdDoesNotExistError(id=id_from_err)):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {id_from_err} does not exist.",
             )
         case ("success", subscription_response):
             return subscription_response
