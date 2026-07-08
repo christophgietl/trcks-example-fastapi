@@ -779,7 +779,8 @@ wheels = [
 
 [[package]]
 name = "subscription-management"
-source = { virtual = "." }
+version = "0"
+source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },
     { name = "pydantic" },
