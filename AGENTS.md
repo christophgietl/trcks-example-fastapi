@@ -32,11 +32,6 @@
   module next to their entity (e.g. `ProductWithIdDoesNotExistError` in
   `subscription_management.data_structures.domain.product_error`).
   Each error carries the relevant identifier (`id`, `email`, or `name`).
-  Errors with more than one possible cause
-  (e.g. `ProductStatusUpdateError`) also carry
-  a `reason: Literal[...]` field.
-  Repositories and services return errors as failure payloads.
-  Routers match on error classes to map failures to HTTP exceptions.
 - ORM models use SQLAlchemy's declarative dataclass mapping style
   (i.e. `DeclarativeBase` combined with `MappedAsDataclass`).
 - ORM models and request schemas provide `to_*` methods
@@ -57,9 +52,8 @@
 - Routers await service methods. They handle awaited `trcks.Result` as follows:
   - `trcks.Success` values are returned with
     an appropriate HTTP success status code.
-  - `trcks.Failure` payloads are matched on **error classes**
-    from `subscription_management.data_structures.domain`
-    and mapped to an appropriate HTTP exception, which is then raised.
+  - `trcks.Failure` payloads are mapped to an appropriate HTTP exception,
+    which is then raised.
 
 ### Import contracts
 
