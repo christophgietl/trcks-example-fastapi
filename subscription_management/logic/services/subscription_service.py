@@ -34,8 +34,8 @@ if TYPE_CHECKING:
         UserWithIdDoesNotExistError,
     )
 
-type _ProductStatusError = ProductInDeprecatedStatusError | ProductInDraftStatusError
 type _ProductNotSubscribableError = _ProductStatusError | ProductWithIdDoesNotExistError
+type _ProductStatusError = ProductInDeprecatedStatusError | ProductInDraftStatusError
 
 type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
