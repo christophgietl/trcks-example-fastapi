@@ -1,3 +1,7 @@
+[build-system]
+requires = ["uv_build>=0.11,<0.12"]
+build-backend = "uv_build"
+
 [dependency-groups]
 dev = [
     "anyio==4.14.1", # provides pytest plugin for testing async code
@@ -20,9 +24,9 @@ dependencies = [
     "sqlalchemy[aiosqlite]==2.0.51",
     "trcks==0.6.1",
 ]
-dynamic = ["version"]
 name = "subscription-management"
 requires-python = "==3.14.*"
+version = "0.1.0"
 
 [tool.fastapi]
 entrypoint = "subscription_management.logic.main:app"
@@ -201,7 +205,9 @@ typeCheckingMode = "strict"
 addopts = "--cov=subscription_management --cov-fail-under=100 --cov-report=term-missing --import-mode=importlib"
 anyio_mode = "auto"
 filterwarnings = ["error"]
-pythonpath = ["."]
+
+[tool.ruff]
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 ignore = [
@@ -230,5 +236,5 @@ convention = "google"
 
 [tool.uv]
 add-bounds = "exact"
-package = false
+package = true
 required-version = "~=0.11.0"

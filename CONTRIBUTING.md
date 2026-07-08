@@ -22,6 +22,8 @@ Please follow these steps to set up your development environment:
 1. Install `uv` if you have not already done so.
 2. Clone the `trcks-example-fastapi` repository and `cd` into it.
 3. Install (development) dependencies by running `uv sync`.
+   The project uses a `src` layout and the `uv_build` backend, so `uv sync`
+   installs the package in editable mode.
 4. Set up the Git hooks by executing `uv run pre-commit install`.
    The output should look something like this:
 
