@@ -28,6 +28,14 @@
 
 - Collections of values are tuples (e.g. `tuple[SubscriptionWithProduct, ...]`).
 - Public domain models are frozen, immutable, and final data classes.
+- Domain errors are frozen dataclasses defined in dedicated `*_error.py` modules
+  under `subscription_management.data_structures.domain`
+  (e.g. `product_error.py`, `user_error.py`, and `subscription_error.py`).
+  Each error carries the relevant identifier field
+  (`id: UUID`, `email: str`, or `name: str`).
+  Errors that can occur for more than one reason also carry
+  a `reason: Literal[...]` field.
+  Single-cause errors omit `reason` entirely.
 - ORM models use SQLAlchemy's declarative dataclass mapping style
   (i.e. `DeclarativeBase` combined with `MappedAsDataclass`).
 - ORM models and request schemas provide `to_*` methods
@@ -48,8 +56,9 @@
 - Routers await service methods. They handle awaited `trcks.Result` as follows:
   - `trcks.Success` values are returned with
     an appropriate HTTP success status code.
-  - `trcks.Failure` payloads are mapped to an appropriate HTTP exception,
-    which is then raised.
+  - `trcks.Failure` payloads are domain error dataclasses.
+    Routers pattern-match on error classes and raise an appropriate HTTP exception
+    for each case.
 
 ### Import contracts
 

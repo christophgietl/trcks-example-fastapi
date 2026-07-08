@@ -34,3 +34,23 @@ Please follow these steps to set up your development environment:
 
 Check [the section "Development tools" in `AGENTS.md`](AGENTS.md#development-tools)
 for instructions on how to use the development tools.
+
+## Conventions
+
+### Adding a new failure reason
+
+To add a new failure reason, create a new frozen dataclass in the relevant
+domain error module
+(`subscription_management/data_structures/domain/user_error.py`,
+`.../product_error.py`, or `.../subscription_error.py`).
+Each concrete error class must:
+
+- Use `@final` and `@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)`.
+- Carry the relevant identifier as a field
+  (e.g. `id: UUID`, `email: str`, or `name: str`).
+- Declare a `reason` field typed as a narrowed `Literal[...]`
+  only if the error can occur for more than one reason.
+  Omit the `reason` field entirely if there is only one reason.
+
+Return the error as a failure payload in the repository or service,
+and add a matching `case` arm in the router.
