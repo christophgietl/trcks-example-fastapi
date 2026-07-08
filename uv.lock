@@ -779,7 +779,7 @@ wheels = [
 
 [[package]]
 name = "subscription-management"
-version = "0.1.0"
+version = "0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },

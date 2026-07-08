@@ -11,8 +11,6 @@
 ## Project decisions
 
 - The example domain _subscription management_ illustrates ROP in FastAPI.
-- The project uses a `src` layout and the `uv_build` backend so the package is
-  installed and importable from the editable environment managed by `uv`.
 
 ## Architecture decisions
 

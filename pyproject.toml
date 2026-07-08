@@ -26,7 +26,7 @@ dependencies = [
 ]
 name = "subscription-management"
 requires-python = "==3.14.*"
-version = "0.1.0"
+version = "0"
 
 [tool.fastapi]
 entrypoint = "subscription_management.logic.main:app"
@@ -236,5 +236,4 @@ convention = "google"
 
 [tool.uv]
 add-bounds = "exact"
-package = true
 required-version = "~=0.11.0"
