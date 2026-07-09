@@ -31,8 +31,8 @@ async def _get_subscriptions_from_database(
     statement = select(
         SubscriptionModel.id,
         SubscriptionModel.is_active,
-        SubscriptionModel.product_id,
         SubscriptionModel.user_id,
+        SubscriptionModel.product_id,
     )
     result = await session.execute(statement)
     return result.all()
@@ -54,15 +54,6 @@ def _to_product_dict(product: ProductTuple) -> dict[str, str]:
     }
 
 
-def _to_product_model(product: ProductTuple) -> ProductModel:
-    return ProductModel(
-        id=product[0],
-        monthly_fee_in_euros=product[1],
-        name=product[2],
-        status=product[3],
-    )
-
-
 def _to_subscription_dict(
     subscription: SubscriptionTuple, product: ProductTuple
 ) -> SubscriptionDict:
@@ -73,44 +64,31 @@ def _to_subscription_dict(
     }
 
 
-def _to_subscription_model(subscription: SubscriptionTuple) -> SubscriptionModel:
-    return SubscriptionModel(
-        id=subscription[0],
-        is_active=subscription[1],
-        product_id=subscription[2],
-        user_id=subscription[3],
-    )
-
-
-def _to_user_model(user: UserTuple) -> UserModel:
-    return UserModel(id=user[0], email=user[1])
-
-
 async def test_create_subscription_adds_subscription_to_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
-    subscription1: SubscriptionTuple = (uuid7(), True, product[0], user1[0])
+    subscription1: SubscriptionTuple = (uuid7(), True, user1[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user1),
-                _to_user_model(user2),
-                _to_subscription_model(subscription1),
+                ProductModel(*product),
+                UserModel(*user1),
+                UserModel(*user2),
+                SubscriptionModel(*subscription1),
             ]
         )
 
-    new_subscription: SubscriptionTuple = (uuid7(), True, product[0], user2[0])
+    new_subscription: SubscriptionTuple = (uuid7(), True, user2[0], product[0])
     response = await client.post(
         "/subscriptions/",
         json={
             "id": str(new_subscription[0]),
             "is_active": new_subscription[1],
-            "user_id": str(new_subscription[3]),
-            "product_id": str(new_subscription[2]),
+            "user_id": str(new_subscription[2]),
+            "product_id": str(new_subscription[3]),
         },
     )
 
@@ -133,7 +111,7 @@ async def test_create_subscription_for_non_published_product_fails(
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", product_status)
     user: UserTuple = (uuid7(), "user@example.com")
     async with session.begin():
-        session.add_all([_to_product_model(product), _to_user_model(user)])
+        session.add_all([ProductModel(*product), UserModel(*user)])
 
     subscription_id = uuid7()
     response = await client.post(
@@ -161,14 +139,14 @@ async def test_create_subscription_with_existing_id_fails(
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user1[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user1[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user1),
-                _to_user_model(user2),
-                _to_subscription_model(subscription),
+                ProductModel(*product),
+                UserModel(*user1),
+                UserModel(*user2),
+                SubscriptionModel(*subscription),
             ]
         )
 
@@ -198,7 +176,7 @@ async def test_create_subscription_with_nonexistent_user_fails(
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
     async with session.begin():
-        session.add_all([_to_product_model(product), _to_user_model(user)])
+        session.add_all([ProductModel(*product), UserModel(*user)])
 
     subscription_id = uuid7()
     nonexistent_user_id = uuid7()
@@ -227,7 +205,7 @@ async def test_create_subscription_with_nonexistent_product_fails(
 ) -> None:
     user: UserTuple = (uuid7(), "user@example.com")
     async with session.begin():
-        session.add(_to_user_model(user))
+        session.add(UserModel(*user))
 
     subscription_id = uuid7()
     nonexistent_product_id = uuid7()
@@ -257,16 +235,16 @@ async def test_delete_subscription_removes_subscription_from_database(
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
-    subscription1: SubscriptionTuple = (uuid7(), True, product[0], user1[0])
-    subscription2: SubscriptionTuple = (uuid7(), False, product[0], user2[0])
+    subscription1: SubscriptionTuple = (uuid7(), True, user1[0], product[0])
+    subscription2: SubscriptionTuple = (uuid7(), False, user2[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user1),
-                _to_user_model(user2),
-                _to_subscription_model(subscription1),
-                _to_subscription_model(subscription2),
+                ProductModel(*product),
+                UserModel(*user1),
+                UserModel(*user2),
+                SubscriptionModel(*subscription1),
+                SubscriptionModel(*subscription2),
             ]
         )
 
@@ -285,13 +263,13 @@ async def test_delete_subscription_with_nonexistent_id_fails(
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user),
-                _to_subscription_model(subscription),
+                ProductModel(*product),
+                UserModel(*user),
+                SubscriptionModel(*subscription),
             ]
         )
 
@@ -315,17 +293,17 @@ async def test_read_subscriptions_returns_all_subscriptions(
     product2: ProductTuple = (uuid7(), Decimal("19.99"), "Product 2", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
-    subscription1: SubscriptionTuple = (uuid7(), True, product1[0], user1[0])
-    subscription2: SubscriptionTuple = (uuid7(), False, product2[0], user2[0])
+    subscription1: SubscriptionTuple = (uuid7(), True, user1[0], product1[0])
+    subscription2: SubscriptionTuple = (uuid7(), False, user2[0], product2[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product1),
-                _to_product_model(product2),
-                _to_user_model(user1),
-                _to_user_model(user2),
-                _to_subscription_model(subscription1),
-                _to_subscription_model(subscription2),
+                ProductModel(*product1),
+                ProductModel(*product2),
+                UserModel(*user1),
+                UserModel(*user2),
+                SubscriptionModel(*subscription1),
+                SubscriptionModel(*subscription2),
             ]
         )
 
@@ -353,13 +331,13 @@ async def test_read_subscription_by_id_returns_subscription(
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user),
-                _to_subscription_model(subscription),
+                ProductModel(*product),
+                UserModel(*user),
+                SubscriptionModel(*subscription),
             ]
         )
 
@@ -389,15 +367,15 @@ async def test_update_subscription_updates_subscription_in_database(
     product2: ProductTuple = (uuid7(), Decimal("19.99"), "Product 2", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product1[0], user1[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user1[0], product1[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product1),
-                _to_product_model(product2),
-                _to_user_model(user1),
-                _to_user_model(user2),
-                _to_subscription_model(subscription),
+                ProductModel(*product1),
+                ProductModel(*product2),
+                UserModel(*user1),
+                UserModel(*user2),
+                SubscriptionModel(*subscription),
             ]
         )
 
@@ -414,8 +392,8 @@ async def test_update_subscription_updates_subscription_in_database(
     updated_subscription: SubscriptionTuple = (
         subscription[0],
         False,
-        product2[0],
         user2[0],
+        product2[0],
     )
     assert response.json() == _to_subscription_dict(updated_subscription, product2)
 
@@ -446,16 +424,16 @@ async def test_update_subscription_to_non_published_product_fails(
     subscription: SubscriptionTuple = (
         uuid7(),
         True,
-        published_product[0],
         user[0],
+        published_product[0],
     )
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(published_product),
-                _to_product_model(non_published_product),
-                _to_user_model(user),
-                _to_subscription_model(subscription),
+                ProductModel(*published_product),
+                ProductModel(*non_published_product),
+                UserModel(*user),
+                SubscriptionModel(*subscription),
             ]
         )
 
@@ -485,13 +463,13 @@ async def test_update_subscription_with_nonexistent_id_fails(
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user),
-                _to_subscription_model(subscription),
+                ProductModel(*product),
+                UserModel(*user),
+                SubscriptionModel(*subscription),
             ]
         )
 
@@ -520,13 +498,13 @@ async def test_update_subscription_with_nonexistent_user_fails(
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user),
-                _to_subscription_model(subscription),
+                ProductModel(*product),
+                UserModel(*user),
+                SubscriptionModel(*subscription),
             ]
         )
 
@@ -555,13 +533,13 @@ async def test_update_subscription_with_nonexistent_product_fails(
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
     async with session.begin():
         session.add_all(
             [
-                _to_product_model(product),
-                _to_user_model(user),
-                _to_subscription_model(subscription),
+                ProductModel(*product),
+                UserModel(*user),
+                SubscriptionModel(*subscription),
             ]
         )
 

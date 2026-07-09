@@ -37,11 +37,12 @@ async def _get_products_from_database(
 
 async def _get_subscriptions_from_database(
     session: AsyncSession,
-) -> Sequence[Row[tuple[UUID, UUID, UUID]]]:
+) -> Sequence[Row[tuple[UUID, bool, UUID, UUID]]]:
     statement = select(
         SubscriptionModel.id,
-        SubscriptionModel.product_id,
+        SubscriptionModel.is_active,
         SubscriptionModel.user_id,
+        SubscriptionModel.product_id,
     )
     result = await session.execute(statement)
     return result.all()
@@ -71,15 +72,6 @@ def _to_product_dict(product: ProductTuple) -> dict[str, str]:
     }
 
 
-def _to_product_model(product: ProductTuple) -> ProductModel:
-    return ProductModel(
-        id=product[0],
-        monthly_fee_in_euros=product[1],
-        name=product[2],
-        status=product[3],
-    )
-
-
 def _to_subscription_dict(
     subscription: SubscriptionTuple, product: ProductTuple
 ) -> dict[str, object]:
@@ -90,15 +82,6 @@ def _to_subscription_dict(
     }
 
 
-def _to_subscription_model(subscription: SubscriptionTuple) -> SubscriptionModel:
-    return SubscriptionModel(
-        id=subscription[0],
-        is_active=subscription[1],
-        product_id=subscription[2],
-        user_id=subscription[3],
-    )
-
-
 def _to_user_dict(user: UserTuple, subscriptions: list[dict[str, object]]) -> UserDict:
     return {
         "id": str(user[0]),
@@ -107,15 +90,11 @@ def _to_user_dict(user: UserTuple, subscriptions: list[dict[str, object]]) -> Us
     }
 
 
-def _to_user_model(user: UserTuple) -> UserModel:
-    return UserModel(id=user[0], email=user[1])
-
-
 async def test_create_user_adds_additional_user_to_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     users: UserTuples = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
-    user_models = tuple(_to_user_model(user) for user in users)
+    user_models = tuple(UserModel(*user) for user in users)
     async with session.begin():
         session.add_all(user_models)
 
@@ -136,7 +115,7 @@ async def test_create_user_with_existing_email_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    user_model = _to_user_model(user)
+    user_model = UserModel(*user)
     async with session.begin():
         session.add(user_model)
 
@@ -154,7 +133,7 @@ async def test_create_user_with_existing_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    user_model = _to_user_model(user)
+    user_model = UserModel(*user)
     async with session.begin():
         session.add(user_model)
 
@@ -174,7 +153,7 @@ async def test_delete_user_removes_user_from_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     users: UserTuples = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
-    user_models = tuple(_to_user_model(user) for user in users)
+    user_models = tuple(UserModel(*user) for user in users)
     async with session.begin():
         session.add_all(user_models)
 
@@ -192,7 +171,7 @@ async def test_delete_user_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    user_model = _to_user_model(user)
+    user_model = UserModel(*user)
     async with session.begin():
         session.add(user_model)
 
@@ -221,13 +200,13 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
         (uuid7(), "user2@example.com"),
     )
     subscriptions: SubscriptionTuples = (
-        (uuid7(), True, products[0][0], users[0][0]),
-        (uuid7(), True, products[1][0], users[1][0]),
+        (uuid7(), True, users[0][0], products[0][0]),
+        (uuid7(), True, users[1][0], products[1][0]),
     )
     models = (
-        *(_to_product_model(product) for product in products),
-        *(_to_user_model(user) for user in users),
-        *(_to_subscription_model(subscription) for subscription in subscriptions),
+        *(ProductModel(*product) for product in products),
+        *(UserModel(*user) for user in users),
+        *(SubscriptionModel(*subscription) for subscription in subscriptions),
     )
     async with session.begin():
         session.add_all(models)
@@ -246,7 +225,12 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
         product[0] for product in products
     }
     assert subscriptions_in_database == [
-        (subscriptions[1][0], subscriptions[1][2], subscriptions[1][3])
+        (
+            subscriptions[1][0],
+            subscriptions[1][1],
+            subscriptions[1][2],
+            subscriptions[1][3],
+        )
     ]
     assert users_in_database == [users[1]]
 
@@ -256,11 +240,11 @@ async def test_read_user_by_email_returns_user(
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
     async with session.begin():
-        session.add(_to_product_model(product))
-        session.add(_to_user_model(user))
-        session.add(_to_subscription_model(subscription))
+        session.add(ProductModel(*product))
+        session.add(UserModel(*user))
+        session.add(SubscriptionModel(*subscription))
 
     response = await client.get(f"/users/by-email/{user[1]}")
 
@@ -274,7 +258,7 @@ async def test_read_user_by_email_with_nonexistent_email_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    user_model = _to_user_model(user)
+    user_model = UserModel(*user)
     async with session.begin():
         session.add(user_model)
 
@@ -292,11 +276,11 @@ async def test_read_user_by_id_returns_user(
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], user[0])
+    subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
     async with session.begin():
-        session.add(_to_product_model(product))
-        session.add(_to_user_model(user))
-        session.add(_to_subscription_model(subscription))
+        session.add(ProductModel(*product))
+        session.add(UserModel(*user))
+        session.add(SubscriptionModel(*subscription))
 
     response = await client.get(f"/users/{user[0]}")
 
@@ -310,7 +294,7 @@ async def test_read_user_by_id_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    user_model = _to_user_model(user)
+    user_model = UserModel(*user)
     async with session.begin():
         session.add(user_model)
 
@@ -331,12 +315,12 @@ async def test_read_users_returns_all_users(
         (uuid7(), "user1@example.com"),
         (uuid7(), "user2@example.com"),
     )
-    subscription: SubscriptionTuple = (uuid7(), True, product[0], users[0][0])
-    user_models = tuple(_to_user_model(user) for user in users)
+    subscription: SubscriptionTuple = (uuid7(), True, users[0][0], product[0])
+    user_models = tuple(UserModel(*user) for user in users)
     async with session.begin():
-        session.add(_to_product_model(product))
+        session.add(ProductModel(*product))
         session.add_all(user_models)
-        session.add(_to_subscription_model(subscription))
+        session.add(SubscriptionModel(*subscription))
 
     response = await client.get("/users/")
 
@@ -362,7 +346,7 @@ async def test_update_user_modifies_user_in_database(
         (uuid7(), "original@example.com"),
         (uuid7(), "other@example.com"),
     )
-    user_models = tuple(_to_user_model(user) for user in users)
+    user_models = tuple(UserModel(*user) for user in users)
     async with session.begin():
         session.add_all(user_models)
 
@@ -381,7 +365,7 @@ async def test_update_user_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    user_model = _to_user_model(user)
+    user_model = UserModel(*user)
     async with session.begin():
         session.add(user_model)
 
@@ -407,7 +391,7 @@ async def test_update_user_with_existing_email_fails(
         (uuid7(), "original@example.com"),
         (uuid7(), "existing@example.com"),
     )
-    user_models = tuple(_to_user_model(user) for user in users)
+    user_models = tuple(UserModel(*user) for user in users)
     async with session.begin():
         session.add_all(user_models)
 
