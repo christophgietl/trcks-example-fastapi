@@ -49,15 +49,6 @@ def _to_dict(product: ProductTuple) -> ProductDict:
     }
 
 
-def _to_product_model(product: ProductTuple) -> ProductModel:
-    return ProductModel(
-        id=product[0],
-        monthly_fee_in_euros=product[1],
-        name=product[2],
-        status=product[3],
-    )
-
-
 async def test_create_product_adds_additional_product_to_database(
     client: AsyncClient, session: AsyncSession
 ) -> None:
@@ -65,7 +56,7 @@ async def test_create_product_adds_additional_product_to_database(
         (uuid7(), Decimal("6.99"), "Product 1", "published"),
         (uuid7(), Decimal("3.25"), "Product 2", "published"),
     )
-    product_models = tuple(_to_product_model(product) for product in products)
+    product_models = tuple(ProductModel(*product) for product in products)
     async with session.begin():
         session.add_all(product_models)
 
@@ -95,7 +86,7 @@ async def test_create_product_with_existing_id_fails(
         "Test Product",
         "published",
     )
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -124,7 +115,7 @@ async def test_create_product_with_existing_name_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("5.99"), "Test Product", "published")
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -155,7 +146,7 @@ async def test_delete_product_removes_draft_product_from_database(
         (uuid7(), Decimal("0.89"), "Product 1", "draft"),
         (uuid7(), Decimal("0.69"), "Product 2", "published"),
     )
-    product_models = tuple(_to_product_model(product) for product in products)
+    product_models = tuple(ProductModel(*product) for product in products)
     async with session.begin():
         session.add_all(product_models)
 
@@ -178,7 +169,7 @@ async def test_delete_product_with_nonexistent_id_fails(
         "Test Product",
         "published",
     )
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -200,7 +191,7 @@ async def test_delete_product_with_non_draft_status_fails(
     client: AsyncClient, session: AsyncSession, product_status: ProductStatus
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("3.99"), "Test Product", product_status)
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -223,7 +214,7 @@ async def test_read_product_by_id_returns_product(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -237,7 +228,7 @@ async def test_read_product_by_id_with_nonexistent_id_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -254,7 +245,7 @@ async def test_read_product_by_name_returns_product(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -268,7 +259,7 @@ async def test_read_product_by_name_with_nonexistent_name_fails(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -288,7 +279,7 @@ async def test_read_products_returns_all_products(
         (uuid7(), Decimal("4.99"), "Product 1", "published"),
         (uuid7(), Decimal("2.99"), "Product 2", "published"),
     )
-    product_models = tuple(_to_product_model(product) for product in products)
+    product_models = tuple(ProductModel(*product) for product in products)
     async with session.begin():
         session.add_all(product_models)
 
@@ -314,7 +305,7 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
     client: AsyncClient, session: AsyncSession, product_status: ProductStatus
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("4.50"), "Test Product", product_status)
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -342,7 +333,7 @@ async def test_update_product_modifies_product_in_database(
         (uuid7(), Decimal("1.00"), "Original Product", "draft"),
         (uuid7(), Decimal("2.00"), "Other Product", "draft"),
     )
-    product_model = tuple(_to_product_model(product) for product in products)
+    product_model = tuple(ProductModel(*product) for product in products)
     async with session.begin():
         session.add_all(product_model)
 
@@ -379,7 +370,7 @@ async def test_update_product_status_forbidden_transitions_fail(
     target_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("3.33"), "Test Product", initial_status)
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -409,7 +400,7 @@ async def test_update_product_with_existing_name_fails(
         (uuid7(), Decimal("1.10"), "Original Product", "draft"),
         (uuid7(), Decimal("1.20"), "Existing Product", "draft"),
     )
-    product_models = tuple(_to_product_model(product) for product in products)
+    product_models = tuple(ProductModel(*product) for product in products)
     async with session.begin():
         session.add_all(product_models)
 
@@ -441,7 +432,7 @@ async def test_update_product_with_nonexistent_id_fails(
         "Test Product",
         "published",
     )
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
@@ -472,7 +463,7 @@ async def test_update_product_without_changes_succeeds(
     product_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("7.77"), "Test Product", product_status)
-    product_model = _to_product_model(product)
+    product_model = ProductModel(*product)
     async with session.begin():
         session.add(product_model)
 
