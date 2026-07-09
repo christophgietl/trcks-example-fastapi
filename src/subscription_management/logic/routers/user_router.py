@@ -56,7 +56,7 @@ async def create_user(
         case ("success", user_response):
             return user_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @user_router.delete(
@@ -76,7 +76,7 @@ async def delete_user(id_: UUID, user_service: UserServiceDep) -> None:
         case ("success", _):
             return
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @user_router.get(
@@ -100,7 +100,7 @@ async def read_user_by_email(email: str, user_service: UserServiceDep) -> UserRe
         case ("success", user_response):
             return user_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @user_router.get(
@@ -124,7 +124,7 @@ async def read_user_by_id(id_: UUID, user_service: UserServiceDep) -> UserRespon
         case ("success", user_response):
             return user_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @user_router.get("/", tags=["Products", "Subscriptions"])
@@ -173,4 +173,4 @@ async def update_user(
         case ("success", user_response):
             return user_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]

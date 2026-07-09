@@ -60,7 +60,7 @@ async def create_product(
         case ("success", product_response):
             return product_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @product_router.delete(
@@ -103,7 +103,7 @@ async def delete_product(id_: UUID, product_service: ProductServiceDep) -> None:
         case ("success", _):
             return
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @product_router.get(
@@ -128,7 +128,7 @@ async def read_product_by_name(
         case ("success", product_response):
             return product_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @product_router.get(
@@ -153,7 +153,7 @@ async def read_product_by_id(
         case ("success", product_response):
             return product_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @product_router.get("/")
@@ -211,4 +211,4 @@ async def update_product(
         case ("success", product_response):
             return product_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]

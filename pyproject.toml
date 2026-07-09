@@ -198,6 +198,7 @@ reportMissingSuperCall = true
 reportPropertyTypeMismatch = true
 reportUninitializedInstanceVariable = true
 reportUnnecessaryTypeIgnoreComment = true
+reportUnreachable = true
 reportUnusedCallResult = true
 typeCheckingMode = "strict"
 
