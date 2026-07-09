@@ -333,9 +333,9 @@ async def test_update_product_modifies_product_in_database(
         (uuid7(), Decimal("1.00"), "Original Product", "draft"),
         (uuid7(), Decimal("2.00"), "Other Product", "draft"),
     )
-    product_model = tuple(ProductModel(*product) for product in products)
+    product_models = tuple(ProductModel(*product) for product in products)
     async with session.begin():
-        session.add_all(product_model)
+        session.add_all(product_models)
 
     new_name = "Updated Product"
     new_status = "published"
