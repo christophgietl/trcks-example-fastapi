@@ -40,7 +40,7 @@ def _sorted_by_id(products: Iterable[ProductDict]) -> list[ProductDict]:
     return sorted(products, key=_get_id)
 
 
-def _to_dict(product: ProductTuple) -> ProductDict:
+def _to_product_dict(product: ProductTuple) -> ProductDict:
     return {
         "id": str(product[0]),
         "monthly_fee_in_euros": str(product[1]),
@@ -66,7 +66,7 @@ async def test_create_product_adds_additional_product_to_database(
         "Product 3",
         "published",
     )
-    additional_product_as_dict = _to_dict(additional_product)
+    additional_product_as_dict = _to_product_dict(additional_product)
     response = await client.post("/products/", json=additional_product_as_dict)
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -221,7 +221,7 @@ async def test_read_product_by_id_returns_product(
     response = await client.get(f"/products/{product[0]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _to_dict(product)
+    assert response.json() == _to_product_dict(product)
 
 
 async def test_read_product_by_id_with_nonexistent_id_fails(
@@ -252,7 +252,7 @@ async def test_read_product_by_name_returns_product(
     response = await client.get(f"/products/by-name/{product[2]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _to_dict(product)
+    assert response.json() == _to_product_dict(product)
 
 
 async def test_read_product_by_name_with_nonexistent_name_fails(
@@ -287,7 +287,7 @@ async def test_read_products_returns_all_products(
 
     assert response.status_code == status.HTTP_200_OK
     assert _sorted_by_id(response.json()) == _sorted_by_id(
-        _to_dict(product) for product in products
+        _to_product_dict(product) for product in products
     )
 
 
@@ -477,7 +477,7 @@ async def test_update_product_without_changes_succeeds(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _to_dict(product)
+    assert response.json() == _to_product_dict(product)
 
     async with session.begin():
         products_in_database = await _get_products_from_database(session)

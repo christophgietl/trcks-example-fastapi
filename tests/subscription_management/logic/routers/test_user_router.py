@@ -29,15 +29,20 @@ type UserTuples = tuple[UserTuple, ...]
 
 async def _get_products_from_database(
     session: AsyncSession,
-) -> Sequence[Row[tuple[UUID]]]:
-    statement = select(ProductModel.id)
+) -> Sequence[Row[ProductTuple]]:
+    statement = select(
+        ProductModel.id,
+        ProductModel.monthly_fee_in_euros,
+        ProductModel.name,
+        ProductModel.status,
+    )
     result = await session.execute(statement)
     return result.all()
 
 
 async def _get_subscriptions_from_database(
     session: AsyncSession,
-) -> Sequence[Row[tuple[UUID, bool, UUID, UUID]]]:
+) -> Sequence[Row[SubscriptionTuple]]:
     statement = select(
         SubscriptionModel.id,
         SubscriptionModel.is_active,
@@ -50,7 +55,7 @@ async def _get_subscriptions_from_database(
 
 async def _get_users_from_database(
     session: AsyncSession,
-) -> Sequence[Row[tuple[UUID, str]]]:
+) -> Sequence[Row[UserTuple]]:
     statement = select(UserModel.id, UserModel.email)
     result = await session.execute(statement)
     return result.all()

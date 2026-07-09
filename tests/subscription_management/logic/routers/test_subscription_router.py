@@ -27,7 +27,7 @@ type UserTuple = tuple[UUID, str]
 
 async def _get_subscriptions_from_database(
     session: AsyncSession,
-) -> Sequence[Row[tuple[UUID, bool, UUID, UUID]]]:
+) -> Sequence[Row[SubscriptionTuple]]:
     statement = select(
         SubscriptionModel.id,
         SubscriptionModel.is_active,
