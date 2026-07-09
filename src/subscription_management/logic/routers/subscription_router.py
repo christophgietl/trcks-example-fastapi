@@ -83,7 +83,7 @@ async def create_subscription(
         case ("success", subscription_response):
             return subscription_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @subscription_router.delete(
@@ -104,7 +104,7 @@ async def delete_subscription(
         case ("success", _):
             return
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @subscription_router.get("/{id_}")
@@ -121,7 +121,7 @@ async def read_subscription_by_id(
         case ("success", payload):
             return SubscriptionResponse.from_subscription_with_product(payload)
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
 @subscription_router.get("/")
@@ -187,4 +187,4 @@ async def update_subscription(
         case ("success", subscription_response):
             return subscription_response
         case _:  # pragma: no cover
-            assert_never(result)
+            assert_never(result)  # pyright: ignore[reportUnreachable]

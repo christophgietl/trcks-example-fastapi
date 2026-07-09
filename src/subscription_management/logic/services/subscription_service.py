@@ -56,7 +56,7 @@ class SubscriptionService:
             case "deprecated":
                 return "failure", ProductInDeprecatedStatusError(id=product.id)
             case _:  # pragma: no cover
-                assert_never(product.status)
+                assert_never(product.status)  # pyright: ignore[reportUnreachable]
 
     def _read_product_and_check_status(
         self, subscription: SubscriptionWithUserIdAndProductId

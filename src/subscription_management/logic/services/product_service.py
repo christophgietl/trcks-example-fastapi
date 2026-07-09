@@ -101,7 +101,7 @@ class ProductService:
                 )
                 return "failure", error
             case _ as pair:  # pragma: no cover
-                assert_never(pair)
+                assert_never(pair)  # pyright: ignore[reportUnreachable]
 
     @staticmethod
     def _check_that_product_can_be_deleted(
@@ -115,7 +115,7 @@ class ProductService:
             case "deprecated":
                 return "failure", ProductStatusDeprecatedError(id=product.id)
             case _:  # pragma: no cover
-                assert_never(product.status)
+                assert_never(product.status)  # pyright: ignore[reportUnreachable]
 
     @staticmethod
     def _check_that_status_update_is_allowed(
@@ -150,7 +150,7 @@ class ProductService:
             case "deprecated", "deprecated":
                 return "success", None
             case _ as pair:  # pragma: no cover
-                assert_never(pair)
+                assert_never(pair)  # pyright: ignore[reportUnreachable]
 
     def _check_that_update_is_allowed(
         self, new_product: Product
