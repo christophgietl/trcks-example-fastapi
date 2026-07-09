@@ -21,7 +21,7 @@ def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportU
     del app.state.engine
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def _database_url(tmp_path: Path) -> str:  # pyright: ignore[reportUnusedFunction]
     file = tmp_path / "database.sqlite"
     return f"sqlite+aiosqlite:///{file}"
