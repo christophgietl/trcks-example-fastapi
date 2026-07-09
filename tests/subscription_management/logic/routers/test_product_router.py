@@ -1,11 +1,11 @@
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
 
 import pytest
 from fastapi import status
-from sqlalchemy import Row, select
+from sqlalchemy import Row
 
 from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import ProductModel
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
+type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[Row[ProductTuple]]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
 type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
@@ -21,21 +22,11 @@ type StrDict = dict[str, object]
 type ToProductDict = Callable[[ProductTuple], StrDict]
 
 
-async def _get_products_from_database(
-    session: AsyncSession,
-) -> Sequence[Row[ProductTuple]]:
-    statement = select(
-        ProductModel.id,
-        ProductModel.monthly_fee_in_euros,
-        ProductModel.name,
-        ProductModel.status,
-    )
-    result = await session.execute(statement)
-    return result.all()
-
-
 async def test_create_product_adds_additional_product_to_database(
-    client: AsyncClient, session: AsyncSession, to_product_dict: ToProductDict
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
+    to_product_dict: ToProductDict,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("6.99"), "Product 1", "published"),
@@ -57,13 +48,14 @@ async def test_create_product_adds_additional_product_to_database(
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == additional_product_as_dict
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert sorted(products_in_database) == sorted((*products, additional_product))
 
 
 async def test_create_product_with_existing_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (
         uuid7(),
@@ -91,13 +83,14 @@ async def test_create_product_with_existing_id_fails(
         "detail": f"Product with ID {product[0]} already exists."
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
 
 
 async def test_create_product_with_existing_name_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("5.99"), "Test Product", "published")
     product_model = ProductModel(*product)
@@ -119,13 +112,14 @@ async def test_create_product_with_existing_name_fails(
         "detail": f"Product with name {product[2]} already exists."
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
 
 
 async def test_delete_product_removes_draft_product_from_database(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("0.89"), "Product 1", "draft"),
@@ -140,13 +134,14 @@ async def test_delete_product_removes_draft_product_from_database(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [products[1]]
 
 
 async def test_delete_product_with_nonexistent_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (
         uuid7(),
@@ -166,14 +161,16 @@ async def test_delete_product_with_nonexistent_id_fails(
         "detail": f"Product with ID {nonexistent_product_id} does not exist."
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
 
 
 @pytest.mark.parametrize("product_status", ["published", "deprecated"])
 async def test_delete_product_with_non_draft_status_fails(
-    client: AsyncClient, session: AsyncSession, product_status: ProductStatus
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
+    product_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("3.99"), "Test Product", product_status)
     product_model = ProductModel(*product)
@@ -190,8 +187,7 @@ async def test_delete_product_with_non_draft_status_fails(
         )
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
 
 
@@ -290,7 +286,10 @@ async def test_read_products_returns_empty_list_when_no_products(
 
 @pytest.mark.parametrize("product_status", ["published", "deprecated"])
 async def test_update_product_cannot_change_non_status_attributes_of_published_product(
-    client: AsyncClient, session: AsyncSession, product_status: ProductStatus
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
+    product_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("4.50"), "Test Product", product_status)
     product_model = ProductModel(*product)
@@ -309,13 +308,14 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
         "detail": f"Cannot modify non-status attributes of a {product_status} product"
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
 
 
 async def test_update_product_modifies_product_in_database(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("1.00"), "Original Product", "draft"),
@@ -337,8 +337,7 @@ async def test_update_product_modifies_product_in_database(
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"id": str(products[0][0])} | product_update
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert sorted(products_in_database) == sorted(
         (
             (products[0][0], products[0][1], new_name, new_status),
@@ -353,6 +352,7 @@ async def test_update_product_modifies_product_in_database(
 )
 async def test_update_product_status_forbidden_transitions_fail(
     client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
     session: AsyncSession,
     initial_status: ProductStatus,
     target_status: ProductStatus,
@@ -376,13 +376,14 @@ async def test_update_product_status_forbidden_transitions_fail(
         "detail": f"Cannot change status from {initial_status} to {target_status}"
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
 
 
 async def test_update_product_with_existing_name_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("1.10"), "Original Product", "draft"),
@@ -406,13 +407,14 @@ async def test_update_product_with_existing_name_fails(
         "detail": f"Product with name '{products[1][2]}' already exists."
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert sorted(products_in_database) == sorted(products)
 
 
 async def test_update_product_with_nonexistent_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (
         uuid7(),
@@ -439,14 +441,14 @@ async def test_update_product_with_nonexistent_id_fails(
         "detail": f"Product with ID {nonexistent_product_id} does not exist."
     }
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
 
 
 @pytest.mark.parametrize("product_status", ["draft", "published", "deprecated"])
 async def test_update_product_without_changes_succeeds(
     client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
     session: AsyncSession,
     product_status: ProductStatus,
     to_product_dict: ToProductDict,
@@ -468,6 +470,5 @@ async def test_update_product_without_changes_succeeds(
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == to_product_dict(product)
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
+    products_in_database = await get_products_from_database()
     assert products_in_database == [product]
