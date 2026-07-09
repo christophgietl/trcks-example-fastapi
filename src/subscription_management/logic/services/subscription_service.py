@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, assert_never, final
+from typing import TYPE_CHECKING, Annotated, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -55,8 +55,6 @@ class SubscriptionService:
                 return "success", None
             case "deprecated":
                 return "failure", ProductInDeprecatedStatusError(id=product.id)
-            case _:  # pragma: no cover
-                assert_never(product.status)
 
     def _read_product_and_check_status(
         self, subscription: SubscriptionWithUserIdAndProductId

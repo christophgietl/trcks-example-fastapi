@@ -1,4 +1,3 @@
-from typing import assert_never
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
@@ -82,8 +81,6 @@ async def create_subscription(
             )
         case ("success", subscription_response):
             return subscription_response
-        case _:  # pragma: no cover
-            assert_never(result)
 
 
 @subscription_router.delete(
@@ -103,8 +100,6 @@ async def delete_subscription(
             )
         case ("success", _):
             return
-        case _:  # pragma: no cover
-            assert_never(result)
 
 
 @subscription_router.get("/{id_}")
@@ -120,8 +115,6 @@ async def read_subscription_by_id(
             )
         case ("success", payload):
             return SubscriptionResponse.from_subscription_with_product(payload)
-        case _:  # pragma: no cover
-            assert_never(result)
 
 
 @subscription_router.get("/")
@@ -186,5 +179,3 @@ async def update_subscription(
             )
         case ("success", subscription_response):
             return subscription_response
-        case _:  # pragma: no cover
-            assert_never(result)

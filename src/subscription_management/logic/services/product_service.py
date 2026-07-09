@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, assert_never, final
+from typing import TYPE_CHECKING, Annotated, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -100,8 +100,6 @@ class ProductService:
                     reason=reason, status=product_update.before.status
                 )
                 return "failure", error
-            case _ as pair:  # pragma: no cover
-                assert_never(pair)
 
     @staticmethod
     def _check_that_product_can_be_deleted(
@@ -114,8 +112,6 @@ class ProductService:
                 return "failure", ProductStatusPublishedError(id=product.id)
             case "deprecated":
                 return "failure", ProductStatusDeprecatedError(id=product.id)
-            case _:  # pragma: no cover
-                assert_never(product.status)
 
     @staticmethod
     def _check_that_status_update_is_allowed(
@@ -149,8 +145,6 @@ class ProductService:
                 return "failure", error
             case "deprecated", "deprecated":
                 return "success", None
-            case _ as pair:  # pragma: no cover
-                assert_never(pair)
 
     def _check_that_update_is_allowed(
         self, new_product: Product
