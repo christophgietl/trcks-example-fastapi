@@ -206,9 +206,6 @@ addopts = "--cov=subscription_management --cov-fail-under=100 --cov-report=term-
 anyio_mode = "auto"
 filterwarnings = ["error"]
 
-[tool.ruff]
-src = ["src", "tests"]
-
 [tool.ruff.lint]
 ignore = [
     "COM812", # "may cause conflicts when used with the formatter"
