@@ -1,3 +1,4 @@
+from collections.abc import Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
@@ -10,14 +11,13 @@ from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import ProductModel
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
-
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
-type ProductDict = dict[str, str]
+type ProductDict = dict[str, object]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
+type SortedById = Callable[[Iterable[dict[str, object]]], list[dict[str, object]]]
 
 
 async def _get_products_from_database(
@@ -31,13 +31,6 @@ async def _get_products_from_database(
     )
     result = await session.execute(statement)
     return result.all()
-
-
-def _sorted_by_id(products: Iterable[ProductDict]) -> list[ProductDict]:
-    def _get_id(product: ProductDict) -> str:
-        return product["id"]
-
-    return sorted(products, key=_get_id)
 
 
 def _to_product_dict(product: ProductTuple) -> ProductDict:
@@ -273,7 +266,7 @@ async def test_read_product_by_name_with_nonexistent_name_fails(
 
 
 async def test_read_products_returns_all_products(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient, session: AsyncSession, sorted_by_id: SortedById
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("4.99"), "Product 1", "published"),
@@ -286,7 +279,7 @@ async def test_read_products_returns_all_products(
     response = await client.get("/products/")
 
     assert response.status_code == status.HTTP_200_OK
-    assert _sorted_by_id(response.json()) == _sorted_by_id(
+    assert sorted_by_id(response.json()) == sorted_by_id(
         _to_product_dict(product) for product in products
     )
 

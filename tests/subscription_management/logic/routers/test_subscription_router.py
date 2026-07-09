@@ -1,3 +1,4 @@
+from collections.abc import Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid7
@@ -14,12 +15,11 @@ from subscription_management.data_structures.models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
-
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
+type SortedById = Callable[[Iterable[dict[str, object]]], list[dict[str, object]]]
 type SubscriptionDict = dict[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type UserTuple = tuple[UUID, str]
@@ -36,13 +36,6 @@ async def _get_subscriptions_from_database(
     )
     result = await session.execute(statement)
     return result.all()
-
-
-def _sorted_by_id(subscriptions: Iterable[SubscriptionDict]) -> list[SubscriptionDict]:
-    def _get_id(subscription: SubscriptionDict) -> str:
-        return str(subscription["id"])
-
-    return sorted(subscriptions, key=_get_id)
 
 
 def _to_product_dict(product: ProductTuple) -> dict[str, str]:
@@ -287,7 +280,7 @@ async def test_delete_subscription_with_nonexistent_id_fails(
 
 
 async def test_read_subscriptions_returns_all_subscriptions(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient, session: AsyncSession, sorted_by_id: SortedById
 ) -> None:
     product1: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     product2: ProductTuple = (uuid7(), Decimal("19.99"), "Product 2", "published")
@@ -310,11 +303,12 @@ async def test_read_subscriptions_returns_all_subscriptions(
     response = await client.get("/subscriptions/")
 
     assert response.status_code == status.HTTP_200_OK
-    expected = [
-        _to_subscription_dict(subscription1, product1),
-        _to_subscription_dict(subscription2, product2),
-    ]
-    assert _sorted_by_id(response.json()) == _sorted_by_id(expected)
+    assert sorted_by_id(response.json()) == sorted_by_id(
+        (
+            _to_subscription_dict(subscription1, product1),
+            _to_subscription_dict(subscription2, product2),
+        )
+    )
 
 
 async def test_read_subscriptions_returns_empty_list_when_no_subscriptions(
