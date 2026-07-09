@@ -1,3 +1,4 @@
+from collections.abc import Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
@@ -13,13 +14,12 @@ from subscription_management.data_structures.models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
-
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
+type SortedById = Callable[[Iterable[dict[str, object]]], list[dict[str, object]]]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type SubscriptionTuples = tuple[SubscriptionTuple, ...]
 type UserDict = dict[str, object]
@@ -59,13 +59,6 @@ async def _get_users_from_database(
     statement = select(UserModel.id, UserModel.email)
     result = await session.execute(statement)
     return result.all()
-
-
-def _sorted_by_id(users: Iterable[UserDict]) -> list[UserDict]:
-    def _get_id(user: UserDict) -> str:
-        return str(user["id"])
-
-    return sorted(users, key=_get_id)
 
 
 def _to_product_dict(product: ProductTuple) -> dict[str, str]:
@@ -313,7 +306,7 @@ async def test_read_user_by_id_with_nonexistent_id_fails(
 
 
 async def test_read_users_returns_all_users(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient, session: AsyncSession, sorted_by_id: SortedById
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     users: UserTuples = (
@@ -330,11 +323,12 @@ async def test_read_users_returns_all_users(
     response = await client.get("/users/")
 
     assert response.status_code == status.HTTP_200_OK
-    expected = [
-        _to_user_dict(users[0], [_to_subscription_dict(subscription, product)]),
-        _to_user_dict(users[1], []),
-    ]
-    assert _sorted_by_id(response.json()) == _sorted_by_id(expected)
+    assert sorted_by_id(response.json()) == sorted_by_id(
+        (
+            _to_user_dict(users[0], [_to_subscription_dict(subscription, product)]),
+            _to_user_dict(users[1], []),
+        )
+    )
 
 
 async def test_read_users_returns_empty_list_when_no_users(client: AsyncClient) -> None:
