@@ -29,7 +29,6 @@ class TestSubscriptionModel:
         )
         async with session.begin():
             session.add(product_model)
-            await session.flush()
 
         nonexistent_user_id = uuid7()
         subscription_model = SubscriptionModel(
@@ -38,10 +37,9 @@ class TestSubscriptionModel:
             product_id=product_id,
             user_id=nonexistent_user_id,
         )
-        with pytest.raises(IntegrityError):  # noqa: PT012
+        with pytest.raises(IntegrityError):
             async with session.begin():
                 session.add(subscription_model)
-                await session.flush()
 
     async def test_subscriptions_are_deleted_on_user_deletion(
         self, session: AsyncSession
@@ -65,13 +63,11 @@ class TestSubscriptionModel:
         )
         async with session.begin():
             session.add_all(models)
-            await session.flush()
 
         async with session.begin():
             user_model = await session.get(UserModel, user_id)
             assert user_model is not None
             await session.delete(user_model)
-            await session.flush()
 
         async with session.begin():
             user_id_scalars = await session.scalars(select(SubscriptionModel.user_id))
