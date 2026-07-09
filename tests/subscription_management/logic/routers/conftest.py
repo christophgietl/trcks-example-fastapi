@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from sqlalchemy import Row, select
+from sqlalchemy import select
 
 from subscription_management.data_structures.models import (
     ProductModel,
@@ -30,7 +30,7 @@ def _get_id(d: StrDict) -> str:
 
 async def _get_products_from_database(
     session: AsyncSession,
-) -> Sequence[Row[ProductTuple]]:
+) -> Sequence[ProductTuple]:
     statement = select(
         ProductModel.id,
         ProductModel.monthly_fee_in_euros,
@@ -39,12 +39,12 @@ async def _get_products_from_database(
     )
     async with session.begin():
         result = await session.execute(statement)
-        return result.all()
+        return result.tuples().all()
 
 
 async def _get_subscriptions_from_database(
     session: AsyncSession,
-) -> Sequence[Row[SubscriptionTuple]]:
+) -> Sequence[SubscriptionTuple]:
     statement = select(
         SubscriptionModel.id,
         SubscriptionModel.is_active,
@@ -53,16 +53,16 @@ async def _get_subscriptions_from_database(
     )
     async with session.begin():
         result = await session.execute(statement)
-        return result.all()
+        return result.tuples().all()
 
 
 async def _get_users_from_database(
     session: AsyncSession,
-) -> Sequence[Row[UserTuple]]:
+) -> Sequence[UserTuple]:
     statement = select(UserModel.id, UserModel.email)
     async with session.begin():
         result = await session.execute(statement)
-        return result.all()
+        return result.tuples().all()
 
 
 def _sorted_by_id(ds: Iterable[StrDict]) -> list[StrDict]:
@@ -104,21 +104,21 @@ def _to_user_dict(
 @pytest.fixture
 def get_products_from_database(
     session: AsyncSession,
-) -> Callable[[], Awaitable[Sequence[Row[ProductTuple]]]]:
+) -> Callable[[], Awaitable[Sequence[ProductTuple]]]:
     return lambda: _get_products_from_database(session)
 
 
 @pytest.fixture
 def get_subscriptions_from_database(
     session: AsyncSession,
-) -> Callable[[], Awaitable[Sequence[Row[SubscriptionTuple]]]]:
+) -> Callable[[], Awaitable[Sequence[SubscriptionTuple]]]:
     return lambda: _get_subscriptions_from_database(session)
 
 
 @pytest.fixture
 def get_users_from_database(
     session: AsyncSession,
-) -> Callable[[], Awaitable[Sequence[Row[UserTuple]]]]:
+) -> Callable[[], Awaitable[Sequence[UserTuple]]]:
     return lambda: _get_users_from_database(session)
 
 
