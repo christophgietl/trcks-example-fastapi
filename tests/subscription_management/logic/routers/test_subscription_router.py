@@ -1,11 +1,11 @@
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid7
 
 import pytest
 from fastapi import status
-from sqlalchemy import Row, select
+from sqlalchemy import Row
 
 from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
+type GetSubscriptionsFromDatabase = Callable[
+    [], Awaitable[Sequence[Row[SubscriptionTuple]]]
+]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
 type StrDict = dict[str, object]
@@ -26,21 +29,11 @@ type ToSubscriptionDict = Callable[[SubscriptionTuple, ProductTuple], StrDict]
 type UserTuple = tuple[UUID, str]
 
 
-async def _get_subscriptions_from_database(
-    session: AsyncSession,
-) -> Sequence[Row[SubscriptionTuple]]:
-    statement = select(
-        SubscriptionModel.id,
-        SubscriptionModel.is_active,
-        SubscriptionModel.user_id,
-        SubscriptionModel.product_id,
-    )
-    result = await session.execute(statement)
-    return result.all()
-
-
 async def test_create_subscription_adds_subscription_to_database(
-    client: AsyncClient, session: AsyncSession, to_subscription_dict: ToSubscriptionDict
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
+    to_subscription_dict: ToSubscriptionDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
@@ -70,8 +63,7 @@ async def test_create_subscription_adds_subscription_to_database(
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == to_subscription_dict(new_subscription, product)
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert sorted(subscriptions_in_database) == sorted(
         (subscription1, new_subscription)
     )
@@ -80,6 +72,7 @@ async def test_create_subscription_adds_subscription_to_database(
 @pytest.mark.parametrize("product_status", ["draft", "deprecated"])
 async def test_create_subscription_for_non_published_product_fails(
     client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
     session: AsyncSession,
     product_status: Literal["draft", "deprecated"],
 ) -> None:
@@ -103,13 +96,14 @@ async def test_create_subscription_for_non_published_product_fails(
         "detail": f"Product with ID {product[0]} is in {product_status} status."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == []
 
 
 async def test_create_subscription_with_existing_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
@@ -140,13 +134,14 @@ async def test_create_subscription_with_existing_id_fails(
         "detail": f"Subscription with ID {subscription[0]} already exists."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [subscription]
 
 
 async def test_create_subscription_with_nonexistent_user_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
@@ -170,13 +165,14 @@ async def test_create_subscription_with_nonexistent_user_fails(
         "detail": f"User with ID {nonexistent_user_id} does not exist."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == []
 
 
 async def test_create_subscription_with_nonexistent_product_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "user@example.com")
     async with session.begin():
@@ -199,13 +195,14 @@ async def test_create_subscription_with_nonexistent_product_fails(
         "detail": f"Product with ID {nonexistent_product_id} does not exist."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == []
 
 
 async def test_delete_subscription_removes_subscription_from_database(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
@@ -228,13 +225,14 @@ async def test_delete_subscription_removes_subscription_from_database(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [subscription2]
 
 
 async def test_delete_subscription_with_nonexistent_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
@@ -256,8 +254,7 @@ async def test_delete_subscription_with_nonexistent_id_fails(
         "detail": f"Subscription with ID {nonexistent_subscription_id} does not exist."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [subscription]
 
 
@@ -306,7 +303,9 @@ async def test_read_subscriptions_returns_empty_list_when_no_subscriptions(
 
 
 async def test_read_subscription_by_id_returns_subscription(
-    client: AsyncClient, session: AsyncSession, to_subscription_dict: ToSubscriptionDict
+    client: AsyncClient,
+    session: AsyncSession,
+    to_subscription_dict: ToSubscriptionDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
@@ -340,7 +339,10 @@ async def test_read_subscription_by_id_returns_404_when_subscription_does_not_ex
 
 
 async def test_update_subscription_updates_subscription_in_database(
-    client: AsyncClient, session: AsyncSession, to_subscription_dict: ToSubscriptionDict
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
+    to_subscription_dict: ToSubscriptionDict,
 ) -> None:
     product1: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     product2: ProductTuple = (uuid7(), Decimal("19.99"), "Product 2", "published")
@@ -376,14 +378,14 @@ async def test_update_subscription_updates_subscription_in_database(
     )
     assert response.json() == to_subscription_dict(updated_subscription, product2)
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [updated_subscription]
 
 
 @pytest.mark.parametrize("product_status", ["draft", "deprecated"])
 async def test_update_subscription_to_non_published_product_fails(
     client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
     session: AsyncSession,
     product_status: Literal["draft", "deprecated"],
 ) -> None:
@@ -432,13 +434,14 @@ async def test_update_subscription_to_non_published_product_fails(
         )
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [subscription]
 
 
 async def test_update_subscription_with_nonexistent_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
@@ -467,13 +470,14 @@ async def test_update_subscription_with_nonexistent_id_fails(
         "detail": f"Subscription with ID {nonexistent_subscription_id} does not exist."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [subscription]
 
 
 async def test_update_subscription_with_nonexistent_user_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
@@ -502,13 +506,14 @@ async def test_update_subscription_with_nonexistent_user_fails(
         "detail": f"User with ID {nonexistent_user_id} does not exist."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [subscription]
 
 
 async def test_update_subscription_with_nonexistent_product_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
@@ -537,6 +542,5 @@ async def test_update_subscription_with_nonexistent_product_fails(
         "detail": f"Product with ID {nonexistent_product_id} does not exist."
     }
 
-    async with session.begin():
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [subscription]

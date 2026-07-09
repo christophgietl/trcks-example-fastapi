@@ -1,10 +1,10 @@
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
 
 from fastapi import status
-from sqlalchemy import Row, select
+from sqlalchemy import Row
 
 from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
@@ -17,12 +17,17 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
+type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[Row[ProductTuple]]]]
+type GetSubscriptionsFromDatabase = Callable[
+    [], Awaitable[Sequence[Row[SubscriptionTuple]]]
+]
+type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[Row[UserTuple]]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
 type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
+type StrDict = dict[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type SubscriptionTuples = tuple[SubscriptionTuple, ...]
-type StrDict = dict[str, object]
 type ToUserDict = Callable[
     [UserTuple, Iterable[tuple[SubscriptionTuple, ProductTuple]]], StrDict
 ]
@@ -30,42 +35,11 @@ type UserTuple = tuple[UUID, str]
 type UserTuples = tuple[UserTuple, ...]
 
 
-async def _get_products_from_database(
-    session: AsyncSession,
-) -> Sequence[Row[ProductTuple]]:
-    statement = select(
-        ProductModel.id,
-        ProductModel.monthly_fee_in_euros,
-        ProductModel.name,
-        ProductModel.status,
-    )
-    result = await session.execute(statement)
-    return result.all()
-
-
-async def _get_subscriptions_from_database(
-    session: AsyncSession,
-) -> Sequence[Row[SubscriptionTuple]]:
-    statement = select(
-        SubscriptionModel.id,
-        SubscriptionModel.is_active,
-        SubscriptionModel.user_id,
-        SubscriptionModel.product_id,
-    )
-    result = await session.execute(statement)
-    return result.all()
-
-
-async def _get_users_from_database(
-    session: AsyncSession,
-) -> Sequence[Row[UserTuple]]:
-    statement = select(UserModel.id, UserModel.email)
-    result = await session.execute(statement)
-    return result.all()
-
-
 async def test_create_user_adds_additional_user_to_database(
-    client: AsyncClient, session: AsyncSession, to_user_dict: ToUserDict
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
+    to_user_dict: ToUserDict,
 ) -> None:
     users: UserTuples = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
     user_models = tuple(UserModel(*user) for user in users)
@@ -80,13 +54,14 @@ async def test_create_user_adds_additional_user_to_database(
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == to_user_dict(additional_user, [])
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert sorted(users_in_database) == sorted((*users, additional_user))
 
 
 async def test_create_user_with_existing_email_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
     user_model = UserModel(*user)
@@ -98,13 +73,14 @@ async def test_create_user_with_existing_email_fails(
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {"detail": f"User with email {user[1]} already exists."}
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert users_in_database == [user]
 
 
 async def test_create_user_with_existing_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
     user_model = UserModel(*user)
@@ -118,13 +94,14 @@ async def test_create_user_with_existing_id_fails(
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {"detail": f"User with ID {user[0]} already exists."}
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert users_in_database == [user]
 
 
 async def test_delete_user_removes_user_from_database(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
 ) -> None:
     users: UserTuples = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
     user_models = tuple(UserModel(*user) for user in users)
@@ -136,13 +113,14 @@ async def test_delete_user_removes_user_from_database(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert users_in_database == [users[1]]
 
 
 async def test_delete_user_with_nonexistent_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
     user_model = UserModel(*user)
@@ -157,13 +135,16 @@ async def test_delete_user_with_nonexistent_id_fails(
         "detail": f"User with ID {nonexistent_user_id} does not exist."
     }
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert users_in_database == [user]
 
 
 async def test_delete_user_also_removes_subscriptions_but_keeps_products(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_products_from_database: GetProductsFromDatabase,
+    get_subscriptions_from_database: GetSubscriptionsFromDatabase,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("9.99"), "Product 1", "published"),
@@ -190,14 +171,11 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
-    async with session.begin():
-        products_in_database = await _get_products_from_database(session)
-        subscriptions_in_database = await _get_subscriptions_from_database(session)
-        users_in_database = await _get_users_from_database(session)
-
+    products_in_database = await get_products_from_database()
     assert {product[0] for product in products_in_database} == {
         product[0] for product in products
     }
+    subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [
         (
             subscriptions[1][0],
@@ -206,11 +184,14 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
             subscriptions[1][3],
         )
     ]
+    users_in_database = await get_users_from_database()
     assert users_in_database == [users[1]]
 
 
 async def test_read_user_by_email_returns_user(
-    client: AsyncClient, session: AsyncSession, to_user_dict: ToUserDict
+    client: AsyncClient,
+    session: AsyncSession,
+    to_user_dict: ToUserDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
@@ -227,7 +208,8 @@ async def test_read_user_by_email_returns_user(
 
 
 async def test_read_user_by_email_with_nonexistent_email_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
     user_model = UserModel(*user)
@@ -244,7 +226,9 @@ async def test_read_user_by_email_with_nonexistent_email_fails(
 
 
 async def test_read_user_by_id_returns_user(
-    client: AsyncClient, session: AsyncSession, to_user_dict: ToUserDict
+    client: AsyncClient,
+    session: AsyncSession,
+    to_user_dict: ToUserDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
@@ -261,7 +245,8 @@ async def test_read_user_by_id_returns_user(
 
 
 async def test_read_user_by_id_with_nonexistent_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
     user_model = UserModel(*user)
@@ -314,7 +299,10 @@ async def test_read_users_returns_empty_list_when_no_users(client: AsyncClient) 
 
 
 async def test_update_user_modifies_user_in_database(
-    client: AsyncClient, session: AsyncSession, to_user_dict: ToUserDict
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
+    to_user_dict: ToUserDict,
 ) -> None:
     users: UserTuples = (
         (uuid7(), "original@example.com"),
@@ -330,13 +318,14 @@ async def test_update_user_modifies_user_in_database(
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == to_user_dict((users[0][0], new_email), [])
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert sorted(users_in_database) == sorted(((users[0][0], new_email), users[1]))
 
 
 async def test_update_user_with_nonexistent_id_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
     user_model = UserModel(*user)
@@ -353,13 +342,14 @@ async def test_update_user_with_nonexistent_id_fails(
         "detail": f"User with ID {nonexistent_user_id} does not exist."
     }
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert users_in_database == [user]
 
 
 async def test_update_user_with_existing_email_fails(
-    client: AsyncClient, session: AsyncSession
+    client: AsyncClient,
+    get_users_from_database: GetUsersFromDatabase,
+    session: AsyncSession,
 ) -> None:
     users: UserTuples = (
         (uuid7(), "original@example.com"),
@@ -376,6 +366,5 @@ async def test_update_user_with_existing_email_fails(
         "detail": f"User with email {users[1][1]} already exists."
     }
 
-    async with session.begin():
-        users_in_database = await _get_users_from_database(session)
+    users_in_database = await get_users_from_database()
     assert sorted(users_in_database) == sorted(users)
