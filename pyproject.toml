@@ -1,7 +1,6 @@
 [build-system]
 build-backend = "uv_build"
-# must match tool.uv.required-version
-requires = ["uv_build~=0.11.0"]
+requires = ["uv_build~=0.11.0"] # should match tool.uv.required-version
 
 [dependency-groups]
 dev = [
