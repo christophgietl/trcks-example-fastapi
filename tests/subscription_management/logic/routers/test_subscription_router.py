@@ -5,7 +5,6 @@ from uuid import UUID, uuid7
 
 import pytest
 from fastapi import status
-from sqlalchemy import Row
 
 from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
@@ -18,9 +17,7 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
-type GetSubscriptionsFromDatabase = Callable[
-    [], Awaitable[Sequence[Row[SubscriptionTuple]]]
-]
+type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
 type StrDict = dict[str, object]

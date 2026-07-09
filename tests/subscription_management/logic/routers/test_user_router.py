@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
 
 from fastapi import status
-from sqlalchemy import Row
 
 from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
@@ -17,11 +16,9 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
-type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[Row[ProductTuple]]]]
-type GetSubscriptionsFromDatabase = Callable[
-    [], Awaitable[Sequence[Row[SubscriptionTuple]]]
-]
-type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[Row[UserTuple]]]]
+type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
+type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
+type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[UserTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
 type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
