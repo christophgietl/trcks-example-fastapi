@@ -25,22 +25,18 @@ type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type UserTuple = tuple[UUID, str]
 
 
-def _to_product_dict(product: ProductTuple) -> StrDict:
-    return {
-        "id": str(product[0]),
-        "monthly_fee_in_euros": str(product[1]),
-        "name": product[2],
-        "status": product[3],
-    }
-
-
 def _to_subscription_dict(
     subscription: SubscriptionTuple, product: ProductTuple
 ) -> StrDict:
     return {
         "id": str(subscription[0]),
         "is_active": subscription[1],
-        "product": _to_product_dict(product),
+        "product": {
+            "id": str(product[0]),
+            "monthly_fee_in_euros": str(product[1]),
+            "name": product[2],
+            "status": product[3],
+        },
     }
 
 
