@@ -13,12 +13,23 @@ from subscription_management.data_structures.models import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
     from decimal import Decimal
+    from typing import Unpack
     from uuid import UUID
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from subscription_management.data_structures.domain.product import ProductStatus
 
+type AddProductsToDatabase = Callable[
+    [Unpack[tuple[ProductTuple, ...]]], Awaitable[None]
+]
+type AddSubscriptionsToDatabase = Callable[
+    [Unpack[tuple[SubscriptionTuple, ...]]], Awaitable[None]
+]
+type AddUsersToDatabase = Callable[[Unpack[tuple[UserTuple, ...]]], Awaitable[None]]
+type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
+type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
+type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[UserTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type StrMapping = Mapping[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
@@ -27,6 +38,27 @@ type UserTuple = tuple[UUID, str]
 
 def _get_id(d: StrMapping) -> str:
     return str(d["id"])
+
+
+async def _add_products_to_database(
+    session: AsyncSession, *products: ProductTuple
+) -> None:
+    async with session.begin():
+        session.add_all(ProductModel(*product) for product in products)
+
+
+async def _add_subscriptions_to_database(
+    session: AsyncSession, *subscriptions: SubscriptionTuple
+) -> None:
+    async with session.begin():
+        session.add_all(
+            SubscriptionModel(*subscription) for subscription in subscriptions
+        )
+
+
+async def _add_users_to_database(session: AsyncSession, *users: UserTuple) -> None:
+    async with session.begin():
+        session.add_all(UserModel(*user) for user in users)
 
 
 async def _get_products_from_database(
@@ -68,6 +100,23 @@ async def _get_users_from_database(
 
 def _sorted_by_id(ds: Iterable[StrMapping]) -> list[StrMapping]:
     return sorted(ds, key=_get_id)
+
+
+@pytest.fixture
+def add_products_to_database(session: AsyncSession) -> AddProductsToDatabase:
+    return functools.partial(_add_products_to_database, session)
+
+
+@pytest.fixture
+def add_subscriptions_to_database(
+    session: AsyncSession,
+) -> AddSubscriptionsToDatabase:
+    return functools.partial(_add_subscriptions_to_database, session)
+
+
+@pytest.fixture
+def add_users_to_database(session: AsyncSession) -> AddUsersToDatabase:
+    return functools.partial(_add_users_to_database, session)
 
 
 @pytest.fixture

@@ -1,22 +1,23 @@
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from decimal import Decimal
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Unpack
 from uuid import UUID, uuid7
 
 import pytest
 from fastapi import status
 
 from subscription_management.data_structures.domain.product import ProductStatus
-from subscription_management.data_structures.models import (
-    ProductModel,
-    SubscriptionModel,
-    UserModel,
-)
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
-    from sqlalchemy.ext.asyncio import AsyncSession
 
+type AddProductsToDatabase = Callable[
+    [Unpack[tuple[ProductTuple, ...]]], Awaitable[None]
+]
+type AddSubscriptionsToDatabase = Callable[
+    [Unpack[tuple[SubscriptionTuple, ...]]], Awaitable[None]
+]
+type AddUsersToDatabase = Callable[[Unpack[tuple[UserTuple, ...]]], Awaitable[None]]
 type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type SortedById = Callable[[Iterable[StrMapping]], list[StrMapping]]
@@ -42,22 +43,18 @@ def _to_json(
 
 async def test_create_subscription_adds_subscription_to_database(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
     subscription1: SubscriptionTuple = (uuid7(), True, user1[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user1),
-                UserModel(*user2),
-                SubscriptionModel(*subscription1),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user1, user2)
+    await add_subscriptions_to_database(subscription1)
 
     new_subscription: SubscriptionTuple = (uuid7(), True, user2[0], product[0])
     response = await client.post(
@@ -82,14 +79,15 @@ async def test_create_subscription_adds_subscription_to_database(
 @pytest.mark.parametrize("product_status", ["draft", "deprecated"])
 async def test_create_subscription_for_non_published_product_fails(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
     product_status: Literal["draft", "deprecated"],
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", product_status)
     user: UserTuple = (uuid7(), "user@example.com")
-    async with session.begin():
-        session.add_all([ProductModel(*product), UserModel(*user)])
+    await add_products_to_database(product)
+    await add_users_to_database(user)
 
     subscription_id = uuid7()
     response = await client.post(
@@ -112,22 +110,18 @@ async def test_create_subscription_for_non_published_product_fails(
 
 async def test_create_subscription_with_existing_id_fails(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user1[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user1),
-                UserModel(*user2),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user1, user2)
+    await add_subscriptions_to_database(subscription)
 
     response = await client.post(
         "/subscriptions/",
@@ -150,13 +144,14 @@ async def test_create_subscription_with_existing_id_fails(
 
 async def test_create_subscription_with_nonexistent_user_fails(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
-    async with session.begin():
-        session.add_all([ProductModel(*product), UserModel(*user)])
+    await add_products_to_database(product)
+    await add_users_to_database(user)
 
     subscription_id = uuid7()
     nonexistent_user_id = uuid7()
@@ -181,12 +176,11 @@ async def test_create_subscription_with_nonexistent_user_fails(
 
 async def test_create_subscription_with_nonexistent_product_fails(
     client: AsyncClient,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     user: UserTuple = (uuid7(), "user@example.com")
-    async with session.begin():
-        session.add(UserModel(*user))
+    await add_users_to_database(user)
 
     subscription_id = uuid7()
     nonexistent_product_id = uuid7()
@@ -211,24 +205,19 @@ async def test_create_subscription_with_nonexistent_product_fails(
 
 async def test_delete_subscription_removes_subscription_from_database(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
     subscription1: SubscriptionTuple = (uuid7(), True, user1[0], product[0])
     subscription2: SubscriptionTuple = (uuid7(), False, user2[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user1),
-                UserModel(*user2),
-                SubscriptionModel(*subscription1),
-                SubscriptionModel(*subscription2),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user1, user2)
+    await add_subscriptions_to_database(subscription1, subscription2)
 
     response = await client.delete(f"/subscriptions/{subscription1[0]}")
 
@@ -241,20 +230,17 @@ async def test_delete_subscription_removes_subscription_from_database(
 
 async def test_delete_subscription_with_nonexistent_id_fails(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user)
+    await add_subscriptions_to_database(subscription)
 
     nonexistent_subscription_id = uuid7()
     response = await client.delete(f"/subscriptions/{nonexistent_subscription_id}")
@@ -270,7 +256,9 @@ async def test_delete_subscription_with_nonexistent_id_fails(
 
 async def test_read_subscriptions_returns_all_subscriptions(
     client: AsyncClient,
-    session: AsyncSession,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     sorted_by_id: SortedById,
 ) -> None:
     product1: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
@@ -279,17 +267,9 @@ async def test_read_subscriptions_returns_all_subscriptions(
     user2: UserTuple = (uuid7(), "user2@example.com")
     subscription1: SubscriptionTuple = (uuid7(), True, user1[0], product1[0])
     subscription2: SubscriptionTuple = (uuid7(), False, user2[0], product2[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product1),
-                ProductModel(*product2),
-                UserModel(*user1),
-                UserModel(*user2),
-                SubscriptionModel(*subscription1),
-                SubscriptionModel(*subscription2),
-            ]
-        )
+    await add_products_to_database(product1, product2)
+    await add_users_to_database(user1, user2)
+    await add_subscriptions_to_database(subscription1, subscription2)
 
     response = await client.get("/subscriptions/")
 
@@ -313,19 +293,16 @@ async def test_read_subscriptions_returns_empty_list_when_no_subscriptions(
 
 async def test_read_subscription_by_id_returns_subscription(
     client: AsyncClient,
-    session: AsyncSession,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user)
+    await add_subscriptions_to_database(subscription)
 
     response = await client.get(f"/subscriptions/{subscription[0]}")
 
@@ -348,24 +325,19 @@ async def test_read_subscription_by_id_returns_404_when_subscription_does_not_ex
 
 async def test_update_subscription_updates_subscription_in_database(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product1: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     product2: ProductTuple = (uuid7(), Decimal("19.99"), "Product 2", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
     user2: UserTuple = (uuid7(), "user2@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user1[0], product1[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product1),
-                ProductModel(*product2),
-                UserModel(*user1),
-                UserModel(*user2),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(product1, product2)
+    await add_users_to_database(user1, user2)
+    await add_subscriptions_to_database(subscription)
 
     response = await client.put(
         f"/subscriptions/{subscription[0]}",
@@ -390,10 +362,12 @@ async def test_update_subscription_updates_subscription_in_database(
 
 
 @pytest.mark.parametrize("product_status", ["draft", "deprecated"])
-async def test_update_subscription_to_non_published_product_fails(
+async def test_update_subscription_to_non_published_product_fails(  # noqa: PLR0913
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
     product_status: Literal["draft", "deprecated"],
 ) -> None:
     published_product: ProductTuple = (
@@ -415,15 +389,9 @@ async def test_update_subscription_to_non_published_product_fails(
         user[0],
         published_product[0],
     )
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*published_product),
-                ProductModel(*non_published_product),
-                UserModel(*user),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(published_product, non_published_product)
+    await add_users_to_database(user)
+    await add_subscriptions_to_database(subscription)
 
     response = await client.put(
         f"/subscriptions/{subscription[0]}",
@@ -447,20 +415,17 @@ async def test_update_subscription_to_non_published_product_fails(
 
 async def test_update_subscription_with_nonexistent_id_fails(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user)
+    await add_subscriptions_to_database(subscription)
 
     nonexistent_subscription_id = uuid7()
     response = await client.put(
@@ -483,20 +448,17 @@ async def test_update_subscription_with_nonexistent_id_fails(
 
 async def test_update_subscription_with_nonexistent_user_fails(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user)
+    await add_subscriptions_to_database(subscription)
 
     nonexistent_user_id = uuid7()
     response = await client.put(
@@ -519,20 +481,17 @@ async def test_update_subscription_with_nonexistent_user_fails(
 
 async def test_update_subscription_with_nonexistent_product_fails(
     client: AsyncClient,
+    add_products_to_database: AddProductsToDatabase,
+    add_subscriptions_to_database: AddSubscriptionsToDatabase,
+    add_users_to_database: AddUsersToDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
-    session: AsyncSession,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
-    async with session.begin():
-        session.add_all(
-            [
-                ProductModel(*product),
-                UserModel(*user),
-                SubscriptionModel(*subscription),
-            ]
-        )
+    await add_products_to_database(product)
+    await add_users_to_database(user)
+    await add_subscriptions_to_database(subscription)
 
     nonexistent_product_id = uuid7()
     response = await client.put(
