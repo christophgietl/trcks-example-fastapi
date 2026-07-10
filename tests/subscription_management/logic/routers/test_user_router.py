@@ -11,6 +11,8 @@ from subscription_management.data_structures.models import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,17 +25,37 @@ if TYPE_CHECKING:
         SortedById,
         SubscriptionTuple,
         SubscriptionTuples,
-        ToUserDict,
         UserTuple,
         UserTuples,
     )
+
+
+def _get_expected_user_response(
+    user: UserTuple, iterable: Iterable[tuple[SubscriptionTuple, ProductTuple]]
+) -> dict[str, object]:
+    return {
+        "id": str(user[0]),
+        "email": user[1],
+        "subscriptions": [
+            {
+                "id": str(subscription[0]),
+                "is_active": subscription[1],
+                "product": {
+                    "id": str(product[0]),
+                    "monthly_fee_in_euros": str(product[1]),
+                    "name": product[2],
+                    "status": product[3],
+                },
+            }
+            for subscription, product in iterable
+        ],
+    }
 
 
 async def test_create_user_adds_additional_user_to_database(
     client: AsyncClient,
     get_users_from_database: GetUsersFromDatabase,
     session: AsyncSession,
-    to_user_dict: ToUserDict,
 ) -> None:
     users: UserTuples = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
     user_models = tuple(UserModel(*user) for user in users)
@@ -46,7 +68,7 @@ async def test_create_user_adds_additional_user_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == to_user_dict(additional_user, [])
+    assert response.json() == _get_expected_user_response(additional_user, [])
 
     users_in_database = await get_users_from_database()
     assert sorted(users_in_database) == sorted((*users, additional_user))
@@ -185,7 +207,6 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
 async def test_read_user_by_email_returns_user(
     client: AsyncClient,
     session: AsyncSession,
-    to_user_dict: ToUserDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
@@ -198,7 +219,9 @@ async def test_read_user_by_email_returns_user(
     response = await client.get(f"/users/by-email/{user[1]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_user_dict(user, [(subscription, product)])
+    assert response.json() == _get_expected_user_response(
+        user, [(subscription, product)]
+    )
 
 
 async def test_read_user_by_email_with_nonexistent_email_fails(
@@ -222,7 +245,6 @@ async def test_read_user_by_email_with_nonexistent_email_fails(
 async def test_read_user_by_id_returns_user(
     client: AsyncClient,
     session: AsyncSession,
-    to_user_dict: ToUserDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
@@ -235,7 +257,9 @@ async def test_read_user_by_id_returns_user(
     response = await client.get(f"/users/{user[0]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_user_dict(user, [(subscription, product)])
+    assert response.json() == _get_expected_user_response(
+        user, [(subscription, product)]
+    )
 
 
 async def test_read_user_by_id_with_nonexistent_id_fails(
@@ -260,7 +284,6 @@ async def test_read_users_returns_all_users(
     client: AsyncClient,
     session: AsyncSession,
     sorted_by_id: SortedById,
-    to_user_dict: ToUserDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     users: UserTuples = (
@@ -279,8 +302,8 @@ async def test_read_users_returns_all_users(
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
         (
-            to_user_dict(users[0], [(subscription, product)]),
-            to_user_dict(users[1], []),
+            _get_expected_user_response(users[0], [(subscription, product)]),
+            _get_expected_user_response(users[1], []),
         )
     )
 
@@ -296,7 +319,6 @@ async def test_update_user_modifies_user_in_database(
     client: AsyncClient,
     get_users_from_database: GetUsersFromDatabase,
     session: AsyncSession,
-    to_user_dict: ToUserDict,
 ) -> None:
     users: UserTuples = (
         (uuid7(), "original@example.com"),
@@ -310,7 +332,7 @@ async def test_update_user_modifies_user_in_database(
     response = await client.put(f"/users/{users[0][0]}", json={"email": new_email})
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_user_dict((users[0][0], new_email), [])
+    assert response.json() == _get_expected_user_response((users[0][0], new_email), [])
 
     users_in_database = await get_users_from_database()
     assert sorted(users_in_database) == sorted(((users[0][0], new_email), users[1]))
