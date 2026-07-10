@@ -1,5 +1,5 @@
 import functools
-from typing import TYPE_CHECKING, Unpack
+from typing import TYPE_CHECKING
 
 import pytest
 from sqlalchemy import select
@@ -19,13 +19,11 @@ if TYPE_CHECKING:
 
     from subscription_management.data_structures.domain.product import ProductStatus
 
-type AddProductsToDatabase = Callable[
-    [Unpack[tuple[ProductTuple, ...]]], Awaitable[None]
-]
+type AddProductsToDatabase = Callable[[*tuple[ProductTuple, ...]], Awaitable[None]]
 type AddSubscriptionsToDatabase = Callable[
-    [Unpack[tuple[SubscriptionTuple, ...]]], Awaitable[None]
+    [*tuple[SubscriptionTuple, ...]], Awaitable[None]
 ]
-type AddUsersToDatabase = Callable[[Unpack[tuple[UserTuple, ...]]], Awaitable[None]]
+type AddUsersToDatabase = Callable[[*tuple[UserTuple, ...]], Awaitable[None]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type StrMapping = Mapping[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
