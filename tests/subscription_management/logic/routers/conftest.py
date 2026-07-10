@@ -1,3 +1,4 @@
+import functools
 from typing import TYPE_CHECKING
 
 import pytest
@@ -105,21 +106,21 @@ def _to_user_dict(
 def get_products_from_database(
     session: AsyncSession,
 ) -> Callable[[], Awaitable[Sequence[ProductTuple]]]:
-    return lambda: _get_products_from_database(session)
+    return functools.partial(_get_products_from_database, session)
 
 
 @pytest.fixture
 def get_subscriptions_from_database(
     session: AsyncSession,
 ) -> Callable[[], Awaitable[Sequence[SubscriptionTuple]]]:
-    return lambda: _get_subscriptions_from_database(session)
+    return functools.partial(_get_subscriptions_from_database, session)
 
 
 @pytest.fixture
 def get_users_from_database(
     session: AsyncSession,
 ) -> Callable[[], Awaitable[Sequence[UserTuple]]]:
-    return lambda: _get_users_from_database(session)
+    return functools.partial(_get_users_from_database, session)
 
 
 @pytest.fixture
