@@ -16,11 +16,11 @@ __docformat__ = "google"
 
 @pytest.fixture
 def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
-    """Set up the database for `app` and yield it.
+    """Set up the database for `app` and yield `app`.
 
-    The database setup logic for `app` lives in its `lifespan` function.
-    Unfortunately, `ASGITransport` and `AsyncClient` do not run `lifespan` events.
-    Therefore, we use the `_app` fixture which takes care of the database setup.
+    Note:
+        The database setup logic for `app` lives in its `lifespan` function.
+        Unfortunately, `ASGITransport` and `AsyncClient` do not run `lifespan` events.
     """
     app.state.engine = _engine
     yield app
