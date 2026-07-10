@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from decimal import Decimal
-from typing import TYPE_CHECKING, Literal, Unpack
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid7
 
 import pytest
@@ -11,13 +11,11 @@ from subscription_management.data_structures.domain.product import ProductStatus
 if TYPE_CHECKING:
     from httpx import AsyncClient
 
-type AddProductsToDatabase = Callable[
-    [Unpack[tuple[ProductTuple, ...]]], Awaitable[None]
-]
+type AddProductsToDatabase = Callable[[*tuple[ProductTuple, ...]], Awaitable[None]]
 type AddSubscriptionsToDatabase = Callable[
-    [Unpack[tuple[SubscriptionTuple, ...]]], Awaitable[None]
+    [*tuple[SubscriptionTuple, ...]], Awaitable[None]
 ]
-type AddUsersToDatabase = Callable[[Unpack[tuple[UserTuple, ...]]], Awaitable[None]]
+type AddUsersToDatabase = Callable[[*tuple[UserTuple, ...]], Awaitable[None]]
 type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type SortedById = Callable[[Iterable[StrMapping]], list[StrMapping]]

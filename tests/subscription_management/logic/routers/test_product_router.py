@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from decimal import Decimal
-from typing import TYPE_CHECKING, Unpack
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
 
 import pytest
@@ -11,9 +11,7 @@ from subscription_management.data_structures.domain.product import ProductStatus
 if TYPE_CHECKING:
     from httpx import AsyncClient
 
-type AddProductsToDatabase = Callable[
-    [Unpack[tuple[ProductTuple, ...]]], Awaitable[None]
-]
+type AddProductsToDatabase = Callable[[*tuple[ProductTuple, ...]], Awaitable[None]]
 type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
