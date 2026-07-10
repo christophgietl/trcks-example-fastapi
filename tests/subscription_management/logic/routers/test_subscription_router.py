@@ -22,15 +22,32 @@ type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
 type StrDict = dict[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
-type ToSubscriptionDict = Callable[[SubscriptionTuple, ProductTuple], StrDict]
 type UserTuple = tuple[UUID, str]
+
+
+def _to_product_dict(product: ProductTuple) -> StrDict:
+    return {
+        "id": str(product[0]),
+        "monthly_fee_in_euros": str(product[1]),
+        "name": product[2],
+        "status": product[3],
+    }
+
+
+def _to_subscription_dict(
+    subscription: SubscriptionTuple, product: ProductTuple
+) -> StrDict:
+    return {
+        "id": str(subscription[0]),
+        "is_active": subscription[1],
+        "product": _to_product_dict(product),
+    }
 
 
 async def test_create_subscription_adds_subscription_to_database(
     client: AsyncClient,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
     session: AsyncSession,
-    to_subscription_dict: ToSubscriptionDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user1: UserTuple = (uuid7(), "user1@example.com")
@@ -58,7 +75,7 @@ async def test_create_subscription_adds_subscription_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == to_subscription_dict(new_subscription, product)
+    assert response.json() == _to_subscription_dict(new_subscription, product)
 
     subscriptions_in_database = await get_subscriptions_from_database()
     assert sorted(subscriptions_in_database) == sorted(
@@ -259,7 +276,6 @@ async def test_read_subscriptions_returns_all_subscriptions(
     client: AsyncClient,
     session: AsyncSession,
     sorted_by_id: SortedById,
-    to_subscription_dict: ToSubscriptionDict,
 ) -> None:
     product1: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     product2: ProductTuple = (uuid7(), Decimal("19.99"), "Product 2", "published")
@@ -284,8 +300,8 @@ async def test_read_subscriptions_returns_all_subscriptions(
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
         (
-            to_subscription_dict(subscription1, product1),
-            to_subscription_dict(subscription2, product2),
+            _to_subscription_dict(subscription1, product1),
+            _to_subscription_dict(subscription2, product2),
         )
     )
 
@@ -302,7 +318,6 @@ async def test_read_subscriptions_returns_empty_list_when_no_subscriptions(
 async def test_read_subscription_by_id_returns_subscription(
     client: AsyncClient,
     session: AsyncSession,
-    to_subscription_dict: ToSubscriptionDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     user: UserTuple = (uuid7(), "user@example.com")
@@ -319,7 +334,7 @@ async def test_read_subscription_by_id_returns_subscription(
     response = await client.get(f"/subscriptions/{subscription[0]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_subscription_dict(subscription, product)
+    assert response.json() == _to_subscription_dict(subscription, product)
 
 
 async def test_read_subscription_by_id_returns_404_when_subscription_does_not_exist(
@@ -339,7 +354,6 @@ async def test_update_subscription_updates_subscription_in_database(
     client: AsyncClient,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
     session: AsyncSession,
-    to_subscription_dict: ToSubscriptionDict,
 ) -> None:
     product1: ProductTuple = (uuid7(), Decimal("9.99"), "Product 1", "published")
     product2: ProductTuple = (uuid7(), Decimal("19.99"), "Product 2", "published")
@@ -373,7 +387,7 @@ async def test_update_subscription_updates_subscription_in_database(
         user2[0],
         product2[0],
     )
-    assert response.json() == to_subscription_dict(updated_subscription, product2)
+    assert response.json() == _to_subscription_dict(updated_subscription, product2)
 
     subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [updated_subscription]

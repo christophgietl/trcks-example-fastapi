@@ -18,14 +18,21 @@ type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
 type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
 type StrDict = dict[str, object]
-type ToProductDict = Callable[[ProductTuple], StrDict]
+
+
+def _to_product_dict(product: ProductTuple) -> StrDict:
+    return {
+        "id": str(product[0]),
+        "monthly_fee_in_euros": str(product[1]),
+        "name": product[2],
+        "status": product[3],
+    }
 
 
 async def test_create_product_adds_additional_product_to_database(
     client: AsyncClient,
     get_products_from_database: GetProductsFromDatabase,
     session: AsyncSession,
-    to_product_dict: ToProductDict,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("6.99"), "Product 1", "published"),
@@ -41,7 +48,7 @@ async def test_create_product_adds_additional_product_to_database(
         "Product 3",
         "published",
     )
-    additional_product_as_dict = to_product_dict(additional_product)
+    additional_product_as_dict = _to_product_dict(additional_product)
     response = await client.post("/products/", json=additional_product_as_dict)
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -191,7 +198,7 @@ async def test_delete_product_with_non_draft_status_fails(
 
 
 async def test_read_product_by_id_returns_product(
-    client: AsyncClient, session: AsyncSession, to_product_dict: ToProductDict
+    client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
     product_model = ProductModel(*product)
@@ -201,7 +208,7 @@ async def test_read_product_by_id_returns_product(
     response = await client.get(f"/products/{product[0]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_product_dict(product)
+    assert response.json() == _to_product_dict(product)
 
 
 async def test_read_product_by_id_with_nonexistent_id_fails(
@@ -222,7 +229,7 @@ async def test_read_product_by_id_with_nonexistent_id_fails(
 
 
 async def test_read_product_by_name_returns_product(
-    client: AsyncClient, session: AsyncSession, to_product_dict: ToProductDict
+    client: AsyncClient, session: AsyncSession
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
     product_model = ProductModel(*product)
@@ -232,7 +239,7 @@ async def test_read_product_by_name_returns_product(
     response = await client.get(f"/products/by-name/{product[2]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_product_dict(product)
+    assert response.json() == _to_product_dict(product)
 
 
 async def test_read_product_by_name_with_nonexistent_name_fails(
@@ -256,7 +263,6 @@ async def test_read_products_returns_all_products(
     client: AsyncClient,
     session: AsyncSession,
     sorted_by_id: SortedById,
-    to_product_dict: ToProductDict,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("4.99"), "Product 1", "published"),
@@ -270,7 +276,7 @@ async def test_read_products_returns_all_products(
 
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
-        to_product_dict(product) for product in products
+        _to_product_dict(product) for product in products
     )
 
 
@@ -450,7 +456,6 @@ async def test_update_product_without_changes_succeeds(
     get_products_from_database: GetProductsFromDatabase,
     session: AsyncSession,
     product_status: ProductStatus,
-    to_product_dict: ToProductDict,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("7.77"), "Test Product", product_status)
     product_model = ProductModel(*product)
@@ -467,7 +472,7 @@ async def test_update_product_without_changes_succeeds(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_product_dict(product)
+    assert response.json() == _to_product_dict(product)
 
     products_in_database = await get_products_from_database()
     assert products_in_database == [product]
