@@ -1,4 +1,4 @@
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid7
@@ -16,11 +16,11 @@ if TYPE_CHECKING:
 type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
-type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
-type StrDict = dict[str, object]
+type SortedById = Callable[[Iterable[StrMapping]], list[StrMapping]]
+type StrMapping = Mapping[str, object]
 
 
-def _get_expected_product_response(product: ProductTuple) -> StrDict:
+def _get_expected_product_response(product: ProductTuple) -> dict[str, object]:
     return {
         "id": str(product[0]),
         "monthly_fee_in_euros": str(product[1]),
