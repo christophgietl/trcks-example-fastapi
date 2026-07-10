@@ -29,7 +29,7 @@ type UserTuple = tuple[UUID, str]
 type UserTuples = tuple[UserTuple, ...]
 
 
-def _get_expected_user_response(
+def _to_json(
     user: UserTuple, iterable: Iterable[tuple[SubscriptionTuple, ProductTuple]]
 ) -> dict[str, object]:
     return {
@@ -67,7 +67,7 @@ async def test_create_user_adds_additional_user_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == _get_expected_user_response(additional_user, [])
+    assert response.json() == _to_json(additional_user, [])
 
     users_in_database = await get_users_from_database()
     assert sorted(users_in_database) == sorted((*users, additional_user))
@@ -218,9 +218,7 @@ async def test_read_user_by_email_returns_user(
     response = await client.get(f"/users/by-email/{user[1]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _get_expected_user_response(
-        user, [(subscription, product)]
-    )
+    assert response.json() == _to_json(user, [(subscription, product)])
 
 
 async def test_read_user_by_email_with_nonexistent_email_fails(
@@ -256,9 +254,7 @@ async def test_read_user_by_id_returns_user(
     response = await client.get(f"/users/{user[0]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _get_expected_user_response(
-        user, [(subscription, product)]
-    )
+    assert response.json() == _to_json(user, [(subscription, product)])
 
 
 async def test_read_user_by_id_with_nonexistent_id_fails(
@@ -301,8 +297,8 @@ async def test_read_users_returns_all_users(
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
         (
-            _get_expected_user_response(users[0], [(subscription, product)]),
-            _get_expected_user_response(users[1], []),
+            _to_json(users[0], [(subscription, product)]),
+            _to_json(users[1], []),
         )
     )
 
@@ -331,7 +327,7 @@ async def test_update_user_modifies_user_in_database(
     response = await client.put(f"/users/{users[0][0]}", json={"email": new_email})
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _get_expected_user_response((users[0][0], new_email), [])
+    assert response.json() == _to_json((users[0][0], new_email), [])
 
     users_in_database = await get_users_from_database()
     assert sorted(users_in_database) == sorted(((users[0][0], new_email), users[1]))

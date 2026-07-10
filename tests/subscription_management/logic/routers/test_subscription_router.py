@@ -25,7 +25,7 @@ type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type UserTuple = tuple[UUID, str]
 
 
-def _get_expected_subscription_response(
+def _to_json(
     subscription: SubscriptionTuple, product: ProductTuple
 ) -> dict[str, object]:
     return {
@@ -71,9 +71,7 @@ async def test_create_subscription_adds_subscription_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == _get_expected_subscription_response(
-        new_subscription, product
-    )
+    assert response.json() == _to_json(new_subscription, product)
 
     subscriptions_in_database = await get_subscriptions_from_database()
     assert sorted(subscriptions_in_database) == sorted(
@@ -298,8 +296,8 @@ async def test_read_subscriptions_returns_all_subscriptions(
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
         (
-            _get_expected_subscription_response(subscription1, product1),
-            _get_expected_subscription_response(subscription2, product2),
+            _to_json(subscription1, product1),
+            _to_json(subscription2, product2),
         )
     )
 
@@ -332,7 +330,7 @@ async def test_read_subscription_by_id_returns_subscription(
     response = await client.get(f"/subscriptions/{subscription[0]}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _get_expected_subscription_response(subscription, product)
+    assert response.json() == _to_json(subscription, product)
 
 
 async def test_read_subscription_by_id_returns_404_when_subscription_does_not_exist(
@@ -385,9 +383,7 @@ async def test_update_subscription_updates_subscription_in_database(
         user2[0],
         product2[0],
     )
-    assert response.json() == _get_expected_subscription_response(
-        updated_subscription, product2
-    )
+    assert response.json() == _to_json(updated_subscription, product2)
 
     subscriptions_in_database = await get_subscriptions_from_database()
     assert subscriptions_in_database == [updated_subscription]
