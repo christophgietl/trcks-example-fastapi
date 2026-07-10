@@ -1,24 +1,25 @@
-from collections.abc import Awaitable, Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING
-from uuid import UUID, uuid7
+from uuid import uuid7
 
 import pytest
 from fastapi import status
 
-from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import ProductModel
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
-type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
-type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
-type ProductTuples = tuple[ProductTuple, ...]
-type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
-type StrDict = dict[str, object]
-type ToProductDict = Callable[[ProductTuple], StrDict]
+    from subscription_management.data_structures.domain.product import ProductStatus
+
+    from ._types import (
+        GetProductsFromDatabase,
+        ProductTuple,
+        ProductTuples,
+        SortedById,
+        ToProductDict,
+    )
 
 
 async def test_create_product_adds_additional_product_to_database(

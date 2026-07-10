@@ -11,17 +11,10 @@ from subscription_management.data_structures.models import (
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Sequence
-    from decimal import Decimal
-    from uuid import UUID
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from subscription_management.data_structures.domain.product import ProductStatus
-
-type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
-type StrDict = dict[str, object]
-type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
-type UserTuple = tuple[UUID, str]
+    from ._types import ProductTuple, StrDict, SubscriptionTuple, UserTuple
 
 
 def _get_id(d: StrDict) -> str:

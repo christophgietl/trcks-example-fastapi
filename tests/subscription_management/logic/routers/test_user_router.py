@@ -1,11 +1,9 @@
-from collections.abc import Awaitable, Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING
-from uuid import UUID, uuid7
+from uuid import uuid7
 
 from fastapi import status
 
-from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
     ProductModel,
     SubscriptionModel,
@@ -16,20 +14,19 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
-type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
-type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
-type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[UserTuple]]]
-type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
-type ProductTuples = tuple[ProductTuple, ...]
-type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
-type StrDict = dict[str, object]
-type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
-type SubscriptionTuples = tuple[SubscriptionTuple, ...]
-type ToUserDict = Callable[
-    [UserTuple, Iterable[tuple[SubscriptionTuple, ProductTuple]]], StrDict
-]
-type UserTuple = tuple[UUID, str]
-type UserTuples = tuple[UserTuple, ...]
+    from ._types import (
+        GetProductsFromDatabase,
+        GetSubscriptionsFromDatabase,
+        GetUsersFromDatabase,
+        ProductTuple,
+        ProductTuples,
+        SortedById,
+        SubscriptionTuple,
+        SubscriptionTuples,
+        ToUserDict,
+        UserTuple,
+        UserTuples,
+    )
 
 
 async def test_create_user_adds_additional_user_to_database(

@@ -1,12 +1,10 @@
-from collections.abc import Awaitable, Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
-from uuid import UUID, uuid7
+from uuid import uuid7
 
 import pytest
 from fastapi import status
 
-from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
     ProductModel,
     SubscriptionModel,
@@ -17,13 +15,14 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
-type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
-type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
-type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
-type StrDict = dict[str, object]
-type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
-type ToSubscriptionDict = Callable[[SubscriptionTuple, ProductTuple], StrDict]
-type UserTuple = tuple[UUID, str]
+    from ._types import (
+        GetSubscriptionsFromDatabase,
+        ProductTuple,
+        SortedById,
+        SubscriptionTuple,
+        ToSubscriptionDict,
+        UserTuple,
+    )
 
 
 async def test_create_subscription_adds_subscription_to_database(
