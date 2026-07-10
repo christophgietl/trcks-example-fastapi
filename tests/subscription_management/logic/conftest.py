@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
+    # The database setup logic for `app` lives in its `lifespan` function.
+    # Unfortunately, `ASGITransport` and `AsyncClient` do not run `lifespan` events.
+    # Therefore, we use the `_app` fixture which takes care of the database setup.
     app.state.engine = _engine
     yield app
     del app.state.engine
@@ -21,9 +24,6 @@ def _app(_engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportU
 
 @pytest.fixture
 async def client(_app: FastAPI) -> AsyncGenerator[AsyncClient]:
-    # The database setup logic for `app` lives in its `lifespan` function.
-    # Unfortunately, `ASGITransport` and `AsyncClient` do not run `lifespan` events.
-    # Therefore, we use the `_app` fixture which takes care of the database setup.
     transport = ASGITransport(_app)
     async with AsyncClient(
         base_url="http://test", follow_redirects=True, transport=transport
