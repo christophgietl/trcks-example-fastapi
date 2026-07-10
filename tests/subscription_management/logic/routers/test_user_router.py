@@ -30,7 +30,7 @@ type UserTuples = tuple[UserTuple, ...]
 
 
 def _to_user_dict(
-    user: UserTuple, subscriptions: Iterable[tuple[SubscriptionTuple, ProductTuple]]
+    user: UserTuple, iterable: Iterable[tuple[SubscriptionTuple, ProductTuple]]
 ) -> StrDict:
     return {
         "id": str(user[0]),
@@ -46,7 +46,7 @@ def _to_user_dict(
                     "status": product[3],
                 },
             }
-            for subscription, product in subscriptions
+            for subscription, product in iterable
         ],
     }
 
