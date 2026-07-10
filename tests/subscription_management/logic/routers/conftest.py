@@ -1,5 +1,5 @@
 import functools
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Unpack
 
 import pytest
 from sqlalchemy import select
@@ -13,7 +13,6 @@ from subscription_management.data_structures.models import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
     from decimal import Decimal
-    from typing import Unpack
     from uuid import UUID
 
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,9 +26,6 @@ type AddSubscriptionsToDatabase = Callable[
     [Unpack[tuple[SubscriptionTuple, ...]]], Awaitable[None]
 ]
 type AddUsersToDatabase = Callable[[Unpack[tuple[UserTuple, ...]]], Awaitable[None]]
-type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
-type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
-type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[UserTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type StrMapping = Mapping[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
