@@ -11,7 +11,7 @@ from subscription_management.data_structures.models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
     from decimal import Decimal
     from uuid import UUID
 
@@ -20,12 +20,12 @@ if TYPE_CHECKING:
     from subscription_management.data_structures.domain.product import ProductStatus
 
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
-type StrDict = dict[str, object]
+type StrMapping = Mapping[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type UserTuple = tuple[UUID, str]
 
 
-def _get_id(d: StrDict) -> str:
+def _get_id(d: StrMapping) -> str:
     return str(d["id"])
 
 
@@ -66,7 +66,7 @@ async def _get_users_from_database(
         return result.tuples().all()
 
 
-def _sorted_by_id(ds: Iterable[StrDict]) -> list[StrDict]:
+def _sorted_by_id(ds: Iterable[StrMapping]) -> list[StrMapping]:
     return sorted(ds, key=_get_id)
 
 
@@ -92,5 +92,5 @@ def get_users_from_database(
 
 
 @pytest.fixture
-def sorted_by_id() -> Callable[[Iterable[StrDict]], list[StrDict]]:
+def sorted_by_id() -> Callable[[Iterable[StrMapping]], list[StrMapping]]:
     return _sorted_by_id

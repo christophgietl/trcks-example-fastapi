@@ -1,4 +1,4 @@
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid7
@@ -19,15 +19,15 @@ if TYPE_CHECKING:
 
 type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
-type SortedById = Callable[[Iterable[StrDict]], list[StrDict]]
-type StrDict = dict[str, object]
+type SortedById = Callable[[Iterable[StrMapping]], list[StrMapping]]
+type StrMapping = Mapping[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type UserTuple = tuple[UUID, str]
 
 
 def _get_expected_subscription_response(
     subscription: SubscriptionTuple, product: ProductTuple
-) -> StrDict:
+) -> dict[str, object]:
     return {
         "id": str(subscription[0]),
         "is_active": subscription[1],
