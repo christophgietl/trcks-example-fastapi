@@ -29,25 +29,6 @@ type UserTuple = tuple[UUID, str]
 type UserTuples = tuple[UserTuple, ...]
 
 
-def _to_product_dict(product: ProductTuple) -> StrDict:
-    return {
-        "id": str(product[0]),
-        "monthly_fee_in_euros": str(product[1]),
-        "name": product[2],
-        "status": product[3],
-    }
-
-
-def _to_subscription_dict(
-    subscription: SubscriptionTuple, product: ProductTuple
-) -> StrDict:
-    return {
-        "id": str(subscription[0]),
-        "is_active": subscription[1],
-        "product": _to_product_dict(product),
-    }
-
-
 def _to_user_dict(
     user: UserTuple, subscriptions: Iterable[tuple[SubscriptionTuple, ProductTuple]]
 ) -> StrDict:
@@ -55,7 +36,16 @@ def _to_user_dict(
         "id": str(user[0]),
         "email": user[1],
         "subscriptions": [
-            _to_subscription_dict(subscription, product)
+            {
+                "id": str(subscription[0]),
+                "is_active": subscription[1],
+                "product": {
+                    "id": str(product[0]),
+                    "monthly_fee_in_euros": str(product[1]),
+                    "name": product[2],
+                    "status": product[3],
+                },
+            }
             for subscription, product in subscriptions
         ],
     }
