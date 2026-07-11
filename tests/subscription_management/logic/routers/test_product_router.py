@@ -7,11 +7,12 @@ import pytest
 from fastapi import status
 
 from subscription_management.data_structures.domain.product import ProductStatus
+from subscription_management.data_structures.models import ProductModel
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
 
-type AddProductsToDatabase = Callable[[*tuple[ProductTuple, ...]], Awaitable[None]]
+type AddToDatabase = Callable[[*tuple[object, ...]], Awaitable[None]]
 type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type ProductTuples = tuple[ProductTuple, ...]
@@ -30,14 +31,15 @@ def _to_json(product: ProductTuple) -> dict[str, object]:
 
 async def test_create_product_adds_additional_product_to_database(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("6.99"), "Product 1", "published"),
         (uuid7(), Decimal("3.25"), "Product 2", "published"),
     )
-    await add_products_to_database(*products)
+    product_models = tuple(ProductModel(*product) for product in products)
+    await add_to_database(*product_models)
 
     additional_product: ProductTuple = (
         uuid7(),
@@ -57,7 +59,7 @@ async def test_create_product_adds_additional_product_to_database(
 
 async def test_create_product_with_existing_id_fails(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     product: ProductTuple = (
@@ -66,7 +68,8 @@ async def test_create_product_with_existing_id_fails(
         "Test Product",
         "published",
     )
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     additional_product_with_existing_id_as_dict = {
         "id": str(product[0]),
@@ -90,11 +93,12 @@ async def test_create_product_with_existing_id_fails(
 
 async def test_create_product_with_existing_name_fails(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("5.99"), "Test Product", "published")
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     additional_product_with_existing_name_as_dict = {
         "id": str(uuid7()),
@@ -117,14 +121,15 @@ async def test_create_product_with_existing_name_fails(
 
 async def test_delete_product_removes_draft_product_from_database(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("0.89"), "Product 1", "draft"),
         (uuid7(), Decimal("0.69"), "Product 2", "published"),
     )
-    await add_products_to_database(*products)
+    product_models = tuple(ProductModel(*product) for product in products)
+    await add_to_database(*product_models)
 
     response = await client.delete(f"/products/{products[0][0]}")
 
@@ -137,7 +142,7 @@ async def test_delete_product_removes_draft_product_from_database(
 
 async def test_delete_product_with_nonexistent_id_fails(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     product: ProductTuple = (
@@ -146,7 +151,8 @@ async def test_delete_product_with_nonexistent_id_fails(
         "Test Product",
         "published",
     )
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     nonexistent_product_id = uuid7()
     response = await client.delete(f"/products/{nonexistent_product_id}")
@@ -163,12 +169,13 @@ async def test_delete_product_with_nonexistent_id_fails(
 @pytest.mark.parametrize("product_status", ["published", "deprecated"])
 async def test_delete_product_with_non_draft_status_fails(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
     product_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("3.99"), "Test Product", product_status)
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     response = await client.delete(f"/products/{product[0]}")
 
@@ -185,10 +192,11 @@ async def test_delete_product_with_non_draft_status_fails(
 
 
 async def test_read_product_by_id_returns_product(
-    client: AsyncClient, add_products_to_database: AddProductsToDatabase
+    client: AsyncClient, add_to_database: AddToDatabase
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     response = await client.get(f"/products/{product[0]}")
 
@@ -197,10 +205,11 @@ async def test_read_product_by_id_returns_product(
 
 
 async def test_read_product_by_id_with_nonexistent_id_fails(
-    client: AsyncClient, add_products_to_database: AddProductsToDatabase
+    client: AsyncClient, add_to_database: AddToDatabase
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     nonexistent_product_id = uuid7()
     response = await client.get(f"/products/{nonexistent_product_id}")
@@ -212,10 +221,11 @@ async def test_read_product_by_id_with_nonexistent_id_fails(
 
 
 async def test_read_product_by_name_returns_product(
-    client: AsyncClient, add_products_to_database: AddProductsToDatabase
+    client: AsyncClient, add_to_database: AddToDatabase
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     response = await client.get(f"/products/by-name/{product[2]}")
 
@@ -224,10 +234,11 @@ async def test_read_product_by_name_returns_product(
 
 
 async def test_read_product_by_name_with_nonexistent_name_fails(
-    client: AsyncClient, add_products_to_database: AddProductsToDatabase
+    client: AsyncClient, add_to_database: AddToDatabase
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("1.99"), "Test Product", "published")
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     nonexistent_product_name = "Nonexistent Product"
     response = await client.get(f"/products/by-name/{nonexistent_product_name}")
@@ -240,14 +251,15 @@ async def test_read_product_by_name_with_nonexistent_name_fails(
 
 async def test_read_products_returns_all_products(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     sorted_by_id: SortedById,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("4.99"), "Product 1", "published"),
         (uuid7(), Decimal("2.99"), "Product 2", "published"),
     )
-    await add_products_to_database(*products)
+    product_models = tuple(ProductModel(*product) for product in products)
+    await add_to_database(*product_models)
 
     response = await client.get("/products/")
 
@@ -269,12 +281,13 @@ async def test_read_products_returns_empty_list_when_no_products(
 @pytest.mark.parametrize("product_status", ["published", "deprecated"])
 async def test_update_product_cannot_change_non_status_attributes_of_published_product(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
     product_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("4.50"), "Test Product", product_status)
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     product_update = {
         "monthly_fee_in_euros": str(product[1]),
@@ -294,14 +307,15 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
 
 async def test_update_product_modifies_product_in_database(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("1.00"), "Original Product", "draft"),
         (uuid7(), Decimal("2.00"), "Other Product", "draft"),
     )
-    await add_products_to_database(*products)
+    product_models = tuple(ProductModel(*product) for product in products)
+    await add_to_database(*product_models)
 
     new_name = "Updated Product"
     new_status = "published"
@@ -330,13 +344,14 @@ async def test_update_product_modifies_product_in_database(
 )
 async def test_update_product_status_forbidden_transitions_fail(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
     initial_status: ProductStatus,
     target_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("3.33"), "Test Product", initial_status)
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     response = await client.put(
         f"/products/{product[0]}",
@@ -358,14 +373,15 @@ async def test_update_product_status_forbidden_transitions_fail(
 
 async def test_update_product_with_existing_name_fails(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     products: ProductTuples = (
         (uuid7(), Decimal("1.10"), "Original Product", "draft"),
         (uuid7(), Decimal("1.20"), "Existing Product", "draft"),
     )
-    await add_products_to_database(*products)
+    product_models = tuple(ProductModel(*product) for product in products)
+    await add_to_database(*product_models)
 
     response = await client.put(
         f"/products/{products[0][0]}",
@@ -387,7 +403,7 @@ async def test_update_product_with_existing_name_fails(
 
 async def test_update_product_with_nonexistent_id_fails(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
 ) -> None:
     product: ProductTuple = (
@@ -396,7 +412,8 @@ async def test_update_product_with_nonexistent_id_fails(
         "Test Product",
         "published",
     )
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     nonexistent_product_id = uuid7()
     response = await client.put(
@@ -420,12 +437,13 @@ async def test_update_product_with_nonexistent_id_fails(
 @pytest.mark.parametrize("product_status", ["draft", "published", "deprecated"])
 async def test_update_product_without_changes_succeeds(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
     product_status: ProductStatus,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("7.77"), "Test Product", product_status)
-    await add_products_to_database(product)
+    product_model = ProductModel(*product)
+    await add_to_database(product_model)
 
     response = await client.put(
         f"/products/{product[0]}",

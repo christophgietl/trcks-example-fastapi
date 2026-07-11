@@ -18,11 +18,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
-type AddProductsToDatabase = Callable[[*tuple[ProductTuple, ...]], Awaitable[None]]
-type AddSubscriptionsToDatabase = Callable[
-    [*tuple[SubscriptionTuple, ...]], Awaitable[None]
-]
-type AddUsersToDatabase = Callable[[*tuple[UserTuple, ...]], Awaitable[None]]
+type AddToDatabase = Callable[[*tuple[object, ...]], Awaitable[None]]
 type ProductTuple = tuple[UUID, Decimal, str, ProductStatus]
 type StrMapping = Mapping[str, object]
 type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
@@ -33,25 +29,9 @@ def _get_id(d: StrMapping) -> str:
     return str(d["id"])
 
 
-async def _add_products_to_database(
-    session: AsyncSession, *products: ProductTuple
-) -> None:
+async def _add_to_database(session: AsyncSession, *instances: object) -> None:
     async with session.begin():
-        session.add_all(ProductModel(*product) for product in products)
-
-
-async def _add_subscriptions_to_database(
-    session: AsyncSession, *subscriptions: SubscriptionTuple
-) -> None:
-    async with session.begin():
-        session.add_all(
-            SubscriptionModel(*subscription) for subscription in subscriptions
-        )
-
-
-async def _add_users_to_database(session: AsyncSession, *users: UserTuple) -> None:
-    async with session.begin():
-        session.add_all(UserModel(*user) for user in users)
+        session.add_all(instances)
 
 
 async def _get_products_from_database(
@@ -96,20 +76,8 @@ def _sorted_by_id(ds: Iterable[StrMapping]) -> list[StrMapping]:
 
 
 @pytest.fixture
-def add_products_to_database(session: AsyncSession) -> AddProductsToDatabase:
-    return functools.partial(_add_products_to_database, session)
-
-
-@pytest.fixture
-def add_subscriptions_to_database(
-    session: AsyncSession,
-) -> AddSubscriptionsToDatabase:
-    return functools.partial(_add_subscriptions_to_database, session)
-
-
-@pytest.fixture
-def add_users_to_database(session: AsyncSession) -> AddUsersToDatabase:
-    return functools.partial(_add_users_to_database, session)
+def add_to_database(session: AsyncSession) -> AddToDatabase:
+    return functools.partial(_add_to_database, session)
 
 
 @pytest.fixture
