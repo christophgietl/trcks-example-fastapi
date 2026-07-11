@@ -1,5 +1,4 @@
 import dataclasses
-from collections.abc import Callable, Iterable, Mapping
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal, Self, final
 from uuid import UUID, uuid7
@@ -15,13 +14,13 @@ from subscription_management.data_structures.models import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
+type _JsonObject = dict[str, object]
 type _ProductStatus = Literal["draft", "published", "deprecated"]
-
-type SortedById = Callable[[Iterable[StrMapping]], list[StrMapping]]
-type StrMapping = Mapping[str, object]
 
 
 @final
@@ -58,14 +57,14 @@ class _Product:
                 for model in models
             )
 
-    def to_json_without_id(self) -> dict[str, object]:
+    def to_json_without_id(self) -> _JsonObject:
         return {
             "monthly_fee_in_euros": str(self.monthly_fee_in_euros),
             "name": self.name,
             "status": self.status,
         }
 
-    def to_json(self) -> dict[str, object]:
+    def to_json(self) -> _JsonObject:
         return {"id": str(self.id)} | self.to_json_without_id()
 
 
@@ -103,7 +102,7 @@ class _Subscription:
                 for model in models
             )
 
-    def to_json(self, product: _Product) -> dict[str, object]:
+    def to_json(self, product: _Product) -> _JsonObject:
         return {
             "id": str(self.id),
             "is_active": self.is_active,
@@ -121,6 +120,14 @@ class _User:
         model = UserModel(id=self.id, email=self.email)
         async with session.begin():
             session.add(model)
+
+
+def _get_id(json_object: _JsonObject) -> str:
+    return str(json_object["id"])
+
+
+def _sorted_by_id(json_objects: Iterable[_JsonObject]) -> list[_JsonObject]:
+    return sorted(json_objects, key=_get_id)
 
 
 async def test_create_subscription_adds_subscription_to_database(
@@ -166,8 +173,13 @@ async def test_create_subscription_adds_subscription_to_database(
     assert response.json() == new_subscription.to_json(product)
 
     subscriptions_in_database = await _Subscription.select(session)
-    assert sorted(subscriptions_in_database) == sorted(
-        (subscription1, new_subscription)
+    assert _sorted_by_id(
+        [subscription.to_json(product) for subscription in subscriptions_in_database]
+    ) == _sorted_by_id(
+        [
+            subscription.to_json(product)
+            for subscription in (subscription1, new_subscription)
+        ]
     )
 
 
@@ -386,7 +398,6 @@ async def test_delete_subscription_with_nonexistent_id_fails(
 async def test_read_subscriptions_returns_all_subscriptions(
     client: AsyncClient,
     session: AsyncSession,
-    sorted_by_id: SortedById,
 ) -> None:
     product1 = _Product(
         id=uuid7(),
@@ -424,7 +435,7 @@ async def test_read_subscriptions_returns_all_subscriptions(
     response = await client.get("/subscriptions/")
 
     assert response.status_code == status.HTTP_200_OK
-    assert sorted_by_id(response.json()) == sorted_by_id(
+    assert _sorted_by_id(response.json()) == _sorted_by_id(
         (
             subscription1.to_json(product1),
             subscription2.to_json(product2),
