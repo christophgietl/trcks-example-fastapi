@@ -6,15 +6,16 @@ from uuid import UUID, uuid7
 from fastapi import status
 
 from subscription_management.data_structures.domain.product import ProductStatus
+from subscription_management.data_structures.models import (
+    ProductModel,
+    SubscriptionModel,
+    UserModel,
+)
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
 
-type AddProductsToDatabase = Callable[[*tuple[ProductTuple, ...]], Awaitable[None]]
-type AddSubscriptionsToDatabase = Callable[
-    [*tuple[SubscriptionTuple, ...]], Awaitable[None]
-]
-type AddUsersToDatabase = Callable[[*tuple[UserTuple, ...]], Awaitable[None]]
+type AddToDatabase = Callable[[*tuple[object, ...]], Awaitable[None]]
 type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
 type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
 type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[UserTuple]]]
@@ -52,11 +53,12 @@ def _to_json(
 
 async def test_create_user_adds_additional_user_to_database(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     users: UserTuples = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
-    await add_users_to_database(*users)
+    user_models = tuple(UserModel(*user) for user in users)
+    await add_to_database(*user_models)
 
     additional_user: UserTuple = (uuid7(), "test@baz.com")
     response = await client.post(
@@ -72,11 +74,12 @@ async def test_create_user_adds_additional_user_to_database(
 
 async def test_create_user_with_existing_email_fails(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    await add_users_to_database(user)
+    user_model = UserModel(*user)
+    await add_to_database(user_model)
 
     response = await client.post("/users/", json={"id": str(uuid7()), "email": user[1]})
 
@@ -89,11 +92,12 @@ async def test_create_user_with_existing_email_fails(
 
 async def test_create_user_with_existing_id_fails(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    await add_users_to_database(user)
+    user_model = UserModel(*user)
+    await add_to_database(user_model)
 
     response = await client.post(
         "/users/", json={"id": str(user[0]), "email": "ham@bar.com"}
@@ -108,11 +112,12 @@ async def test_create_user_with_existing_id_fails(
 
 async def test_delete_user_removes_user_from_database(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     users: UserTuples = ((uuid7(), "spam@foo.org"), (uuid7(), "ham@bar.com"))
-    await add_users_to_database(*users)
+    user_models = tuple(UserModel(*user) for user in users)
+    await add_to_database(*user_models)
 
     response = await client.delete(f"/users/{users[0][0]}")
 
@@ -125,11 +130,12 @@ async def test_delete_user_removes_user_from_database(
 
 async def test_delete_user_with_nonexistent_id_fails(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    await add_users_to_database(user)
+    user_model = UserModel(*user)
+    await add_to_database(user_model)
 
     nonexistent_user_id = uuid7()
     response = await client.delete(f"/users/{nonexistent_user_id}")
@@ -143,11 +149,9 @@ async def test_delete_user_with_nonexistent_id_fails(
     assert users_in_database == [user]
 
 
-async def test_delete_user_also_removes_subscriptions_but_keeps_products(  # noqa: PLR0913
+async def test_delete_user_also_removes_subscriptions_but_keeps_products(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
-    add_subscriptions_to_database: AddSubscriptionsToDatabase,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_products_from_database: GetProductsFromDatabase,
     get_subscriptions_from_database: GetSubscriptionsFromDatabase,
     get_users_from_database: GetUsersFromDatabase,
@@ -164,9 +168,12 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(  # noq
         (uuid7(), True, users[0][0], products[0][0]),
         (uuid7(), True, users[1][0], products[1][0]),
     )
-    await add_products_to_database(*products)
-    await add_users_to_database(*users)
-    await add_subscriptions_to_database(*subscriptions)
+    product_models = tuple(ProductModel(*product) for product in products)
+    user_models = tuple(UserModel(*user) for user in users)
+    subscription_models = tuple(
+        SubscriptionModel(*subscription) for subscription in subscriptions
+    )
+    await add_to_database(*product_models, *user_models, *subscription_models)
 
     response = await client.delete(f"/users/{users[0][0]}")
 
@@ -192,16 +199,15 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(  # noq
 
 async def test_read_user_by_email_returns_user(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
-    add_subscriptions_to_database: AddSubscriptionsToDatabase,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
-    await add_products_to_database(product)
-    await add_users_to_database(user)
-    await add_subscriptions_to_database(subscription)
+    product_model = ProductModel(*product)
+    user_model = UserModel(*user)
+    subscription_model = SubscriptionModel(*subscription)
+    await add_to_database(product_model, user_model, subscription_model)
 
     response = await client.get(f"/users/by-email/{user[1]}")
 
@@ -211,10 +217,11 @@ async def test_read_user_by_email_returns_user(
 
 async def test_read_user_by_email_with_nonexistent_email_fails(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    await add_users_to_database(user)
+    user_model = UserModel(*user)
+    await add_to_database(user_model)
 
     nonexistent_email = "nonexistent@example.com"
     response = await client.get(f"/users/by-email/{nonexistent_email}")
@@ -227,16 +234,15 @@ async def test_read_user_by_email_with_nonexistent_email_fails(
 
 async def test_read_user_by_id_returns_user(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
-    add_subscriptions_to_database: AddSubscriptionsToDatabase,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
     user: UserTuple = (uuid7(), "test@example.com")
     subscription: SubscriptionTuple = (uuid7(), True, user[0], product[0])
-    await add_products_to_database(product)
-    await add_users_to_database(user)
-    await add_subscriptions_to_database(subscription)
+    product_model = ProductModel(*product)
+    user_model = UserModel(*user)
+    subscription_model = SubscriptionModel(*subscription)
+    await add_to_database(product_model, user_model, subscription_model)
 
     response = await client.get(f"/users/{user[0]}")
 
@@ -246,10 +252,11 @@ async def test_read_user_by_id_returns_user(
 
 async def test_read_user_by_id_with_nonexistent_id_fails(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    await add_users_to_database(user)
+    user_model = UserModel(*user)
+    await add_to_database(user_model)
 
     nonexistent_user_id = uuid7()
     response = await client.get(f"/users/{nonexistent_user_id}")
@@ -262,9 +269,7 @@ async def test_read_user_by_id_with_nonexistent_id_fails(
 
 async def test_read_users_returns_all_users(
     client: AsyncClient,
-    add_products_to_database: AddProductsToDatabase,
-    add_subscriptions_to_database: AddSubscriptionsToDatabase,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     sorted_by_id: SortedById,
 ) -> None:
     product: ProductTuple = (uuid7(), Decimal("9.99"), "Test Product", "published")
@@ -273,9 +278,10 @@ async def test_read_users_returns_all_users(
         (uuid7(), "user2@example.com"),
     )
     subscription: SubscriptionTuple = (uuid7(), True, users[0][0], product[0])
-    await add_products_to_database(product)
-    await add_users_to_database(*users)
-    await add_subscriptions_to_database(subscription)
+    product_model = ProductModel(*product)
+    user_models = tuple(UserModel(*user) for user in users)
+    subscription_model = SubscriptionModel(*subscription)
+    await add_to_database(product_model, *user_models, subscription_model)
 
     response = await client.get("/users/")
 
@@ -297,14 +303,15 @@ async def test_read_users_returns_empty_list_when_no_users(client: AsyncClient) 
 
 async def test_update_user_modifies_user_in_database(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     users: UserTuples = (
         (uuid7(), "original@example.com"),
         (uuid7(), "other@example.com"),
     )
-    await add_users_to_database(*users)
+    user_models = tuple(UserModel(*user) for user in users)
+    await add_to_database(*user_models)
 
     new_email = "updated@example.com"
     response = await client.put(f"/users/{users[0][0]}", json={"email": new_email})
@@ -318,11 +325,12 @@ async def test_update_user_modifies_user_in_database(
 
 async def test_update_user_with_nonexistent_id_fails(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     user: UserTuple = (uuid7(), "spam@foo.org")
-    await add_users_to_database(user)
+    user_model = UserModel(*user)
+    await add_to_database(user_model)
 
     nonexistent_user_id = uuid7()
     response = await client.put(
@@ -340,14 +348,15 @@ async def test_update_user_with_nonexistent_id_fails(
 
 async def test_update_user_with_existing_email_fails(
     client: AsyncClient,
-    add_users_to_database: AddUsersToDatabase,
+    add_to_database: AddToDatabase,
     get_users_from_database: GetUsersFromDatabase,
 ) -> None:
     users: UserTuples = (
         (uuid7(), "original@example.com"),
         (uuid7(), "existing@example.com"),
     )
-    await add_users_to_database(*users)
+    user_models = tuple(UserModel(*user) for user in users)
+    await add_to_database(*user_models)
 
     response = await client.put(f"/users/{users[0][0]}", json={"email": users[1][1]})
 
