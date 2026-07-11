@@ -1,9 +1,13 @@
 import functools
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
+from decimal import Decimal
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 import pytest
 from sqlalchemy import select
 
+from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
     ProductModel,
     SubscriptionModel,
@@ -11,13 +15,8 @@ from subscription_management.data_structures.models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
-    from decimal import Decimal
-    from uuid import UUID
-
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from subscription_management.data_structures.domain.product import ProductStatus
 
 type AddProductsToDatabase = Callable[[*tuple[ProductTuple, ...]], Awaitable[None]]
 type AddSubscriptionsToDatabase = Callable[
