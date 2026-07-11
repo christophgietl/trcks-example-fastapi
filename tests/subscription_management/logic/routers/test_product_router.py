@@ -1,5 +1,4 @@
 import dataclasses
-from collections.abc import Callable, Iterable, Mapping
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal, Self, final
 from uuid import UUID, uuid7
@@ -11,13 +10,13 @@ from sqlalchemy import select
 from subscription_management.data_structures.models import ProductModel
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
+type _JsonObject = dict[str, object]
 type _ProductStatus = Literal["draft", "published", "deprecated"]
-
-type SortedById = Callable[[Iterable[StrMapping]], list[StrMapping]]
-type StrMapping = Mapping[str, object]
 
 
 @final
@@ -54,15 +53,23 @@ class _Product:
                 for model in models
             )
 
-    def to_json_without_id(self) -> dict[str, object]:
+    def to_json_without_id(self) -> _JsonObject:
         return {
             "monthly_fee_in_euros": str(self.monthly_fee_in_euros),
             "name": self.name,
             "status": self.status,
         }
 
-    def to_json(self) -> dict[str, object]:
+    def to_json(self) -> _JsonObject:
         return {"id": str(self.id)} | self.to_json_without_id()
+
+
+def _get_id(json_object: _JsonObject) -> str:
+    return str(json_object["id"])
+
+
+def _sorted_by_id(json_objects: Iterable[_JsonObject]) -> list[_JsonObject]:
+    return sorted(json_objects, key=_get_id)
 
 
 async def test_create_product_adds_additional_product_to_database(
@@ -98,7 +105,11 @@ async def test_create_product_adds_additional_product_to_database(
     assert response.json() == additional_product.to_json()
 
     products_in_database = await _Product.select(session)
-    assert sorted(products_in_database) == sorted((*products, additional_product))
+    assert _sorted_by_id(
+        [product.to_json() for product in products_in_database]
+    ) == _sorted_by_id(
+        [product.to_json() for product in (*products, additional_product)]
+    )
 
 
 async def test_create_product_with_existing_id_fails(
@@ -322,7 +333,6 @@ async def test_read_product_by_name_with_nonexistent_name_fails(
 async def test_read_products_returns_all_products(
     client: AsyncClient,
     session: AsyncSession,
-    sorted_by_id: SortedById,
 ) -> None:
     products = (
         _Product(
@@ -344,7 +354,7 @@ async def test_read_products_returns_all_products(
     response = await client.get("/products/")
 
     assert response.status_code == status.HTTP_200_OK
-    assert sorted_by_id(response.json()) == sorted_by_id(
+    assert _sorted_by_id(response.json()) == _sorted_by_id(
         product.to_json() for product in products
     )
 
