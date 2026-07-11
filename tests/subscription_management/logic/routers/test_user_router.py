@@ -1,9 +1,12 @@
+import functools
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol
 from uuid import UUID, uuid7
 
+import pytest
 from fastapi import status
+from sqlalchemy import Select, select
 
 from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.models import (
@@ -16,6 +19,7 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
 
 type AddToDatabase = Callable[[*tuple[object, ...]], Awaitable[None]]
+type AnyTuple = tuple[Any, ...]
 type GetProductsFromDatabase = Callable[[], Awaitable[Sequence[ProductTuple]]]
 type GetSubscriptionsFromDatabase = Callable[[], Awaitable[Sequence[SubscriptionTuple]]]
 type GetUsersFromDatabase = Callable[[], Awaitable[Sequence[UserTuple]]]
@@ -27,6 +31,46 @@ type SubscriptionTuple = tuple[UUID, bool, UUID, UUID]
 type SubscriptionTuples = tuple[SubscriptionTuple, ...]
 type UserTuple = tuple[UUID, str]
 type UserTuples = tuple[UserTuple, ...]
+
+
+class GetFromDatabase(Protocol):
+    def __call__[TP: AnyTuple](
+        self, statement: Select[TP]
+    ) -> Awaitable[Sequence[TP]]: ...
+
+
+@pytest.fixture
+def get_products_from_database(
+    get_from_database: GetFromDatabase,
+) -> GetProductsFromDatabase:
+    statement = select(
+        ProductModel.id,
+        ProductModel.monthly_fee_in_euros,
+        ProductModel.name,
+        ProductModel.status,
+    )
+    return functools.partial(get_from_database, statement)
+
+
+@pytest.fixture
+def get_subscriptions_from_database(
+    get_from_database: GetFromDatabase,
+) -> GetSubscriptionsFromDatabase:
+    statement = select(
+        SubscriptionModel.id,
+        SubscriptionModel.is_active,
+        SubscriptionModel.user_id,
+        SubscriptionModel.product_id,
+    )
+    return functools.partial(get_from_database, statement)
+
+
+@pytest.fixture
+def get_users_from_database(
+    get_from_database: GetFromDatabase,
+) -> GetUsersFromDatabase:
+    statement = select(UserModel.id, UserModel.email)
+    return functools.partial(get_from_database, statement)
 
 
 def _to_json(
