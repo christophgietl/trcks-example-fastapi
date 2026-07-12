@@ -94,7 +94,7 @@ class ProductRepository:
         return "success", product_model
 
     async def _read_products(self) -> tuple[ProductModel, ...]:
-        statement = select(ProductModel)
+        statement = select(ProductModel).order_by(ProductModel.id)
         scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 
