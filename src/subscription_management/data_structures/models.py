@@ -73,7 +73,7 @@ class UserModel(_BaseModel):
     subscriptions: Mapped[list[SubscriptionModel]] = relationship(
         back_populates="user",
         default_factory=list,
-        order_by="SubscriptionModel.id",
+        order_by=SubscriptionModel.id,
         passive_deletes=True,
     )
 
