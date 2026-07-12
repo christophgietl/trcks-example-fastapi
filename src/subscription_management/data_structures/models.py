@@ -71,7 +71,10 @@ class UserModel(_BaseModel):
     __tablename__ = "user"
     email: Mapped[str] = mapped_column(index=True, unique=True)
     subscriptions: Mapped[list[SubscriptionModel]] = relationship(
-        back_populates="user", default_factory=list, passive_deletes=True
+        back_populates="user",
+        default_factory=list,
+        order_by="SubscriptionModel.id",
+        passive_deletes=True,
     )
 
     def to_user_with_subscriptions_with_products(
