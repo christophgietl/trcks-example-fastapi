@@ -122,7 +122,11 @@ class SubscriptionRepository:
         return "success", subscription_model
 
     async def _read_subscriptions(self) -> tuple[SubscriptionModel, ...]:
-        statement = select(SubscriptionModel).options(self._LOADER_OPTION)
+        statement = (
+            select(SubscriptionModel)
+            .options(self._LOADER_OPTION)
+            .order_by(SubscriptionModel.id)
+        )
         scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 

@@ -102,7 +102,9 @@ class UserRepository:
         return "success", user_model
 
     async def _read_users(self) -> tuple[UserModel, ...]:
-        statement = select(UserModel).options(self._LOADER_OPTION)
+        statement = (
+            select(UserModel).options(self._LOADER_OPTION).order_by(UserModel.id)
+        )
         scalars = await self._session.scalars(statement=statement)
         return tuple(scalars.all())
 
