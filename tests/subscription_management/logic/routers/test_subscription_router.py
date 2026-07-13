@@ -51,7 +51,7 @@ async def _insert_products(session: AsyncSession, *products: Product) -> None:
         product_repository = ProductRepository(_session=session)
         for product in products:
             result = await product_repository.create_product(product)
-            assert result[0] == "success"
+            assert result[0] == "success", result
 
 
 async def _insert_subscriptions(
@@ -61,7 +61,7 @@ async def _insert_subscriptions(
         subscription_repository = _get_subscription_repository(session)
         for subscription in subscriptions:
             result = await subscription_repository.create_subscription(subscription)
-            assert result[0] == "success"
+            assert result[0] == "success", result
 
 
 async def _insert_users(session: AsyncSession, *users: User) -> None:
@@ -69,7 +69,7 @@ async def _insert_users(session: AsyncSession, *users: User) -> None:
         user_repository = UserRepository(_session=session)
         for user in users:
             result = await user_repository.create_user(user)
-            assert result[0] == "success"
+            assert result[0] == "success", result
 
 
 async def _select_subscriptions(
