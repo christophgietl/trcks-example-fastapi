@@ -47,7 +47,7 @@ async def _insert_products(session: AsyncSession, *products: Product) -> None:
         product_repository = ProductRepository(_session=session)
         for product in products:
             result = await product_repository.create_product(product)
-            assert result[0] == "success"
+            assert result[0] == "success", result
 
 
 async def _insert_subscriptions(
