@@ -1,16 +1,25 @@
-import dataclasses
 from decimal import Decimal
-from typing import TYPE_CHECKING, Literal, Self, final
-from uuid import UUID, uuid7
+from typing import TYPE_CHECKING
+from uuid import uuid7
 
 from fastapi import status
-from sqlalchemy import select
 
-from subscription_management.data_structures.models import (
-    ProductModel,
-    SubscriptionModel,
-    UserModel,
+from subscription_management.data_structures.domain.product import Product
+from subscription_management.data_structures.domain.subscription import (
+    SubscriptionWithProduct,
+    SubscriptionWithUserIdAndProductId,
 )
+from subscription_management.data_structures.domain.user import (
+    User,
+    UserWithSubscriptionsWithProducts,
+)
+from subscription_management.logic.repositories.product_repository import (
+    ProductRepository,
+)
+from subscription_management.logic.repositories.subscription_repository import (
+    SubscriptionRepository,
+)
+from subscription_management.logic.repositories.user_repository import UserRepository
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -19,131 +28,101 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 type _JsonObject = dict[str, object]
-type _ProductStatus = Literal["draft", "published", "deprecated"]
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, order=True, slots=True)
-class _Product:
-    id: UUID
-    monthly_fee_in_euros: Decimal
-    name: str
-    status: _ProductStatus
-
-    async def insert(self, session: AsyncSession) -> None:
-        model = ProductModel(
-            id=self.id,
-            monthly_fee_in_euros=self.monthly_fee_in_euros,
-            name=self.name,
-            status=self.status,
-        )
-        async with session.begin():
-            session.add(model)
-
-    @classmethod
-    async def select(cls, session: AsyncSession) -> tuple[Self, ...]:
-        statement = select(ProductModel)
-        async with session.begin():
-            scalar_result = await session.scalars(statement)
-            models = scalar_result.all()
-            return tuple(
-                cls(
-                    id=model.id,
-                    monthly_fee_in_euros=model.monthly_fee_in_euros,
-                    name=model.name,
-                    status=model.status,
-                )
-                for model in models
-            )
-
-    def to_json_without_id(self) -> _JsonObject:
-        return {
-            "monthly_fee_in_euros": str(self.monthly_fee_in_euros),
-            "name": self.name,
-            "status": self.status,
-        }
-
-    def to_json(self) -> _JsonObject:
-        return {"id": str(self.id)} | self.to_json_without_id()
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, order=True, slots=True)
-class _Subscription:
-    id: UUID
-    is_active: bool
-    user_id: UUID
-    product_id: UUID
-
-    async def insert(self, session: AsyncSession) -> None:
-        model = SubscriptionModel(
-            id=self.id,
-            is_active=self.is_active,
-            user_id=self.user_id,
-            product_id=self.product_id,
-        )
-        async with session.begin():
-            session.add(model)
-
-    @classmethod
-    async def select(cls, session: AsyncSession) -> tuple[Self, ...]:
-        statement = select(SubscriptionModel)
-        async with session.begin():
-            scalar_result = await session.scalars(statement)
-            models = scalar_result.all()
-            return tuple(
-                cls(
-                    id=model.id,
-                    is_active=model.is_active,
-                    user_id=model.user_id,
-                    product_id=model.product_id,
-                )
-                for model in models
-            )
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, order=True, slots=True)
-class _User:
-    id: UUID
-    email: str
-
-    async def insert(self, session: AsyncSession) -> None:
-        model = UserModel(id=self.id, email=self.email)
-        async with session.begin():
-            session.add(model)
-
-    @classmethod
-    async def select(cls, session: AsyncSession) -> tuple[Self, ...]:
-        statement = select(UserModel)
-        async with session.begin():
-            scalar_result = await session.scalars(statement)
-            models = scalar_result.all()
-            return tuple(cls(id=model.id, email=model.email) for model in models)
-
-    def to_json(
-        self, subscriptions_with_products: Iterable[tuple[_Subscription, _Product]]
-    ) -> _JsonObject:
-        return {
-            "id": str(self.id),
-            "email": self.email,
-            "subscriptions": [
-                {
-                    "id": str(subscription.id),
-                    "is_active": subscription.is_active,
-                    "product": product.to_json(),
-                }
-                for subscription, product in subscriptions_with_products
-            ],
-        }
 
 
 def _get_id(json_object: _JsonObject) -> str:
     return str(json_object["id"])
 
 
+def _get_subscription_repository(session: AsyncSession) -> SubscriptionRepository:
+    return SubscriptionRepository(
+        _session=session,
+        _product_repository=ProductRepository(_session=session),
+        _user_repository=UserRepository(_session=session),
+    )
+
+
+async def _insert_products(session: AsyncSession, *products: Product) -> None:
+    async with session.begin():
+        product_repository = ProductRepository(_session=session)
+        for product in products:
+            result = await product_repository.create_product(product)
+            assert result[0] == "success", result
+
+
+async def _insert_subscriptions(
+    session: AsyncSession, *subscriptions: SubscriptionWithUserIdAndProductId
+) -> None:
+    async with session.begin():
+        subscription_repository = _get_subscription_repository(session)
+        for subscription in subscriptions:
+            result = await subscription_repository.create_subscription(subscription)
+            assert result[0] == "success", result
+
+
+async def _insert_users(session: AsyncSession, *users: User) -> None:
+    async with session.begin():
+        user_repository = UserRepository(_session=session)
+        for user in users:
+            result = await user_repository.create_user(user)
+            assert result[0] == "success", result
+
+
+async def _select_products(session: AsyncSession) -> tuple[Product, ...]:
+    async with session.begin():
+        product_repository = ProductRepository(_session=session)
+        return await product_repository.read_products()
+
+
+async def _select_subscriptions(
+    session: AsyncSession,
+) -> tuple[SubscriptionWithProduct, ...]:
+    async with session.begin():
+        subscription_repository = _get_subscription_repository(session)
+        return await subscription_repository.read_subscriptions()
+
+
+async def _select_users(
+    session: AsyncSession,
+) -> tuple[UserWithSubscriptionsWithProducts, ...]:
+    async with session.begin():
+        user_repository = UserRepository(_session=session)
+        return await user_repository.read_users()
+
+
 def _sorted_by_id(json_objects: Iterable[_JsonObject]) -> list[_JsonObject]:
     return sorted(json_objects, key=_get_id)
+
+
+def _to_product_json_without_id(product: Product) -> _JsonObject:
+    return {
+        "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
+        "name": product.name,
+        "status": product.status,
+    }
+
+
+def _to_product_json(product: Product) -> _JsonObject:
+    return {"id": str(product.id)} | _to_product_json_without_id(product)
+
+
+def _to_subscription_json(subscription: SubscriptionWithProduct) -> _JsonObject:
+    return {
+        "id": str(subscription.id),
+        "is_active": subscription.is_active,
+        "product": _to_product_json(subscription.product),
+    }
+
+
+def _to_user_json(user: UserWithSubscriptionsWithProducts) -> _JsonObject:
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "subscriptions": [
+            _to_subscription_json(subscription)
+            for subscription in user.subscriptions_with_products
+        ],
+    }
 
 
 async def test_create_user_adds_additional_user_to_database(
@@ -151,31 +130,43 @@ async def test_create_user_adds_additional_user_to_database(
     session: AsyncSession,
 ) -> None:
     users = (
-        _User(id=uuid7(), email="spam@foo.org"),
-        _User(id=uuid7(), email="ham@bar.com"),
+        User(id=uuid7(), email="spam@foo.org"),
+        User(id=uuid7(), email="ham@bar.com"),
     )
-    for user in users:
-        await user.insert(session)
+    await _insert_users(session, *users)
 
-    additional_user = _User(id=uuid7(), email="test@baz.com")
+    additional_user = User(id=uuid7(), email="test@baz.com")
     response = await client.post(
         "/users/",
         json={"id": str(additional_user.id), "email": additional_user.email},
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == additional_user.to_json([])
+    assert response.json() == _to_user_json(
+        UserWithSubscriptionsWithProducts(
+            id=additional_user.id,
+            email=additional_user.email,
+            subscriptions_with_products=(),
+        )
+    )
 
-    users_in_database = await _User.select(session)
-    assert sorted(users_in_database) == sorted((*users, additional_user))
+    users_in_database = await _select_users(session)
+    assert frozenset(users_in_database) == frozenset(
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(),
+        )
+        for user in (*users, additional_user)
+    )
 
 
 async def test_create_user_with_existing_email_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    user = _User(id=uuid7(), email="spam@foo.org")
-    await user.insert(session)
+    user = User(id=uuid7(), email="spam@foo.org")
+    await _insert_users(session, user)
 
     response = await client.post(
         "/users/", json={"id": str(uuid7()), "email": user.email}
@@ -186,16 +177,22 @@ async def test_create_user_with_existing_email_fails(
         "detail": f"User with email {user.email} already exists."
     }
 
-    users_in_database = await _User.select(session)
-    assert users_in_database == (user,)
+    users_in_database = await _select_users(session)
+    assert users_in_database == (
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(),
+        ),
+    )
 
 
 async def test_create_user_with_existing_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    user = _User(id=uuid7(), email="spam@foo.org")
-    await user.insert(session)
+    user = User(id=uuid7(), email="spam@foo.org")
+    await _insert_users(session, user)
 
     response = await client.post(
         "/users/", json={"id": str(user.id), "email": "ham@bar.com"}
@@ -204,8 +201,14 @@ async def test_create_user_with_existing_id_fails(
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {"detail": f"User with ID {user.id} already exists."}
 
-    users_in_database = await _User.select(session)
-    assert users_in_database == (user,)
+    users_in_database = await _select_users(session)
+    assert users_in_database == (
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(),
+        ),
+    )
 
 
 async def test_delete_user_removes_user_from_database(
@@ -213,27 +216,32 @@ async def test_delete_user_removes_user_from_database(
     session: AsyncSession,
 ) -> None:
     users = (
-        _User(id=uuid7(), email="spam@foo.org"),
-        _User(id=uuid7(), email="ham@bar.com"),
+        User(id=uuid7(), email="spam@foo.org"),
+        User(id=uuid7(), email="ham@bar.com"),
     )
-    for user in users:
-        await user.insert(session)
+    await _insert_users(session, *users)
 
     response = await client.delete(f"/users/{users[0].id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
-    users_in_database = await _User.select(session)
-    assert users_in_database == (users[1],)
+    users_in_database = await _select_users(session)
+    assert users_in_database == (
+        UserWithSubscriptionsWithProducts(
+            id=users[1].id,
+            email=users[1].email,
+            subscriptions_with_products=(),
+        ),
+    )
 
 
 async def test_delete_user_with_nonexistent_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    user = _User(id=uuid7(), email="spam@foo.org")
-    await user.insert(session)
+    user = User(id=uuid7(), email="spam@foo.org")
+    await _insert_users(session, user)
 
     nonexistent_user_id = uuid7()
     response = await client.delete(f"/users/{nonexistent_user_id}")
@@ -243,8 +251,14 @@ async def test_delete_user_with_nonexistent_id_fails(
         "detail": f"User with ID {nonexistent_user_id} does not exist."
     }
 
-    users_in_database = await _User.select(session)
-    assert users_in_database == (user,)
+    users_in_database = await _select_users(session)
+    assert users_in_database == (
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(),
+        ),
+    )
 
 
 async def test_delete_user_also_removes_subscriptions_but_keeps_products(
@@ -252,13 +266,13 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
     session: AsyncSession,
 ) -> None:
     products = (
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("9.99"),
             name="Product 1",
             status="published",
         ),
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("19.99"),
             name="Product 2",
@@ -266,78 +280,105 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
         ),
     )
     users = (
-        _User(id=uuid7(), email="user1@example.com"),
-        _User(id=uuid7(), email="user2@example.com"),
+        User(id=uuid7(), email="user1@example.com"),
+        User(id=uuid7(), email="user2@example.com"),
     )
     subscriptions = (
-        _Subscription(
+        SubscriptionWithUserIdAndProductId(
             id=uuid7(),
             is_active=True,
             user_id=users[0].id,
             product_id=products[0].id,
         ),
-        _Subscription(
+        SubscriptionWithUserIdAndProductId(
             id=uuid7(),
             is_active=True,
             user_id=users[1].id,
             product_id=products[1].id,
         ),
     )
-    for product in products:
-        await product.insert(session)
-    for user in users:
-        await user.insert(session)
-    for subscription in subscriptions:
-        await subscription.insert(session)
+    await _insert_products(session, *products)
+    await _insert_users(session, *users)
+    await _insert_subscriptions(session, *subscriptions)
 
     response = await client.delete(f"/users/{users[0].id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert {product.id for product in products_in_database} == {
         product.id for product in products
     }
-    subscriptions_in_database = await _Subscription.select(session)
-    assert subscriptions_in_database == (subscriptions[1],)
-    users_in_database = await _User.select(session)
-    assert users_in_database == (users[1],)
+    subscriptions_in_database = await _select_subscriptions(session)
+    assert subscriptions_in_database == (
+        SubscriptionWithProduct(
+            id=subscriptions[1].id,
+            is_active=subscriptions[1].is_active,
+            product=products[1],
+        ),
+    )
+    users_in_database = await _select_users(session)
+    assert users_in_database == (
+        UserWithSubscriptionsWithProducts(
+            id=users[1].id,
+            email=users[1].email,
+            subscriptions_with_products=(
+                SubscriptionWithProduct(
+                    id=subscriptions[1].id,
+                    is_active=subscriptions[1].is_active,
+                    product=products[1],
+                ),
+            ),
+        ),
+    )
 
 
 async def test_read_user_by_email_returns_user(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Test Product",
         status="published",
     )
-    user = _User(id=uuid7(), email="test@example.com")
-    subscription = _Subscription(
+    user = User(id=uuid7(), email="test@example.com")
+    subscription = SubscriptionWithUserIdAndProductId(
         id=uuid7(),
         is_active=True,
         user_id=user.id,
         product_id=product.id,
     )
-    await product.insert(session)
-    await user.insert(session)
-    await subscription.insert(session)
+    await _insert_products(session, product)
+    await _insert_users(session, user)
+    await _insert_subscriptions(session, subscription)
 
     response = await client.get(f"/users/by-email/{user.email}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == user.to_json([(subscription, product)])
+    assert response.json() == _to_user_json(
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(
+                SubscriptionWithProduct(
+                    id=subscription.id,
+                    is_active=subscription.is_active,
+                    product=product,
+                ),
+            ),
+        )
+    )
 
 
 async def test_read_user_by_email_with_nonexistent_email_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    user = _User(id=uuid7(), email="spam@foo.org")
-    await user.insert(session)
+    user = User(id=uuid7(), email="spam@foo.org")
+    await _insert_users(session, user)
 
     nonexistent_email = "nonexistent@example.com"
     response = await client.get(f"/users/by-email/{nonexistent_email}")
@@ -352,35 +393,47 @@ async def test_read_user_by_id_returns_user(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Test Product",
         status="published",
     )
-    user = _User(id=uuid7(), email="test@example.com")
-    subscription = _Subscription(
+    user = User(id=uuid7(), email="test@example.com")
+    subscription = SubscriptionWithUserIdAndProductId(
         id=uuid7(),
         is_active=True,
         user_id=user.id,
         product_id=product.id,
     )
-    await product.insert(session)
-    await user.insert(session)
-    await subscription.insert(session)
+    await _insert_products(session, product)
+    await _insert_users(session, user)
+    await _insert_subscriptions(session, subscription)
 
     response = await client.get(f"/users/{user.id}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == user.to_json([(subscription, product)])
+    assert response.json() == _to_user_json(
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(
+                SubscriptionWithProduct(
+                    id=subscription.id,
+                    is_active=subscription.is_active,
+                    product=product,
+                ),
+            ),
+        )
+    )
 
 
 async def test_read_user_by_id_with_nonexistent_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    user = _User(id=uuid7(), email="spam@foo.org")
-    await user.insert(session)
+    user = User(id=uuid7(), email="spam@foo.org")
+    await _insert_users(session, user)
 
     nonexistent_user_id = uuid7()
     response = await client.get(f"/users/{nonexistent_user_id}")
@@ -395,34 +448,51 @@ async def test_read_users_returns_all_users(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Test Product",
         status="published",
     )
     users = (
-        _User(id=uuid7(), email="user1@example.com"),
-        _User(id=uuid7(), email="user2@example.com"),
+        User(id=uuid7(), email="user1@example.com"),
+        User(id=uuid7(), email="user2@example.com"),
     )
-    subscription = _Subscription(
+    subscription = SubscriptionWithUserIdAndProductId(
         id=uuid7(),
         is_active=True,
         user_id=users[0].id,
         product_id=product.id,
     )
-    await product.insert(session)
-    for user in users:
-        await user.insert(session)
-    await subscription.insert(session)
+    await _insert_products(session, product)
+    await _insert_users(session, *users)
+    await _insert_subscriptions(session, subscription)
 
     response = await client.get("/users/")
 
     assert response.status_code == status.HTTP_200_OK
     assert _sorted_by_id(response.json()) == _sorted_by_id(
         (
-            users[0].to_json([(subscription, product)]),
-            users[1].to_json([]),
+            _to_user_json(
+                UserWithSubscriptionsWithProducts(
+                    id=users[0].id,
+                    email=users[0].email,
+                    subscriptions_with_products=(
+                        SubscriptionWithProduct(
+                            id=subscription.id,
+                            is_active=subscription.is_active,
+                            product=product,
+                        ),
+                    ),
+                )
+            ),
+            _to_user_json(
+                UserWithSubscriptionsWithProducts(
+                    id=users[1].id,
+                    email=users[1].email,
+                    subscriptions_with_products=(),
+                )
+            ),
         )
     )
 
@@ -441,21 +511,37 @@ async def test_update_user_modifies_user_in_database(
     session: AsyncSession,
 ) -> None:
     users = (
-        _User(id=uuid7(), email="original@example.com"),
-        _User(id=uuid7(), email="other@example.com"),
+        User(id=uuid7(), email="original@example.com"),
+        User(id=uuid7(), email="other@example.com"),
     )
-    for user in users:
-        await user.insert(session)
+    await _insert_users(session, *users)
 
     new_email = "updated@example.com"
     response = await client.put(f"/users/{users[0].id}", json={"email": new_email})
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _User(id=users[0].id, email=new_email).to_json([])
+    assert response.json() == _to_user_json(
+        UserWithSubscriptionsWithProducts(
+            id=users[0].id,
+            email=new_email,
+            subscriptions_with_products=(),
+        )
+    )
 
-    users_in_database = await _User.select(session)
-    assert sorted(users_in_database) == sorted(
-        (_User(id=users[0].id, email=new_email), users[1])
+    users_in_database = await _select_users(session)
+    assert frozenset(users_in_database) == frozenset(
+        (
+            UserWithSubscriptionsWithProducts(
+                id=users[0].id,
+                email=new_email,
+                subscriptions_with_products=(),
+            ),
+            UserWithSubscriptionsWithProducts(
+                id=users[1].id,
+                email=users[1].email,
+                subscriptions_with_products=(),
+            ),
+        )
     )
 
 
@@ -463,8 +549,8 @@ async def test_update_user_with_nonexistent_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    user = _User(id=uuid7(), email="spam@foo.org")
-    await user.insert(session)
+    user = User(id=uuid7(), email="spam@foo.org")
+    await _insert_users(session, user)
 
     nonexistent_user_id = uuid7()
     response = await client.put(
@@ -476,8 +562,14 @@ async def test_update_user_with_nonexistent_id_fails(
         "detail": f"User with ID {nonexistent_user_id} does not exist."
     }
 
-    users_in_database = await _User.select(session)
-    assert users_in_database == (user,)
+    users_in_database = await _select_users(session)
+    assert users_in_database == (
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(),
+        ),
+    )
 
 
 async def test_update_user_with_existing_email_fails(
@@ -485,11 +577,10 @@ async def test_update_user_with_existing_email_fails(
     session: AsyncSession,
 ) -> None:
     users = (
-        _User(id=uuid7(), email="original@example.com"),
-        _User(id=uuid7(), email="existing@example.com"),
+        User(id=uuid7(), email="original@example.com"),
+        User(id=uuid7(), email="existing@example.com"),
     )
-    for user in users:
-        await user.insert(session)
+    await _insert_users(session, *users)
 
     response = await client.put(f"/users/{users[0].id}", json={"email": users[1].email})
 
@@ -498,5 +589,18 @@ async def test_update_user_with_existing_email_fails(
         "detail": f"User with email {users[1].email} already exists."
     }
 
-    users_in_database = await _User.select(session)
-    assert sorted(users_in_database) == sorted(users)
+    users_in_database = await _select_users(session)
+    assert frozenset(users_in_database) == frozenset(
+        (
+            UserWithSubscriptionsWithProducts(
+                id=users[0].id,
+                email=users[0].email,
+                subscriptions_with_products=(),
+            ),
+            UserWithSubscriptionsWithProducts(
+                id=users[1].id,
+                email=users[1].email,
+                subscriptions_with_products=(),
+            ),
+        )
+    )
