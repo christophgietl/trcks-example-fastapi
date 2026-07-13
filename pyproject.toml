@@ -6,7 +6,7 @@ requires = ["uv_build~=0.11.0"] # should match tool.uv.required-version
 dev = [
     "anyio==4.14.1", # provides pytest plugin for testing async code
     "httpx==0.28.1", # provides ASGITransport and AsyncClient used for testing
-    "import-linter==2.12",
+    "import-linter==2.13",
     "pre-commit==4.6.0",
     "pyright[nodejs]==1.1.411",
     "pytest==9.1.1",
