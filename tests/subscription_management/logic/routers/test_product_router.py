@@ -1,13 +1,18 @@
 import dataclasses
 from decimal import Decimal
-from typing import TYPE_CHECKING, Literal, Self, final
-from uuid import UUID, uuid7
+from typing import TYPE_CHECKING
+from uuid import uuid7
 
 import pytest
 from fastapi import status
-from sqlalchemy import select
 
-from subscription_management.data_structures.models import ProductModel
+from subscription_management.data_structures.domain.product import (
+    Product,
+    ProductStatus,
+)
+from subscription_management.logic.repositories.product_repository import (
+    ProductRepository,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -16,60 +21,40 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 type _JsonObject = dict[str, object]
-type _ProductStatus = Literal["draft", "published", "deprecated"]
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, order=True, slots=True)
-class _Product:
-    id: UUID
-    monthly_fee_in_euros: Decimal
-    name: str
-    status: _ProductStatus
-
-    async def insert(self, session: AsyncSession) -> None:
-        model = ProductModel(
-            id=self.id,
-            monthly_fee_in_euros=self.monthly_fee_in_euros,
-            name=self.name,
-            status=self.status,
-        )
-        async with session.begin():
-            session.add(model)
-
-    @classmethod
-    async def select(cls, session: AsyncSession) -> tuple[Self, ...]:
-        statement = select(ProductModel)
-        async with session.begin():
-            scalar_result = await session.scalars(statement)
-            models = scalar_result.all()
-            return tuple(
-                cls(
-                    id=model.id,
-                    monthly_fee_in_euros=model.monthly_fee_in_euros,
-                    name=model.name,
-                    status=model.status,
-                )
-                for model in models
-            )
-
-    def to_json_without_id(self) -> _JsonObject:
-        return {
-            "monthly_fee_in_euros": str(self.monthly_fee_in_euros),
-            "name": self.name,
-            "status": self.status,
-        }
-
-    def to_json(self) -> _JsonObject:
-        return {"id": str(self.id)} | self.to_json_without_id()
 
 
 def _get_id(json_object: _JsonObject) -> str:
     return str(json_object["id"])
 
 
+async def _insert_products(session: AsyncSession, *products: Product) -> None:
+    async with session.begin():
+        product_repository = ProductRepository(_session=session)
+        for product in products:
+            result = await product_repository.create_product(product)
+            assert result[0] == "success"
+
+
+async def _select_products(session: AsyncSession) -> tuple[Product, ...]:
+    async with session.begin():
+        product_repository = ProductRepository(_session=session)
+        return await product_repository.read_products()
+
+
 def _sorted_by_id(json_objects: Iterable[_JsonObject]) -> list[_JsonObject]:
     return sorted(json_objects, key=_get_id)
+
+
+def _to_product_json_without_id(product: Product) -> _JsonObject:
+    return {
+        "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
+        "name": product.name,
+        "status": product.status,
+    }
+
+
+def _to_product_json(product: Product) -> _JsonObject:
+    return {"id": str(product.id)} | _to_product_json_without_id(product)
 
 
 async def test_create_product_adds_additional_product_to_database(
@@ -77,67 +62,66 @@ async def test_create_product_adds_additional_product_to_database(
     session: AsyncSession,
 ) -> None:
     products = (
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("6.99"),
             name="Product 1",
             status="published",
         ),
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("3.25"),
             name="Product 2",
             status="published",
         ),
     )
-    for product in products:
-        await product.insert(session)
+    await _insert_products(session, *products)
 
-    additional_product = _Product(
+    additional_product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 3",
         status="published",
     )
-    response = await client.post("/products/", json=additional_product.to_json())
+    response = await client.post(
+        "/products/", json=_to_product_json(additional_product)
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == additional_product.to_json()
+    assert response.json() == _to_product_json(additional_product)
 
-    products_in_database = await _Product.select(session)
-    assert _sorted_by_id(
-        [product.to_json() for product in products_in_database]
-    ) == _sorted_by_id(
-        [product.to_json() for product in (*products, additional_product)]
-    )
+    products_in_database = await _select_products(session)
+    assert frozenset(products_in_database) == frozenset((*products, additional_product))
 
 
 async def test_create_product_with_existing_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("5.99"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
-    conflicting_product = _Product(
+    conflicting_product = Product(
         id=product.id,
         monthly_fee_in_euros=Decimal("8.49"),
         name="Different Product",
         status="published",
     )
-    response = await client.post("/products/", json=conflicting_product.to_json())
+    response = await client.post(
+        "/products/", json=_to_product_json(conflicting_product)
+    )
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
         "detail": f"Product with ID {product.id} already exists."
     }
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
 
 
@@ -145,28 +129,30 @@ async def test_create_product_with_existing_name_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("5.99"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
-    conflicting_product = _Product(
+    conflicting_product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("8.49"),
         name=product.name,
         status="published",
     )
-    response = await client.post("/products/", json=conflicting_product.to_json())
+    response = await client.post(
+        "/products/", json=_to_product_json(conflicting_product)
+    )
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
         "detail": f"Product with name {product.name} already exists."
     }
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
 
 
@@ -175,28 +161,27 @@ async def test_delete_product_removes_draft_product_from_database(
     session: AsyncSession,
 ) -> None:
     products = (
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("0.89"),
             name="Product 1",
             status="draft",
         ),
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("0.69"),
             name="Product 2",
             status="published",
         ),
     )
-    for product in products:
-        await product.insert(session)
+    await _insert_products(session, *products)
 
     response = await client.delete(f"/products/{products[0].id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (products[1],)
 
 
@@ -204,13 +189,13 @@ async def test_delete_product_with_nonexistent_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("2.99"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     nonexistent_product_id = uuid7()
     response = await client.delete(f"/products/{nonexistent_product_id}")
@@ -220,7 +205,7 @@ async def test_delete_product_with_nonexistent_id_fails(
         "detail": f"Product with ID {nonexistent_product_id} does not exist."
     }
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
 
 
@@ -228,15 +213,15 @@ async def test_delete_product_with_nonexistent_id_fails(
 async def test_delete_product_with_non_draft_status_fails(
     client: AsyncClient,
     session: AsyncSession,
-    product_status: _ProductStatus,
+    product_status: ProductStatus,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("3.99"),
         name="Test Product",
         status=product_status,
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     response = await client.delete(f"/products/{product.id}")
 
@@ -248,7 +233,7 @@ async def test_delete_product_with_non_draft_status_fails(
         )
     }
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
 
 
@@ -256,31 +241,31 @@ async def test_read_product_by_id_returns_product(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     response = await client.get(f"/products/{product.id}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == product.to_json()
+    assert response.json() == _to_product_json(product)
 
 
 async def test_read_product_by_id_with_nonexistent_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     nonexistent_product_id = uuid7()
     response = await client.get(f"/products/{nonexistent_product_id}")
@@ -295,31 +280,31 @@ async def test_read_product_by_name_returns_product(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     response = await client.get(f"/products/by-name/{product.name}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == product.to_json()
+    assert response.json() == _to_product_json(product)
 
 
 async def test_read_product_by_name_with_nonexistent_name_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     nonexistent_product_name = "Nonexistent Product"
     response = await client.get(f"/products/by-name/{nonexistent_product_name}")
@@ -335,27 +320,26 @@ async def test_read_products_returns_all_products(
     session: AsyncSession,
 ) -> None:
     products = (
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("4.99"),
             name="Product 1",
             status="published",
         ),
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("2.99"),
             name="Product 2",
             status="published",
         ),
     )
-    for product in products:
-        await product.insert(session)
+    await _insert_products(session, *products)
 
     response = await client.get("/products/")
 
     assert response.status_code == status.HTTP_200_OK
     assert _sorted_by_id(response.json()) == _sorted_by_id(
-        product.to_json() for product in products
+        _to_product_json(product) for product in products
     )
 
 
@@ -372,15 +356,15 @@ async def test_read_products_returns_empty_list_when_no_products(
 async def test_update_product_cannot_change_non_status_attributes_of_published_product(
     client: AsyncClient,
     session: AsyncSession,
-    product_status: _ProductStatus,
+    product_status: ProductStatus,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("4.50"),
         name="Test Product",
         status=product_status,
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     product_update = {
         "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
@@ -394,7 +378,7 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
         "detail": f"Cannot modify non-status attributes of a {product_status} product"
     }
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
 
 
@@ -403,24 +387,23 @@ async def test_update_product_modifies_product_in_database(
     session: AsyncSession,
 ) -> None:
     products = (
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("1.00"),
             name="Original Product",
             status="draft",
         ),
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("2.00"),
             name="Other Product",
             status="draft",
         ),
     )
-    for product in products:
-        await product.insert(session)
+    await _insert_products(session, *products)
 
     new_name = "Updated Product"
-    new_status: _ProductStatus = "published"
+    new_status: ProductStatus = "published"
     product_update = {
         "monthly_fee_in_euros": str(products[0].monthly_fee_in_euros),
         "name": new_name,
@@ -432,8 +415,8 @@ async def test_update_product_modifies_product_in_database(
     assert response.json() == {"id": str(products[0].id)} | product_update
 
     updated_product = dataclasses.replace(products[0], name=new_name, status=new_status)
-    products_in_database = await _Product.select(session)
-    assert sorted(products_in_database) == sorted((updated_product, products[1]))
+    products_in_database = await _select_products(session)
+    assert frozenset(products_in_database) == frozenset((updated_product, products[1]))
 
 
 @pytest.mark.parametrize(
@@ -443,16 +426,16 @@ async def test_update_product_modifies_product_in_database(
 async def test_update_product_status_forbidden_transitions_fail(
     client: AsyncClient,
     session: AsyncSession,
-    initial_status: _ProductStatus,
-    target_status: _ProductStatus,
+    initial_status: ProductStatus,
+    target_status: ProductStatus,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("3.33"),
         name="Test Product",
         status=initial_status,
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     response = await client.put(
         f"/products/{product.id}",
@@ -468,7 +451,7 @@ async def test_update_product_status_forbidden_transitions_fail(
         "detail": f"Cannot change status from {initial_status} to {target_status}"
     }
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
 
 
@@ -477,21 +460,20 @@ async def test_update_product_with_existing_name_fails(
     session: AsyncSession,
 ) -> None:
     products = (
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("1.10"),
             name="Original Product",
             status="draft",
         ),
-        _Product(
+        Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("1.20"),
             name="Existing Product",
             status="draft",
         ),
     )
-    for product in products:
-        await product.insert(session)
+    await _insert_products(session, *products)
 
     response = await client.put(
         f"/products/{products[0].id}",
@@ -507,21 +489,21 @@ async def test_update_product_with_existing_name_fails(
         "detail": f"Product with name '{products[1].name}' already exists."
     }
 
-    products_in_database = await _Product.select(session)
-    assert sorted(products_in_database) == sorted(products)
+    products_in_database = await _select_products(session)
+    assert frozenset(products_in_database) == frozenset(products)
 
 
 async def test_update_product_with_nonexistent_id_fails(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("5.55"),
         name="Test Product",
         status="published",
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     nonexistent_product_id = uuid7()
     response = await client.put(
@@ -538,7 +520,7 @@ async def test_update_product_with_nonexistent_id_fails(
         "detail": f"Product with ID {nonexistent_product_id} does not exist."
     }
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
 
 
@@ -546,23 +528,23 @@ async def test_update_product_with_nonexistent_id_fails(
 async def test_update_product_without_changes_succeeds(
     client: AsyncClient,
     session: AsyncSession,
-    product_status: _ProductStatus,
+    product_status: ProductStatus,
 ) -> None:
-    product = _Product(
+    product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("7.77"),
         name="Test Product",
         status=product_status,
     )
-    await product.insert(session)
+    await _insert_products(session, product)
 
     response = await client.put(
         f"/products/{product.id}",
-        json=product.to_json_without_id(),
+        json=_to_product_json_without_id(product),
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == product.to_json()
+    assert response.json() == _to_product_json(product)
 
-    products_in_database = await _Product.select(session)
+    products_in_database = await _select_products(session)
     assert products_in_database == (product,)
