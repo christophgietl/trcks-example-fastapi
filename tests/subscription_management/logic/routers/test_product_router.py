@@ -160,29 +160,27 @@ async def test_delete_product_removes_draft_product_from_database(
     client: AsyncClient,
     session: AsyncSession,
 ) -> None:
-    products = (
-        Product(
-            id=uuid7(),
-            monthly_fee_in_euros=Decimal("0.89"),
-            name="Product 1",
-            status="draft",
-        ),
-        Product(
-            id=uuid7(),
-            monthly_fee_in_euros=Decimal("0.69"),
-            name="Product 2",
-            status="published",
-        ),
+    draft_product = Product(
+        id=uuid7(),
+        monthly_fee_in_euros=Decimal("0.89"),
+        name="Product 1",
+        status="draft",
     )
-    await _insert_products(session, *products)
+    published_product = Product(
+        id=uuid7(),
+        monthly_fee_in_euros=Decimal("0.69"),
+        name="Product 2",
+        status="published",
+    )
+    await _insert_products(session, draft_product, published_product)
 
-    response = await client.delete(f"/products/{products[0].id}")
+    response = await client.delete(f"/products/{draft_product.id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.content == b""
 
     products_in_database = await _select_products(session)
-    assert products_in_database == (products[1],)
+    assert products_in_database == (published_product,)
 
 
 async def test_delete_product_with_nonexistent_id_fails(
@@ -369,7 +367,7 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
     product_update = {
         "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
         "name": "Updated Product",
-        "status": product_status,
+        "status": product.status,
     }
     response = await client.put(f"/products/{product.id}", json=product_update)
 
@@ -402,19 +400,17 @@ async def test_update_product_modifies_product_in_database(
     )
     await _insert_products(session, *products)
 
-    new_name = "Updated Product"
-    new_status: ProductStatus = "published"
-    product_update = {
-        "monthly_fee_in_euros": str(products[0].monthly_fee_in_euros),
-        "name": new_name,
-        "status": new_status,
-    }
-    response = await client.put(f"/products/{products[0].id}", json=product_update)
+    updated_product = dataclasses.replace(
+        products[0], name="Updated Product", status="published"
+    )
+    response = await client.put(
+        f"/products/{updated_product.id}",
+        json=_to_product_json_without_id(updated_product),
+    )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"id": str(products[0].id)} | product_update
+    assert response.json() == _to_product_json(updated_product)
 
-    updated_product = dataclasses.replace(products[0], name=new_name, status=new_status)
     products_in_database = await _select_products(session)
     assert frozenset(products_in_database) == frozenset((updated_product, products[1]))
 
@@ -480,7 +476,7 @@ async def test_update_product_with_existing_name_fails(
         json={
             "monthly_fee_in_euros": str(products[0].monthly_fee_in_euros),
             "name": products[1].name,
-            "status": "published",
+            "status": products[0].status,
         },
     )
 

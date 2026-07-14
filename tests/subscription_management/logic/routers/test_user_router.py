@@ -106,7 +106,9 @@ def _to_product_json(product: Product) -> _JsonObject:
     return {"id": str(product.id)} | _to_product_json_without_id(product)
 
 
-def _to_subscription_json(subscription: SubscriptionWithProduct) -> _JsonObject:
+def _to_subscription_with_product_json(
+    subscription: SubscriptionWithProduct,
+) -> _JsonObject:
     return {
         "id": str(subscription.id),
         "is_active": subscription.is_active,
@@ -114,12 +116,18 @@ def _to_subscription_json(subscription: SubscriptionWithProduct) -> _JsonObject:
     }
 
 
-def _to_user_json(user: UserWithSubscriptionsWithProducts) -> _JsonObject:
+def _to_user_json(user: User) -> _JsonObject:
+    return {"id": str(user.id), "email": user.email}
+
+
+def _to_user_with_subscriptions_with_products_json(
+    user: UserWithSubscriptionsWithProducts,
+) -> _JsonObject:
     return {
         "id": str(user.id),
         "email": user.email,
         "subscriptions": [
-            _to_subscription_json(subscription)
+            _to_subscription_with_product_json(subscription)
             for subscription in user.subscriptions_with_products
         ],
     }
@@ -136,13 +144,10 @@ async def test_create_user_adds_additional_user_to_database(
     await _insert_users(session, *users)
 
     additional_user = User(id=uuid7(), email="test@baz.com")
-    response = await client.post(
-        "/users/",
-        json={"id": str(additional_user.id), "email": additional_user.email},
-    )
+    response = await client.post("/users/", json=_to_user_json(additional_user))
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == _to_user_json(
+    assert response.json() == _to_user_with_subscriptions_with_products_json(
         UserWithSubscriptionsWithProducts(
             id=additional_user.id,
             email=additional_user.email,
@@ -279,10 +284,12 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
             status="published",
         ),
     )
+    await _insert_products(session, *products)
     users = (
         User(id=uuid7(), email="user1@example.com"),
         User(id=uuid7(), email="user2@example.com"),
     )
+    await _insert_users(session, *users)
     subscriptions = (
         SubscriptionWithUserIdAndProductId(
             id=uuid7(),
@@ -297,8 +304,6 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
             product_id=products[1].id,
         ),
     )
-    await _insert_products(session, *products)
-    await _insert_users(session, *users)
     await _insert_subscriptions(session, *subscriptions)
 
     response = await client.delete(f"/users/{users[0].id}")
@@ -307,29 +312,20 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
     assert response.content == b""
 
     products_in_database = await _select_products(session)
-    assert {product.id for product in products_in_database} == {
-        product.id for product in products
-    }
+    assert frozenset(products_in_database) == frozenset(products)
     subscriptions_in_database = await _select_subscriptions(session)
-    assert subscriptions_in_database == (
-        SubscriptionWithProduct(
-            id=subscriptions[1].id,
-            is_active=subscriptions[1].is_active,
-            product=products[1],
-        ),
+    expected_subscription_with_product = SubscriptionWithProduct(
+        id=subscriptions[1].id,
+        is_active=subscriptions[1].is_active,
+        product=products[1],
     )
+    assert subscriptions_in_database == (expected_subscription_with_product,)
     users_in_database = await _select_users(session)
     assert users_in_database == (
         UserWithSubscriptionsWithProducts(
             id=users[1].id,
             email=users[1].email,
-            subscriptions_with_products=(
-                SubscriptionWithProduct(
-                    id=subscriptions[1].id,
-                    is_active=subscriptions[1].is_active,
-                    product=products[1],
-                ),
-            ),
+            subscriptions_with_products=(expected_subscription_with_product,),
         ),
     )
 
@@ -344,21 +340,21 @@ async def test_read_user_by_email_returns_user(
         name="Test Product",
         status="published",
     )
+    await _insert_products(session, product)
     user = User(id=uuid7(), email="test@example.com")
+    await _insert_users(session, user)
     subscription = SubscriptionWithUserIdAndProductId(
         id=uuid7(),
         is_active=True,
         user_id=user.id,
         product_id=product.id,
     )
-    await _insert_products(session, product)
-    await _insert_users(session, user)
     await _insert_subscriptions(session, subscription)
 
     response = await client.get(f"/users/by-email/{user.email}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _to_user_json(
+    assert response.json() == _to_user_with_subscriptions_with_products_json(
         UserWithSubscriptionsWithProducts(
             id=user.id,
             email=user.email,
@@ -399,21 +395,21 @@ async def test_read_user_by_id_returns_user(
         name="Test Product",
         status="published",
     )
+    await _insert_products(session, product)
     user = User(id=uuid7(), email="test@example.com")
+    await _insert_users(session, user)
     subscription = SubscriptionWithUserIdAndProductId(
         id=uuid7(),
         is_active=True,
         user_id=user.id,
         product_id=product.id,
     )
-    await _insert_products(session, product)
-    await _insert_users(session, user)
     await _insert_subscriptions(session, subscription)
 
     response = await client.get(f"/users/{user.id}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _to_user_json(
+    assert response.json() == _to_user_with_subscriptions_with_products_json(
         UserWithSubscriptionsWithProducts(
             id=user.id,
             email=user.email,
@@ -454,18 +450,18 @@ async def test_read_users_returns_all_users(
         name="Test Product",
         status="published",
     )
+    await _insert_products(session, product)
     users = (
         User(id=uuid7(), email="user1@example.com"),
         User(id=uuid7(), email="user2@example.com"),
     )
+    await _insert_users(session, *users)
     subscription = SubscriptionWithUserIdAndProductId(
         id=uuid7(),
         is_active=True,
         user_id=users[0].id,
         product_id=product.id,
     )
-    await _insert_products(session, product)
-    await _insert_users(session, *users)
     await _insert_subscriptions(session, subscription)
 
     response = await client.get("/users/")
@@ -473,7 +469,7 @@ async def test_read_users_returns_all_users(
     assert response.status_code == status.HTTP_200_OK
     assert _sorted_by_id(response.json()) == _sorted_by_id(
         (
-            _to_user_json(
+            _to_user_with_subscriptions_with_products_json(
                 UserWithSubscriptionsWithProducts(
                     id=users[0].id,
                     email=users[0].email,
@@ -486,7 +482,7 @@ async def test_read_users_returns_all_users(
                     ),
                 )
             ),
-            _to_user_json(
+            _to_user_with_subscriptions_with_products_json(
                 UserWithSubscriptionsWithProducts(
                     id=users[1].id,
                     email=users[1].email,
@@ -520,7 +516,7 @@ async def test_update_user_modifies_user_in_database(
     response = await client.put(f"/users/{users[0].id}", json={"email": new_email})
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == _to_user_json(
+    assert response.json() == _to_user_with_subscriptions_with_products_json(
         UserWithSubscriptionsWithProducts(
             id=users[0].id,
             email=new_email,
