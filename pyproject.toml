@@ -210,6 +210,7 @@ typeCheckingMode = "strict"
 addopts = "--cov=subscription_management --cov-fail-under=100 --cov-report=term-missing --import-mode=importlib"
 anyio_mode = "auto"
 filterwarnings = ["error"]
+strict = true
 
 [tool.ruff.lint]
 ignore = [
