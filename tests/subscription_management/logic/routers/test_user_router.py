@@ -2,6 +2,17 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import uuid7
 
+from _router_test_helpers import (
+    insert_products,
+    insert_subscriptions,
+    insert_users,
+    select_products,
+    select_subscriptions,
+    select_users,
+    sorted_by_id,
+    to_user_json,
+    to_user_with_subscriptions_with_products_json,
+)
 from fastapi import status
 
 from subscription_management.data_structures.domain.product import Product
@@ -12,17 +23,6 @@ from subscription_management.data_structures.domain.subscription import (
 from subscription_management.data_structures.domain.user import (
     User,
     UserWithSubscriptionsWithProducts,
-)
-from subscription_management.logic._test_helpers import (
-    insert_products,
-    insert_subscriptions,
-    insert_users,
-    select_products,
-    select_subscriptions,
-    select_users,
-    sorted_by_id,
-    to_user_json,
-    to_user_with_subscriptions_with_products_json,
 )
 
 if TYPE_CHECKING:
