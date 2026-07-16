@@ -179,7 +179,7 @@ allowed_importers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "subscription_management.logic._test_helpers may not be imported by any production module"
+name = "No subscription_management module may import subscription_management.logic._test_helpers"
 type = "protected"
 protected_modules = ["subscription_management.logic._test_helpers"]
 allowed_importers = []

@@ -83,6 +83,8 @@
 Apply these rules in prose such as docstrings, documentation, and
 comments, but not in code, paths, URLs, commands, or identifiers:
 
+- Prefer active voice over passive voice
+  (e.g. "No module may import X" instead of "X may not be imported").
 - Prefer short sentences over long sentences.
 - Use the Oxford comma in lists of three or more items
   (e.g. "red, green, and blue" instead of "red, green and blue").
