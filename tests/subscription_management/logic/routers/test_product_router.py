@@ -4,18 +4,18 @@ from typing import TYPE_CHECKING
 from uuid import uuid7
 
 import pytest
-from fastapi import status
-
-from subscription_management.data_structures.domain.product import (
-    Product,
-    ProductStatus,
-)
-from subscription_management.logic._test_helpers import (
+from _router_test_helpers import (
     insert_products,
     select_products,
     sorted_by_id,
     to_product_json,
     to_product_json_without_id,
+)
+from fastapi import status
+
+from subscription_management.data_structures.domain.product import (
+    Product,
+    ProductStatus,
 )
 
 if TYPE_CHECKING:
