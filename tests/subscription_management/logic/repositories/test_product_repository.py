@@ -35,9 +35,8 @@ class TestProductRepository:
     async def test_update_product_returns_failure_for_nonexistent_id(
         self, repository: ProductRepository
     ) -> None:
-        nonexistent_product_id = uuid7()
         nonexistent_product = Product(
-            id=nonexistent_product_id,
+            id=uuid7(),
             monthly_fee_in_euros=Decimal("4.99"),
             name="Unknown Product",
             status="draft",
