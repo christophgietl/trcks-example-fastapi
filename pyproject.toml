@@ -57,7 +57,7 @@ layers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "subscription_management.logic has exactly six sublayers"
+name = "subscription_management.logic has exactly five sublayers"
 type = "layers"
 containers = ["subscription_management.logic"]
 exhaustive = true
@@ -179,6 +179,12 @@ allowed_importers = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "subscription_management.logic._test_helpers may not be imported by any production module"
+type = "protected"
+protected_modules = ["subscription_management.logic._test_helpers"]
+allowed_importers = []
+
+[[tool.importlinter.contracts]]
 name = "Only subscription_management.logic.routers can import subscription_management.logic.services"
 type = "protected"
 protected_modules = ["subscription_management.logic.services"]
@@ -230,7 +236,6 @@ runtime-evaluated-decorators = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"src/subscription_management/logic/_test_helpers.py" = ["S101"]
 "tests/**" = ["INP001", "S101"]
 
 [tool.ruff.lint.pydocstyle]
