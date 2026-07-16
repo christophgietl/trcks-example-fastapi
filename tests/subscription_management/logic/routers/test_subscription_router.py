@@ -4,14 +4,6 @@ from typing import TYPE_CHECKING
 from uuid import uuid7
 
 import pytest
-from _router_test_helpers import (
-    insert_products,
-    insert_subscriptions,
-    insert_users,
-    select_subscriptions,
-    sorted_by_id,
-    to_subscription_json,
-)
 from fastapi import status
 
 from subscription_management.data_structures.domain.product import (
@@ -23,6 +15,14 @@ from subscription_management.data_structures.domain.subscription import (
     SubscriptionWithUserIdAndProductId,
 )
 from subscription_management.data_structures.domain.user import User
+from subscription_management.testing.helpers import (
+    insert_products,
+    insert_subscriptions,
+    insert_users,
+    select_subscriptions,
+    sorted_by_id,
+    to_subscription_json,
+)
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
