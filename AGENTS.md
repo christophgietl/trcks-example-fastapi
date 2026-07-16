@@ -16,13 +16,15 @@
 
 ### Application layers
 
-- The package `subscription_management` has two layers: `data_structures` and `logic`.
-- `subscription_management.data_structures` contains data classes and models.
-  It has two sublayers: ORM models and API schemas at one level,
-  and domain classes at the level below.
+- The package `subscription_management` has three layers: `testing`, `logic`,
+  and `data_structures`.
+- `subscription_management.testing` contains test helpers.
 - `subscription_management.logic` contains business logic and data access.
   It has five sublayers: the app entry point, routers, services,
   repositories, and the database.
+- `subscription_management.data_structures` contains data classes and models.
+  It has two sublayers: ORM models and API schemas at one level,
+  and domain classes at the level below.
 
 ### Data structures
 
@@ -83,6 +85,8 @@
 Apply these rules in prose such as docstrings, documentation, and
 comments, but not in code, paths, URLs, commands, or identifiers:
 
+- Prefer active voice over passive voice
+  (e.g. "No module may import X" instead of "X may not be imported").
 - Prefer short sentences over long sentences.
 - Use the Oxford comma in lists of three or more items
   (e.g. "red, green, and blue" instead of "red, green and blue").
