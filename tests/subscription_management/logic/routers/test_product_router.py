@@ -177,8 +177,8 @@ async def test_delete_product_with_nonexistent_id_fails(
 @pytest.mark.parametrize("product_status", ["published", "deprecated"])
 async def test_delete_product_with_non_draft_status_fails(
     client: AsyncClient,
-    session: AsyncSession,
     product_status: ProductStatus,
+    session: AsyncSession,
 ) -> None:
     product = Product(
         id=uuid7(),
@@ -194,7 +194,7 @@ async def test_delete_product_with_non_draft_status_fails(
     assert response.json() == {
         "detail": (
             f"Product with ID {product.id} cannot be deleted "
-            f"because its status is {product_status}."
+            f"because its status is {product.status}."
         )
     }
 
