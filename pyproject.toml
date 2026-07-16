@@ -37,11 +37,12 @@ include_external_packages = true
 root_package = "subscription_management"
 
 [[tool.importlinter.contracts]]
-name = "subscription_management has exactly two layers"
+name = "subscription_management has exactly three layers"
 type = "layers"
 containers = ["subscription_management"]
 exhaustive = true
 layers = [
+    "testing",
     "logic",
     "data_structures",
 ]
@@ -121,17 +122,18 @@ allowed_importers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only subscription_management.data_structures.models, subscription_management.logic.database, and subscription_management.logic.repositories can import sqlalchemy"
+name = "Only subscription_management.data_structures.models, subscription_management.logic.database, subscription_management.logic.repositories, and subscription_management.testing.helpers can import sqlalchemy"
 type = "protected"
 protected_modules = ["sqlalchemy"]
 allowed_importers = [
     "subscription_management.data_structures.models",
     "subscription_management.logic.database",
     "subscription_management.logic.repositories",
+    "subscription_management.testing.helpers",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only subscription_management.data_structures, subscription_management.logic.repositories, subscription_management.logic.routers, and subscription_management.logic.services can import subscription_management.data_structures.domain"
+name = "Only subscription_management.data_structures, subscription_management.logic.repositories, subscription_management.logic.routers, subscription_management.logic.services, and subscription_management.testing.helpers can import subscription_management.data_structures.domain"
 type = "protected"
 protected_modules = ["subscription_management.data_structures.domain"]
 allowed_importers = [
@@ -139,6 +141,7 @@ allowed_importers = [
     "subscription_management.logic.repositories",
     "subscription_management.logic.routers",
     "subscription_management.logic.services",
+    "subscription_management.testing.helpers",
 ]
 
 [[tool.importlinter.contracts]]
@@ -168,11 +171,12 @@ allowed_importers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Only subscription_management.logic.services can import subscription_management.logic.repositories"
+name = "Only subscription_management.logic.services and subscription_management.testing.helpers can import subscription_management.logic.repositories"
 type = "protected"
 protected_modules = ["subscription_management.logic.repositories"]
 allowed_importers = [
     "subscription_management.logic.services",
+    "subscription_management.testing.helpers",
 ]
 
 [[tool.importlinter.contracts]]
@@ -227,6 +231,7 @@ runtime-evaluated-decorators = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"src/subscription_management/testing/helpers.py" = ["S101"]
 "tests/**" = ["INP001", "S101"]
 
 [tool.ruff.lint.pydocstyle]
