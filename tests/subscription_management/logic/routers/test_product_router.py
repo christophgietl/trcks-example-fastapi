@@ -16,6 +16,7 @@ from subscription_management.testing.helpers import (
     sorted_by_id,
     to_product_creation_request_json,
     to_product_response_json,
+    to_product_update_request_json,
 )
 
 if TYPE_CHECKING:
@@ -50,7 +51,7 @@ async def test_create_product_adds_additional_product_to_database(
         status="published",
     )
     response = await client.post(
-        "/products/", json=to_product_response_json(additional_product)
+        "/products/", json=to_product_creation_request_json(additional_product)
     )
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -79,7 +80,7 @@ async def test_create_product_with_existing_id_fails(
         status="published",
     )
     response = await client.post(
-        "/products/", json=to_product_response_json(conflicting_product)
+        "/products/", json=to_product_creation_request_json(conflicting_product)
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -110,7 +111,7 @@ async def test_create_product_with_existing_name_fails(
         status="published",
     )
     response = await client.post(
-        "/products/", json=to_product_response_json(conflicting_product)
+        "/products/", json=to_product_creation_request_json(conflicting_product)
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -371,7 +372,7 @@ async def test_update_product_modifies_product_in_database(
     )
     response = await client.put(
         f"/products/{updated_product.id}",
-        json=to_product_creation_request_json(updated_product),
+        json=to_product_update_request_json(updated_product),
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -502,7 +503,7 @@ async def test_update_product_without_changes_succeeds(
 
     response = await client.put(
         f"/products/{product.id}",
-        json=to_product_creation_request_json(product),
+        json=to_product_update_request_json(product),
     )
 
     assert response.status_code == status.HTTP_200_OK
