@@ -88,10 +88,7 @@ class ProductService:
                 return "success", None
             case False, "draft":
                 return "success", None
-            case False, "published":
-                error = ProductPayloadUpdateError(status=product_update.before.status)
-                return "failure", error
-            case False, "deprecated":
+            case False, "published" | "deprecated":
                 error = ProductPayloadUpdateError(status=product_update.before.status)
                 return "failure", error
             case _ as pair:  # pragma: no cover
@@ -118,7 +115,14 @@ class ProductService:
         match product_update.before.status, product_update.after.status:
             case "draft", "draft" | "published" | "deprecated":
                 return "success", None
-            case "published", "draft":
+            case (
+                ("published", "draft")
+                | ("deprecated", "draft")
+                | (
+                    "deprecated",
+                    "published",
+                )
+            ):
                 error = ProductStatusUpdateError(
                     before=product_update.before.status,
                     after=product_update.after.status,
@@ -126,18 +130,6 @@ class ProductService:
                 return "failure", error
             case "published", "published" | "deprecated":
                 return "success", None
-            case "deprecated", "draft":
-                error = ProductStatusUpdateError(
-                    before=product_update.before.status,
-                    after=product_update.after.status,
-                )
-                return "failure", error
-            case "deprecated", "published":
-                error = ProductStatusUpdateError(
-                    before=product_update.before.status,
-                    after=product_update.after.status,
-                )
-                return "failure", error
             case "deprecated", "deprecated":
                 return "success", None
             case _ as pair:  # pragma: no cover
