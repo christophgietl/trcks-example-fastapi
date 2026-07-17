@@ -8,8 +8,8 @@ from trcks.oop import Wrapper
 from subscription_management.data_structures.domain.product_error import (
     ProductNotDeletableBecauseDeprecatedError,
     ProductNotDeletableBecausePublishedError,
-    ProductPayloadUpdateError,
-    ProductStatusUpdateError,
+    ProductPayloadNotUpdatableBecauseStatusError,
+    ProductStatusTransitionNotAllowedError,
     ProductWithIdAlreadyExistsError,
     ProductWithIdDoesNotExistError,
     ProductWithNameAlreadyExistsError,
@@ -32,8 +32,8 @@ type _DeleteProductError = (
     | ProductWithIdDoesNotExistError
 )
 type _UpdateNotAllowedError = (
-    ProductPayloadUpdateError
-    | ProductStatusUpdateError
+    ProductPayloadNotUpdatableBecauseStatusError
+    | ProductStatusTransitionNotAllowedError
     | ProductWithIdDoesNotExistError
 )
 
@@ -79,7 +79,7 @@ class ProductService:
     @staticmethod
     def _check_that_payload_update_is_allowed(
         product_update: _ProductUpdate,
-    ) -> Result[ProductPayloadUpdateError, None]:
+    ) -> Result[ProductPayloadNotUpdatableBecauseStatusError, None]:
         payload_is_identical = product_update.before == dataclasses.replace(
             product_update.after, status=product_update.before.status
         )
@@ -89,7 +89,9 @@ class ProductService:
             case False, "draft":
                 return "success", None
             case False, "published" | "deprecated":
-                error = ProductPayloadUpdateError(status=product_update.before.status)
+                error = ProductPayloadNotUpdatableBecauseStatusError(
+                    status=product_update.before.status
+                )
                 return "failure", error
             case _ as pair:  # pragma: no cover
                 assert_never(pair)  # pyright: ignore[reportUnreachable]
@@ -119,7 +121,7 @@ class ProductService:
     @staticmethod
     def _check_that_status_update_is_allowed(
         product_update: _ProductUpdate,
-    ) -> Result[ProductStatusUpdateError, None]:
+    ) -> Result[ProductStatusTransitionNotAllowedError, None]:
         match product_update.before.status, product_update.after.status:
             case "draft", "draft" | "published" | "deprecated":
                 return "success", None
@@ -131,7 +133,7 @@ class ProductService:
                     "published",
                 )
             ):
-                error = ProductStatusUpdateError(
+                error = ProductStatusTransitionNotAllowedError(
                     before=product_update.before.status,
                     after=product_update.after.status,
                 )

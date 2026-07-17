@@ -7,8 +7,8 @@ from trcks.oop import AwaitableTupleWrapper, Wrapper
 from subscription_management.data_structures.domain.product_error import (
     ProductNotDeletableBecauseDeprecatedError,
     ProductNotDeletableBecausePublishedError,
-    ProductPayloadUpdateError,
-    ProductStatusUpdateError,
+    ProductPayloadNotUpdatableBecauseStatusError,
+    ProductStatusTransitionNotAllowedError,
     ProductWithIdAlreadyExistsError,
     ProductWithIdDoesNotExistError,
     ProductWithNameAlreadyExistsError,
@@ -202,7 +202,10 @@ async def update_product(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with name '{name}' already exists.",
             )
-        case ("failure", ProductPayloadUpdateError(status=product_status)):
+        case (
+            "failure",
+            ProductPayloadNotUpdatableBecauseStatusError(status=product_status),
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -210,7 +213,10 @@ async def update_product(
                     f"of a {product_status} product."
                 ),
             )
-        case ("failure", ProductStatusUpdateError(before=before, after=after)):
+        case (
+            "failure",
+            ProductStatusTransitionNotAllowedError(before=before, after=after),
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Cannot change status from {before} to {after}.",
