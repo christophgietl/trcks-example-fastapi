@@ -70,8 +70,8 @@
 
 ## Code style
 
-- Sort type aliases alphabetically within each module.
-- Sort methods alphabetically within each class.
+- Sort type aliases case-insensitively in alphabetical order within each module.
+- Sort methods case-insensitively in alphabetical order within each class.
 - Place comments regarding implementation inside the respective function or class,
   not above it.
 - Suppress `ruff` rule `TC001` when importing a `*Dep` type:
