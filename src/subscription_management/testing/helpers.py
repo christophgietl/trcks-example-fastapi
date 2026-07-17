@@ -98,14 +98,6 @@ def sorted_by_id(json_objects: Iterable[_JsonObject]) -> list[_JsonObject]:
     return sorted(json_objects, key=_get_id)
 
 
-def to_product_update_request_json(product: Product) -> _JsonObject:
-    return {
-        "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
-        "name": product.name,
-        "status": product.status,
-    }
-
-
 def to_product_creation_request_json(product: Product) -> _JsonObject:
     return {"id": str(product.id)} | to_product_update_request_json(product)
 
@@ -116,6 +108,14 @@ def to_product_response_json(product: Product) -> _JsonObject:
     # same attributes), so the response helper reuses the creation-request helper.
     # If a response-only field is ever added, split these into independent helpers.
     return to_product_creation_request_json(product)
+
+
+def to_product_update_request_json(product: Product) -> _JsonObject:
+    return {
+        "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
+        "name": product.name,
+        "status": product.status,
+    }
 
 
 def to_subscription_creation_request_json(
