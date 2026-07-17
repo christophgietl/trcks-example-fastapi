@@ -110,6 +110,17 @@ def to_product_json(product: Product) -> _JsonObject:
     return {"id": str(product.id)} | to_product_json_without_id(product)
 
 
+def to_subscription_create_json(
+    subscription: SubscriptionWithUserIdAndProductId,
+) -> _JsonObject:
+    return {
+        "id": str(subscription.id),
+        "is_active": subscription.is_active,
+        "user_id": str(subscription.user_id),
+        "product_id": str(subscription.product_id),
+    }
+
+
 def to_subscription_json(
     subscription: SubscriptionWithUserIdAndProductId, product: Product
 ) -> _JsonObject:
@@ -117,6 +128,16 @@ def to_subscription_json(
         "id": str(subscription.id),
         "is_active": subscription.is_active,
         "product": to_product_json(product),
+    }
+
+
+def to_subscription_update_json(
+    subscription: SubscriptionWithUserIdAndProductId,
+) -> _JsonObject:
+    return {
+        "is_active": subscription.is_active,
+        "user_id": str(subscription.user_id),
+        "product_id": str(subscription.product_id),
     }
 
 

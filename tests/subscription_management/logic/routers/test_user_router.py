@@ -70,9 +70,8 @@ async def test_create_user_with_existing_email_fails(
     user = User(id=uuid7(), email="spam@foo.org")
     await insert_users(session, user)
 
-    response = await client.post(
-        "/users/", json={"id": str(uuid7()), "email": user.email}
-    )
+    conflicting_user = User(id=uuid7(), email=user.email)
+    response = await client.post("/users/", json=to_user_json(conflicting_user))
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
@@ -96,9 +95,8 @@ async def test_create_user_with_existing_id_fails(
     user = User(id=uuid7(), email="spam@foo.org")
     await insert_users(session, user)
 
-    response = await client.post(
-        "/users/", json={"id": str(user.id), "email": "ham@bar.com"}
-    )
+    conflicting_user = User(id=user.id, email="ham@bar.com")
+    response = await client.post("/users/", json=to_user_json(conflicting_user))
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {"detail": f"User with ID {user.id} already exists."}
