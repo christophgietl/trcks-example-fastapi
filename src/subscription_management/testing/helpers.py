@@ -121,16 +121,14 @@ def to_product_update_request_json(product: Product) -> _JsonObject:
 def to_subscription_creation_request_json(
     subscription: SubscriptionWithUserIdAndProductId,
 ) -> _JsonObject:
-    return {
-        "id": str(subscription.id),
-        "is_active": subscription.is_active,
-        "user_id": str(subscription.user_id),
-        "product_id": str(subscription.product_id),
-    }
+    return {"id": str(subscription.id)} | to_subscription_update_request_json(
+        subscription
+    )
 
 
 def to_subscription_response_json(
-    subscription: SubscriptionWithUserIdAndProductId, product: Product
+    subscription: SubscriptionWithProduct | SubscriptionWithUserIdAndProductId,
+    product: Product,
 ) -> _JsonObject:
     return {
         "id": str(subscription.id),
@@ -152,11 +150,7 @@ def to_subscription_update_request_json(
 def to_subscription_with_product_response_json(
     subscription: SubscriptionWithProduct,
 ) -> _JsonObject:
-    return {
-        "id": str(subscription.id),
-        "is_active": subscription.is_active,
-        "product": to_product_response_json(subscription.product),
-    }
+    return to_subscription_response_json(subscription, subscription.product)
 
 
 def to_user_creation_request_json(user: User) -> _JsonObject:
