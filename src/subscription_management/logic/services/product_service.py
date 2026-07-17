@@ -6,9 +6,9 @@ from fastapi import Depends
 from trcks.oop import Wrapper
 
 from subscription_management.data_structures.domain.product_error import (
+    ProductNotDeletableBecauseDeprecatedError,
+    ProductNotDeletableBecausePublishedError,
     ProductPayloadUpdateError,
-    ProductStatusDeprecatedError,
-    ProductStatusPublishedError,
     ProductStatusUpdateError,
     ProductWithIdAlreadyExistsError,
     ProductWithIdDoesNotExistError,
@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     from subscription_management.data_structures.domain.product import Product
 
 type _DeleteProductError = (
-    ProductStatusDeprecatedError
-    | ProductStatusPublishedError
+    ProductNotDeletableBecauseDeprecatedError
+    | ProductNotDeletableBecausePublishedError
     | ProductWithIdDoesNotExistError
 )
 type _UpdateNotAllowedError = (
@@ -97,14 +97,22 @@ class ProductService:
     @staticmethod
     def _check_that_product_can_be_deleted(
         product: Product,
-    ) -> Result[ProductStatusDeprecatedError | ProductStatusPublishedError, None]:
+    ) -> Result[
+        ProductNotDeletableBecauseDeprecatedError
+        | ProductNotDeletableBecausePublishedError,
+        None,
+    ]:
         match product.status:
             case "draft":
                 return "success", None
             case "published":
-                return "failure", ProductStatusPublishedError(id=product.id)
+                return "failure", ProductNotDeletableBecausePublishedError(
+                    id=product.id
+                )
             case "deprecated":
-                return "failure", ProductStatusDeprecatedError(id=product.id)
+                return "failure", ProductNotDeletableBecauseDeprecatedError(
+                    id=product.id
+                )
             case _:  # pragma: no cover
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]
 

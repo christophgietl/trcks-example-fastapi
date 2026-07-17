@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from subscription_management.data_structures.domain.product_error import (
-    ProductInDeprecatedStatusError,
-    ProductInDraftStatusError,
+    ProductNotSubscribableBecauseDeprecatedError,
+    ProductNotSubscribableBecauseDraftError,
     ProductWithIdDoesNotExistError,
 )
 from subscription_management.data_structures.domain.subscription_error import (
@@ -55,12 +55,12 @@ async def create_subscription(
         .core
     )
     match result:
-        case ("failure", ProductInDeprecatedStatusError(id=id_)):
+        case ("failure", ProductNotSubscribableBecauseDeprecatedError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {id_} is in deprecated status.",
             )
-        case ("failure", ProductInDraftStatusError(id=id_)):
+        case ("failure", ProductNotSubscribableBecauseDraftError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {id_} is in draft status.",
@@ -159,12 +159,15 @@ async def update_subscription(
         .core
     )
     match result:
-        case ("failure", ProductInDeprecatedStatusError(id=id_from_err)):
+        case (
+            "failure",
+            ProductNotSubscribableBecauseDeprecatedError(id=id_from_err),
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {id_from_err} is in deprecated status.",
             )
-        case ("failure", ProductInDraftStatusError(id=id_from_err)):
+        case ("failure", ProductNotSubscribableBecauseDraftError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with ID {id_from_err} is in draft status.",
