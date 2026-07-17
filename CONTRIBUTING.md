@@ -12,7 +12,7 @@ The following section describes how to set up and use a development environment.
 - [pre-commit](https://pre-commit.com) for managing Git hooks
   (particularly for code formatting and linting)
 - [pyright](https://microsoft.github.io/pyright/) for static type checking
-- [pytest](https://pytest.org) for unit testing and doctests
+- [pytest](https://pytest.org) for unit testing
 - [uv](https://docs.astral.sh/uv/) for dependency management
 
 ### Setup
