@@ -14,8 +14,8 @@ from subscription_management.testing.helpers import (
     insert_products,
     select_products,
     sorted_by_id,
-    to_product_json,
-    to_product_json_without_id,
+    to_product_creation_request_json,
+    to_product_response_json,
 )
 
 if TYPE_CHECKING:
@@ -49,10 +49,12 @@ async def test_create_product_adds_additional_product_to_database(
         name="Product 3",
         status="published",
     )
-    response = await client.post("/products/", json=to_product_json(additional_product))
+    response = await client.post(
+        "/products/", json=to_product_response_json(additional_product)
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == to_product_json(additional_product)
+    assert response.json() == to_product_response_json(additional_product)
 
     products_in_database = await select_products(session)
     assert frozenset(products_in_database) == frozenset((*products, additional_product))
@@ -77,7 +79,7 @@ async def test_create_product_with_existing_id_fails(
         status="published",
     )
     response = await client.post(
-        "/products/", json=to_product_json(conflicting_product)
+        "/products/", json=to_product_response_json(conflicting_product)
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -108,7 +110,7 @@ async def test_create_product_with_existing_name_fails(
         status="published",
     )
     response = await client.post(
-        "/products/", json=to_product_json(conflicting_product)
+        "/products/", json=to_product_response_json(conflicting_product)
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -214,7 +216,7 @@ async def test_read_product_by_id_returns_product(
     response = await client.get(f"/products/{product.id}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_product_json(product)
+    assert response.json() == to_product_response_json(product)
 
 
 async def test_read_product_by_id_with_nonexistent_id_fails(
@@ -253,7 +255,7 @@ async def test_read_product_by_name_returns_product(
     response = await client.get(f"/products/by-name/{product.name}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_product_json(product)
+    assert response.json() == to_product_response_json(product)
 
 
 async def test_read_product_by_name_with_nonexistent_name_fails(
@@ -301,7 +303,7 @@ async def test_read_products_returns_all_products(
 
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
-        to_product_json(product) for product in products
+        to_product_response_json(product) for product in products
     )
 
 
@@ -369,11 +371,11 @@ async def test_update_product_modifies_product_in_database(
     )
     response = await client.put(
         f"/products/{updated_product.id}",
-        json=to_product_json_without_id(updated_product),
+        json=to_product_creation_request_json(updated_product),
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_product_json(updated_product)
+    assert response.json() == to_product_response_json(updated_product)
 
     products_in_database = await select_products(session)
     assert frozenset(products_in_database) == frozenset((updated_product, products[1]))
@@ -500,11 +502,11 @@ async def test_update_product_without_changes_succeeds(
 
     response = await client.put(
         f"/products/{product.id}",
-        json=to_product_json_without_id(product),
+        json=to_product_creation_request_json(product),
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_product_json(product)
+    assert response.json() == to_product_response_json(product)
 
     products_in_database = await select_products(session)
     assert products_in_database == (product,)

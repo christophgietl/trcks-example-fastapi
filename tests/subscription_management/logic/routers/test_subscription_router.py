@@ -20,9 +20,9 @@ from subscription_management.testing.helpers import (
     insert_users,
     select_subscriptions,
     sorted_by_id,
-    to_subscription_create_json,
-    to_subscription_json,
-    to_subscription_update_json,
+    to_subscription_creation_request_json,
+    to_subscription_response_json,
+    to_subscription_update_request_json,
 )
 
 if TYPE_CHECKING:
@@ -62,11 +62,11 @@ async def test_create_subscription_adds_subscription_to_database(
     )
     response = await client.post(
         "/subscriptions/",
-        json=to_subscription_create_json(new_subscription),
+        json=to_subscription_creation_request_json(new_subscription),
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == to_subscription_json(new_subscription, product)
+    assert response.json() == to_subscription_response_json(new_subscription, product)
 
     subscriptions_in_database = await select_subscriptions(session)
     assert frozenset(subscriptions_in_database) == frozenset(
@@ -107,7 +107,7 @@ async def test_create_subscription_for_non_published_product_fails(
     )
     response = await client.post(
         "/subscriptions/",
-        json=to_subscription_create_json(new_subscription),
+        json=to_subscription_creation_request_json(new_subscription),
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -151,7 +151,7 @@ async def test_create_subscription_with_existing_id_fails(
     )
     response = await client.post(
         "/subscriptions/",
-        json=to_subscription_create_json(conflicting_subscription),
+        json=to_subscription_creation_request_json(conflicting_subscription),
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -190,7 +190,7 @@ async def test_create_subscription_with_nonexistent_user_fails(
     )
     response = await client.post(
         "/subscriptions/",
-        json=to_subscription_create_json(subscription_with_nonexistent_user),
+        json=to_subscription_creation_request_json(subscription_with_nonexistent_user),
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -218,7 +218,9 @@ async def test_create_subscription_with_nonexistent_product_fails(
     )
     response = await client.post(
         "/subscriptions/",
-        json=to_subscription_create_json(subscription_with_nonexistent_product),
+        json=to_subscription_creation_request_json(
+            subscription_with_nonexistent_product
+        ),
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -359,8 +361,8 @@ async def test_read_subscriptions_returns_all_subscriptions(
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
         (
-            to_subscription_json(subscriptions[0], products[0]),
-            to_subscription_json(subscriptions[1], products[1]),
+            to_subscription_response_json(subscriptions[0], products[0]),
+            to_subscription_response_json(subscriptions[1], products[1]),
         )
     )
 
@@ -398,7 +400,7 @@ async def test_read_subscription_by_id_returns_subscription(
     response = await client.get(f"/subscriptions/{subscription.id}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_subscription_json(subscription, product)
+    assert response.json() == to_subscription_response_json(subscription, product)
 
 
 async def test_read_subscription_by_id_returns_404_when_subscription_does_not_exist(
@@ -454,11 +456,13 @@ async def test_update_subscription_updates_subscription_in_database(
     )
     response = await client.put(
         f"/subscriptions/{subscription.id}",
-        json=to_subscription_update_json(updated_subscription),
+        json=to_subscription_update_request_json(updated_subscription),
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_subscription_json(updated_subscription, products[1])
+    assert response.json() == to_subscription_response_json(
+        updated_subscription, products[1]
+    )
 
     subscriptions_in_database = await select_subscriptions(session)
     assert subscriptions_in_database == (
@@ -507,7 +511,7 @@ async def test_update_subscription_to_non_published_product_fails(
     )
     response = await client.put(
         f"/subscriptions/{subscription.id}",
-        json=to_subscription_update_json(subscription_update),
+        json=to_subscription_update_request_json(subscription_update),
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -557,7 +561,7 @@ async def test_update_subscription_with_nonexistent_id_fails(
     )
     response = await client.put(
         f"/subscriptions/{nonexistent_subscription_id}",
-        json=to_subscription_update_json(subscription_update),
+        json=to_subscription_update_request_json(subscription_update),
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -603,7 +607,7 @@ async def test_update_subscription_with_nonexistent_user_fails(
     )
     response = await client.put(
         f"/subscriptions/{subscription.id}",
-        json=to_subscription_update_json(subscription_update),
+        json=to_subscription_update_request_json(subscription_update),
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -649,7 +653,7 @@ async def test_update_subscription_with_nonexistent_product_fails(
     )
     response = await client.put(
         f"/subscriptions/{subscription.id}",
-        json=to_subscription_update_json(subscription_update),
+        json=to_subscription_update_request_json(subscription_update),
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND

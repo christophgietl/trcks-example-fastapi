@@ -98,7 +98,7 @@ def sorted_by_id(json_objects: Iterable[_JsonObject]) -> list[_JsonObject]:
     return sorted(json_objects, key=_get_id)
 
 
-def to_product_json_without_id(product: Product) -> _JsonObject:
+def to_product_creation_request_json(product: Product) -> _JsonObject:
     return {
         "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
         "name": product.name,
@@ -106,11 +106,11 @@ def to_product_json_without_id(product: Product) -> _JsonObject:
     }
 
 
-def to_product_json(product: Product) -> _JsonObject:
-    return {"id": str(product.id)} | to_product_json_without_id(product)
+def to_product_response_json(product: Product) -> _JsonObject:
+    return {"id": str(product.id)} | to_product_creation_request_json(product)
 
 
-def to_subscription_create_json(
+def to_subscription_creation_request_json(
     subscription: SubscriptionWithUserIdAndProductId,
 ) -> _JsonObject:
     return {
@@ -121,17 +121,17 @@ def to_subscription_create_json(
     }
 
 
-def to_subscription_json(
+def to_subscription_response_json(
     subscription: SubscriptionWithUserIdAndProductId, product: Product
 ) -> _JsonObject:
     return {
         "id": str(subscription.id),
         "is_active": subscription.is_active,
-        "product": to_product_json(product),
+        "product": to_product_response_json(product),
     }
 
 
-def to_subscription_update_json(
+def to_subscription_update_request_json(
     subscription: SubscriptionWithUserIdAndProductId,
 ) -> _JsonObject:
     return {
@@ -141,28 +141,28 @@ def to_subscription_update_json(
     }
 
 
-def to_subscription_with_product_json(
+def to_subscription_with_product_response_json(
     subscription: SubscriptionWithProduct,
 ) -> _JsonObject:
     return {
         "id": str(subscription.id),
         "is_active": subscription.is_active,
-        "product": to_product_json(subscription.product),
+        "product": to_product_response_json(subscription.product),
     }
 
 
-def to_user_json(user: User) -> _JsonObject:
+def to_user_creation_request_json(user: User) -> _JsonObject:
     return {"id": str(user.id), "email": user.email}
 
 
-def to_user_with_subscriptions_with_products_json(
+def to_user_response_json(
     user: UserWithSubscriptionsWithProducts,
 ) -> _JsonObject:
     return {
         "id": str(user.id),
         "email": user.email,
         "subscriptions": [
-            to_subscription_with_product_json(subscription)
+            to_subscription_with_product_response_json(subscription)
             for subscription in user.subscriptions_with_products
         ],
     }
