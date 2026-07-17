@@ -5,8 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from subscription_management.data_structures.domain.product_error import (
-    ProductNotSubscribableBecauseDeprecatedError,
-    ProductNotSubscribableBecauseDraftError,
+    ProductNotSubscribableBecauseStatusError,
     ProductWithIdDoesNotExistError,
 )
 from subscription_management.data_structures.domain.subscription_error import (
@@ -55,15 +54,13 @@ async def create_subscription(
         .core
     )
     match result:
-        case ("failure", ProductNotSubscribableBecauseDeprecatedError(id=id_)):
+        case (
+            "failure",
+            ProductNotSubscribableBecauseStatusError(id=id_, status=product_status),
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_} is in deprecated status.",
-            )
-        case ("failure", ProductNotSubscribableBecauseDraftError(id=id_)):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_} is in draft status.",
+                detail=f"Product with ID {id_} is in {product_status} status.",
             )
         case ("failure", ProductWithIdDoesNotExistError(id=id_)):
             raise HTTPException(
@@ -161,16 +158,13 @@ async def update_subscription(
     match result:
         case (
             "failure",
-            ProductNotSubscribableBecauseDeprecatedError(id=id_from_err),
+            ProductNotSubscribableBecauseStatusError(
+                id=id_from_err, status=product_status
+            ),
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_from_err} is in deprecated status.",
-            )
-        case ("failure", ProductNotSubscribableBecauseDraftError(id=id_from_err)):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_from_err} is in draft status.",
+                detail=f"Product with ID {id_from_err} is in {product_status} status.",
             )
         case ("failure", ProductWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(

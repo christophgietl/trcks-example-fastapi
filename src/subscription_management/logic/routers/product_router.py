@@ -5,8 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from subscription_management.data_structures.domain.product_error import (
-    ProductNotDeletableBecauseDeprecatedError,
-    ProductNotDeletableBecausePublishedError,
+    ProductNotDeletableBecauseStatusError,
     ProductPayloadNotUpdatableBecauseStatusError,
     ProductStatusTransitionNotAllowedError,
     ProductWithIdAlreadyExistsError,
@@ -79,20 +78,17 @@ async def create_product(
 async def delete_product(id_: UUID, product_service: ProductServiceDep) -> None:
     result = await product_service.delete_product(id_)
     match result:
-        case ("failure", ProductNotDeletableBecauseDeprecatedError(id=id_from_err)):
+        case (
+            "failure",
+            ProductNotDeletableBecauseStatusError(
+                id=id_from_err, status=product_status
+            ),
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
                     f"Product with ID {id_from_err} cannot be deleted "
-                    "because its status is deprecated."
-                ),
-            )
-        case ("failure", ProductNotDeletableBecausePublishedError(id=id_from_err)):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    f"Product with ID {id_from_err} cannot be deleted "
-                    "because its status is published."
+                    f"because its status is {product_status}."
                 ),
             )
         case ("failure", ProductWithIdDoesNotExistError(id=id_from_err)):
