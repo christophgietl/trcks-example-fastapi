@@ -33,8 +33,9 @@ if TYPE_CHECKING:
         UserWithIdDoesNotExistError,
     )
 
-type _ProductNotSubscribableError = _ProductStatusError | ProductWithIdDoesNotExistError
-type _ProductStatusError = ProductNotSubscribableBecauseStatusError
+type _ProductNotSubscribableError = (
+    ProductNotSubscribableBecauseStatusError | ProductWithIdDoesNotExistError
+)
 
 type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
@@ -46,7 +47,9 @@ class SubscriptionService:
     _subscription_repository: SubscriptionRepositoryDep
 
     @staticmethod
-    def _check_product_status(product: Product) -> Result[_ProductStatusError, None]:
+    def _check_product_status(
+        product: Product,
+    ) -> Result[ProductNotSubscribableBecauseStatusError, None]:
         match product.status:
             case "draft" | "deprecated":
                 return "failure", ProductNotSubscribableBecauseStatusError(
