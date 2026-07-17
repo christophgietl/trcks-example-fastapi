@@ -202,12 +202,19 @@ async def update_product(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with name '{name}' already exists.",
             )
-        case (
-            "failure",
-            ProductPayloadUpdateError(reason=reason)
-            | ProductStatusUpdateError(reason=reason),
-        ):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=reason)
+        case ("failure", ProductPayloadUpdateError(status=product_status)):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Cannot modify non-status attributes "
+                    f"of a {product_status} product."
+                ),
+            )
+        case ("failure", ProductStatusUpdateError(before=before, after=after)):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot change status from {before} to {after}.",
+            )
         case ("success", product_response):
             return product_response
         case _:  # pragma: no cover
