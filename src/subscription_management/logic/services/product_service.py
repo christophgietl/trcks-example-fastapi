@@ -89,16 +89,10 @@ class ProductService:
             case False, "draft":
                 return "success", None
             case False, "published":
-                reason = "Cannot modify non-status attributes of a published product"
-                error = ProductPayloadUpdateError(
-                    reason=reason, status=product_update.before.status
-                )
+                error = ProductPayloadUpdateError(status=product_update.before.status)
                 return "failure", error
             case False, "deprecated":
-                reason = "Cannot modify non-status attributes of a deprecated product"
-                error = ProductPayloadUpdateError(
-                    reason=reason, status=product_update.before.status
-                )
+                error = ProductPayloadUpdateError(status=product_update.before.status)
                 return "failure", error
             case _ as pair:  # pragma: no cover
                 assert_never(pair)  # pyright: ignore[reportUnreachable]
@@ -126,7 +120,6 @@ class ProductService:
                 return "success", None
             case "published", "draft":
                 error = ProductStatusUpdateError(
-                    reason="Cannot change status from published to draft",
                     before=product_update.before.status,
                     after=product_update.after.status,
                 )
@@ -135,14 +128,12 @@ class ProductService:
                 return "success", None
             case "deprecated", "draft":
                 error = ProductStatusUpdateError(
-                    reason="Cannot change status from deprecated to draft",
                     before=product_update.before.status,
                     after=product_update.after.status,
                 )
                 return "failure", error
             case "deprecated", "published":
                 error = ProductStatusUpdateError(
-                    reason="Cannot change status from deprecated to published",
                     before=product_update.before.status,
                     after=product_update.after.status,
                 )
