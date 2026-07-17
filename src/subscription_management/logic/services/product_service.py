@@ -87,7 +87,8 @@ class ProductService:
                 return "success", None
             case False, "published" | "deprecated":
                 error = ProductPayloadNotUpdatableBecauseStatusError(
-                    status=product_update.before.status
+                    id=product_update.before.id,
+                    status=product_update.before.status,
                 )
                 return "failure", error
             case _ as pair:  # pragma: no cover
@@ -126,6 +127,7 @@ class ProductService:
                 )
             ):
                 error = ProductStatusTransitionNotAllowedError(
+                    id=product_update.before.id,
                     before=product_update.before.status,
                     after=product_update.after.status,
                 )

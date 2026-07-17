@@ -340,7 +340,10 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
-        "detail": f"Cannot modify non-status attributes of a {product_status} product."
+        "detail": (
+            f"Product with ID {product.id} cannot have non-status attributes "
+            f"modified because its status is {product_status}."
+        )
     }
 
     products_in_database = await select_products(session)
@@ -411,7 +414,10 @@ async def test_update_product_status_forbidden_transitions_fail(
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
-        "detail": f"Cannot change status from {initial_status} to {target_status}."
+        "detail": (
+            f"Product with ID {product.id} cannot change status from "
+            f"{initial_status} to {target_status}."
+        )
     }
 
     products_in_database = await select_products(session)

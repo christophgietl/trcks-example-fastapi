@@ -200,22 +200,29 @@ async def update_product(
             )
         case (
             "failure",
-            ProductPayloadNotUpdatableBecauseStatusError(status=product_status),
+            ProductPayloadNotUpdatableBecauseStatusError(
+                id=id_from_err, status=product_status
+            ),
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
-                    "Cannot modify non-status attributes "
-                    f"of a {product_status} product."
+                    f"Product with ID {id_from_err} cannot have non-status "
+                    f"attributes modified because its status is {product_status}."
                 ),
             )
         case (
             "failure",
-            ProductStatusTransitionNotAllowedError(before=before, after=after),
+            ProductStatusTransitionNotAllowedError(
+                id=id_from_err, before=before, after=after
+            ),
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Cannot change status from {before} to {after}.",
+                detail=(
+                    f"Product with ID {id_from_err} cannot change status "
+                    f"from {before} to {after}."
+                ),
             )
         case ("success", product_response):
             return product_response

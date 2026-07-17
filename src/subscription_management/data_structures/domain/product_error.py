@@ -29,13 +29,13 @@ class ProductNotSubscribableBecauseStatusError(_ProductErrorWithId):
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductPayloadNotUpdatableBecauseStatusError:
+class ProductPayloadNotUpdatableBecauseStatusError(_ProductErrorWithId):
     status: Literal["published", "deprecated"]
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductStatusTransitionNotAllowedError:
+class ProductStatusTransitionNotAllowedError(_ProductErrorWithId):
     before: Literal["published", "deprecated"]
     after: Literal["draft", "published"]
 
