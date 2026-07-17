@@ -21,8 +21,8 @@ from subscription_management.testing.helpers import (
     select_subscriptions,
     select_users,
     sorted_by_id,
-    to_user_json,
-    to_user_with_subscriptions_with_products_json,
+    to_user_creation_request_json,
+    to_user_response_json,
 )
 
 if TYPE_CHECKING:
@@ -41,10 +41,12 @@ async def test_create_user_adds_additional_user_to_database(
     await insert_users(session, *users)
 
     additional_user = User(id=uuid7(), email="test@baz.com")
-    response = await client.post("/users/", json=to_user_json(additional_user))
+    response = await client.post(
+        "/users/", json=to_user_creation_request_json(additional_user)
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == to_user_with_subscriptions_with_products_json(
+    assert response.json() == to_user_response_json(
         UserWithSubscriptionsWithProducts(
             id=additional_user.id,
             email=additional_user.email,
@@ -71,7 +73,9 @@ async def test_create_user_with_existing_email_fails(
     await insert_users(session, user)
 
     conflicting_user = User(id=uuid7(), email=user.email)
-    response = await client.post("/users/", json=to_user_json(conflicting_user))
+    response = await client.post(
+        "/users/", json=to_user_creation_request_json(conflicting_user)
+    )
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
@@ -96,7 +100,9 @@ async def test_create_user_with_existing_id_fails(
     await insert_users(session, user)
 
     conflicting_user = User(id=user.id, email="ham@bar.com")
-    response = await client.post("/users/", json=to_user_json(conflicting_user))
+    response = await client.post(
+        "/users/", json=to_user_creation_request_json(conflicting_user)
+    )
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {"detail": f"User with ID {user.id} already exists."}
@@ -249,7 +255,7 @@ async def test_read_user_by_email_returns_user(
     response = await client.get(f"/users/by-email/{user.email}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_user_with_subscriptions_with_products_json(
+    assert response.json() == to_user_response_json(
         UserWithSubscriptionsWithProducts(
             id=user.id,
             email=user.email,
@@ -304,7 +310,7 @@ async def test_read_user_by_id_returns_user(
     response = await client.get(f"/users/{user.id}")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_user_with_subscriptions_with_products_json(
+    assert response.json() == to_user_response_json(
         UserWithSubscriptionsWithProducts(
             id=user.id,
             email=user.email,
@@ -364,7 +370,7 @@ async def test_read_users_returns_all_users(
     assert response.status_code == status.HTTP_200_OK
     assert sorted_by_id(response.json()) == sorted_by_id(
         (
-            to_user_with_subscriptions_with_products_json(
+            to_user_response_json(
                 UserWithSubscriptionsWithProducts(
                     id=users[0].id,
                     email=users[0].email,
@@ -377,7 +383,7 @@ async def test_read_users_returns_all_users(
                     ),
                 )
             ),
-            to_user_with_subscriptions_with_products_json(
+            to_user_response_json(
                 UserWithSubscriptionsWithProducts(
                     id=users[1].id,
                     email=users[1].email,
@@ -411,7 +417,7 @@ async def test_update_user_modifies_user_in_database(
     response = await client.put(f"/users/{users[0].id}", json={"email": new_email})
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == to_user_with_subscriptions_with_products_json(
+    assert response.json() == to_user_response_json(
         UserWithSubscriptionsWithProducts(
             id=users[0].id,
             email=new_email,

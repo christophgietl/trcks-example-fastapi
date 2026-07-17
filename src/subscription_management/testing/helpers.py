@@ -98,7 +98,19 @@ def sorted_by_id(json_objects: Iterable[_JsonObject]) -> list[_JsonObject]:
     return sorted(json_objects, key=_get_id)
 
 
-def to_product_json_without_id(product: Product) -> _JsonObject:
+def to_product_creation_request_json(product: Product) -> _JsonObject:
+    return {"id": str(product.id)} | to_product_update_request_json(product)
+
+
+def to_product_response_json(product: Product) -> _JsonObject:
+    # The product create-request and response bodies currently have an identical
+    # shape (both `PostProductRequest` and `ProductResponse` include `id` plus the
+    # same attributes), so the response helper reuses the creation-request helper.
+    # If a response-only field is ever added, split these into independent helpers.
+    return to_product_creation_request_json(product)
+
+
+def to_product_update_request_json(product: Product) -> _JsonObject:
     return {
         "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
         "name": product.name,
@@ -106,32 +118,26 @@ def to_product_json_without_id(product: Product) -> _JsonObject:
     }
 
 
-def to_product_json(product: Product) -> _JsonObject:
-    return {"id": str(product.id)} | to_product_json_without_id(product)
-
-
-def to_subscription_create_json(
+def to_subscription_creation_request_json(
     subscription: SubscriptionWithUserIdAndProductId,
 ) -> _JsonObject:
-    return {
-        "id": str(subscription.id),
-        "is_active": subscription.is_active,
-        "user_id": str(subscription.user_id),
-        "product_id": str(subscription.product_id),
-    }
+    return {"id": str(subscription.id)} | to_subscription_update_request_json(
+        subscription
+    )
 
 
-def to_subscription_json(
-    subscription: SubscriptionWithUserIdAndProductId, product: Product
+def to_subscription_response_json(
+    subscription: SubscriptionWithProduct | SubscriptionWithUserIdAndProductId,
+    product: Product,
 ) -> _JsonObject:
     return {
         "id": str(subscription.id),
         "is_active": subscription.is_active,
-        "product": to_product_json(product),
+        "product": to_product_response_json(product),
     }
 
 
-def to_subscription_update_json(
+def to_subscription_update_request_json(
     subscription: SubscriptionWithUserIdAndProductId,
 ) -> _JsonObject:
     return {
@@ -141,28 +147,18 @@ def to_subscription_update_json(
     }
 
 
-def to_subscription_with_product_json(
-    subscription: SubscriptionWithProduct,
-) -> _JsonObject:
-    return {
-        "id": str(subscription.id),
-        "is_active": subscription.is_active,
-        "product": to_product_json(subscription.product),
-    }
-
-
-def to_user_json(user: User) -> _JsonObject:
+def to_user_creation_request_json(user: User) -> _JsonObject:
     return {"id": str(user.id), "email": user.email}
 
 
-def to_user_with_subscriptions_with_products_json(
+def to_user_response_json(
     user: UserWithSubscriptionsWithProducts,
 ) -> _JsonObject:
     return {
         "id": str(user.id),
         "email": user.email,
         "subscriptions": [
-            to_subscription_with_product_json(subscription)
+            to_subscription_response_json(subscription, subscription.product)
             for subscription in user.subscriptions_with_products
         ],
     }
