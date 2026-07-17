@@ -103,13 +103,9 @@ class ProductService:
         match product.status:
             case "draft":
                 return "success", None
-            case "published":
+            case "published" | "deprecated":
                 return "failure", ProductNotDeletableBecauseStatusError(
-                    id=product.id, status="published"
-                )
-            case "deprecated":
-                return "failure", ProductNotDeletableBecauseStatusError(
-                    id=product.id, status="deprecated"
+                    id=product.id, status=product.status
                 )
             case _:  # pragma: no cover
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]

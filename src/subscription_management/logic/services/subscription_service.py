@@ -48,19 +48,12 @@ class SubscriptionService:
     @staticmethod
     def _check_product_status(product: Product) -> Result[_ProductStatusError, None]:
         match product.status:
-            case "draft":
+            case "draft" | "deprecated":
                 return "failure", ProductNotSubscribableBecauseStatusError(
-                    id=product.id, status="draft"
+                    id=product.id, status=product.status
                 )
             case "published":
                 return "success", None
-            case "deprecated":
-                return (
-                    "failure",
-                    ProductNotSubscribableBecauseStatusError(
-                        id=product.id, status="deprecated"
-                    ),
-                )
             case _:  # pragma: no cover
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]
 
