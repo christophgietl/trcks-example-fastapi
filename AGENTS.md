@@ -70,6 +70,8 @@
 
 ## Code style
 
+- Sort functions case-insensitively in alphabetical order within each module,
+  except for router modules.
 - Sort type aliases case-insensitively in alphabetical order within each module.
 - Sort methods case-insensitively in alphabetical order within each class.
 - Place comments regarding implementation inside the respective function or class,
