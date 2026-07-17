@@ -5,8 +5,8 @@ from fastapi import Depends
 from trcks.oop import Wrapper
 
 from subscription_management.data_structures.domain.product_error import (
-    ProductInDeprecatedStatusError,
-    ProductInDraftStatusError,
+    ProductNotSubscribableBecauseDeprecatedError,
+    ProductNotSubscribableBecauseDraftError,
     ProductWithIdDoesNotExistError,
 )
 from subscription_management.logic.repositories.product_repository import (
@@ -35,7 +35,10 @@ if TYPE_CHECKING:
     )
 
 type _ProductNotSubscribableError = _ProductStatusError | ProductWithIdDoesNotExistError
-type _ProductStatusError = ProductInDeprecatedStatusError | ProductInDraftStatusError
+type _ProductStatusError = (
+    ProductNotSubscribableBecauseDeprecatedError
+    | ProductNotSubscribableBecauseDraftError
+)
 
 type SubscriptionServiceDep = Annotated[SubscriptionService, Depends()]
 
@@ -50,11 +53,14 @@ class SubscriptionService:
     def _check_product_status(product: Product) -> Result[_ProductStatusError, None]:
         match product.status:
             case "draft":
-                return "failure", ProductInDraftStatusError(id=product.id)
+                return "failure", ProductNotSubscribableBecauseDraftError(id=product.id)
             case "published":
                 return "success", None
             case "deprecated":
-                return "failure", ProductInDeprecatedStatusError(id=product.id)
+                return (
+                    "failure",
+                    ProductNotSubscribableBecauseDeprecatedError(id=product.id),
+                )
             case _:  # pragma: no cover
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]
 

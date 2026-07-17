@@ -19,13 +19,13 @@ class _ProductErrorWithName:
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductInDeprecatedStatusError(_ProductErrorWithId):
+class ProductNotDeletableBecauseDeprecatedError(_ProductErrorWithId):
     pass
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductInDraftStatusError(_ProductErrorWithId):
+class ProductNotDeletableBecausePublishedError(_ProductErrorWithId):
     pass
 
 
@@ -37,13 +37,13 @@ class ProductPayloadUpdateError:
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductStatusDeprecatedError(_ProductErrorWithId):
+class ProductNotSubscribableBecauseDeprecatedError(_ProductErrorWithId):
     pass
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductStatusPublishedError(_ProductErrorWithId):
+class ProductNotSubscribableBecauseDraftError(_ProductErrorWithId):
     pass
 
 
