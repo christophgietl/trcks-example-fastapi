@@ -1,7 +1,7 @@
 # trcks-example-fastapi
 
-This repository contains an example FastAPI application.
-It demonstrates type-safe railway-oriented programming with
+This repository contains an example FastAPI application
+that demonstrates type-safe railway-oriented programming with
 [`trcks`](https://pypi.org/project/trcks/).
 The example domain is subscription management.
 
