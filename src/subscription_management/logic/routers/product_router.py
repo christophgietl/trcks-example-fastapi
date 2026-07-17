@@ -5,10 +5,10 @@ from fastapi import APIRouter, HTTPException, status
 from trcks.oop import AwaitableTupleWrapper, Wrapper
 
 from subscription_management.data_structures.domain.product_error import (
-    ProductNotDeletableBecauseDeprecatedError,
-    ProductNotDeletableBecausePublishedError,
-    ProductPayloadUpdateError,
-    ProductStatusUpdateError,
+    ProductInUndeletableDeprecatedStatusError,
+    ProductInUndeletablePublishedStatusError,
+    ProductPayloadUpdateNotAllowedError,
+    ProductStatusTransitionNotAllowedError,
     ProductWithIdAlreadyExistsError,
     ProductWithIdDoesNotExistError,
     ProductWithNameAlreadyExistsError,
@@ -79,7 +79,7 @@ async def create_product(
 async def delete_product(id_: UUID, product_service: ProductServiceDep) -> None:
     result = await product_service.delete_product(id_)
     match result:
-        case ("failure", ProductNotDeletableBecauseDeprecatedError(id=id_from_err)):
+        case ("failure", ProductInUndeletableDeprecatedStatusError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -87,7 +87,7 @@ async def delete_product(id_: UUID, product_service: ProductServiceDep) -> None:
                     "because its status is deprecated."
                 ),
             )
-        case ("failure", ProductNotDeletableBecausePublishedError(id=id_from_err)):
+        case ("failure", ProductInUndeletablePublishedStatusError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -202,7 +202,7 @@ async def update_product(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product with name '{name}' already exists.",
             )
-        case ("failure", ProductPayloadUpdateError(status=product_status)):
+        case ("failure", ProductPayloadUpdateNotAllowedError(status=product_status)):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -210,7 +210,10 @@ async def update_product(
                     f"of a {product_status} product."
                 ),
             )
-        case ("failure", ProductStatusUpdateError(before=before, after=after)):
+        case (
+            "failure",
+            ProductStatusTransitionNotAllowedError(before=before, after=after),
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Cannot change status from {before} to {after}.",

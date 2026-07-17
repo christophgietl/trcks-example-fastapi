@@ -19,37 +19,37 @@ class _ProductErrorWithName:
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductNotSubscribableBecauseDeprecatedError(_ProductErrorWithId):
+class ProductInDeprecatedStatusError(_ProductErrorWithId):
     pass
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductNotSubscribableBecauseDraftError(_ProductErrorWithId):
+class ProductInDraftStatusError(_ProductErrorWithId):
     pass
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductPayloadUpdateError:
+class ProductInUndeletableDeprecatedStatusError(_ProductErrorWithId):
+    pass
+
+
+@final
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class ProductInUndeletablePublishedStatusError(_ProductErrorWithId):
+    pass
+
+
+@final
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class ProductPayloadUpdateNotAllowedError:
     status: ProductStatus
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductNotDeletableBecauseDeprecatedError(_ProductErrorWithId):
-    pass
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductNotDeletableBecausePublishedError(_ProductErrorWithId):
-    pass
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductStatusUpdateError:
+class ProductStatusTransitionNotAllowedError:
     before: ProductStatus
     after: ProductStatus
 

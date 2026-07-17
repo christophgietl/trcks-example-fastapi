@@ -6,10 +6,10 @@ from fastapi import Depends
 from trcks.oop import Wrapper
 
 from subscription_management.data_structures.domain.product_error import (
-    ProductNotDeletableBecauseDeprecatedError,
-    ProductNotDeletableBecausePublishedError,
-    ProductPayloadUpdateError,
-    ProductStatusUpdateError,
+    ProductInUndeletableDeprecatedStatusError,
+    ProductInUndeletablePublishedStatusError,
+    ProductPayloadUpdateNotAllowedError,
+    ProductStatusTransitionNotAllowedError,
     ProductWithIdAlreadyExistsError,
     ProductWithIdDoesNotExistError,
     ProductWithNameAlreadyExistsError,
@@ -27,13 +27,13 @@ if TYPE_CHECKING:
     from subscription_management.data_structures.domain.product import Product
 
 type _DeleteProductError = (
-    ProductNotDeletableBecauseDeprecatedError
-    | ProductNotDeletableBecausePublishedError
+    ProductInUndeletableDeprecatedStatusError
+    | ProductInUndeletablePublishedStatusError
     | ProductWithIdDoesNotExistError
 )
 type _UpdateNotAllowedError = (
-    ProductPayloadUpdateError
-    | ProductStatusUpdateError
+    ProductPayloadUpdateNotAllowedError
+    | ProductStatusTransitionNotAllowedError
     | ProductWithIdDoesNotExistError
 )
 
@@ -79,7 +79,7 @@ class ProductService:
     @staticmethod
     def _check_that_payload_update_is_allowed(
         product_update: _ProductUpdate,
-    ) -> Result[ProductPayloadUpdateError, None]:
+    ) -> Result[ProductPayloadUpdateNotAllowedError, None]:
         payload_is_identical = product_update.before == dataclasses.replace(
             product_update.after, status=product_update.before.status
         )
@@ -89,7 +89,9 @@ class ProductService:
             case False, "draft":
                 return "success", None
             case False, "published" | "deprecated":
-                error = ProductPayloadUpdateError(status=product_update.before.status)
+                error = ProductPayloadUpdateNotAllowedError(
+                    status=product_update.before.status
+                )
                 return "failure", error
             case _ as pair:  # pragma: no cover
                 assert_never(pair)  # pyright: ignore[reportUnreachable]
@@ -98,19 +100,19 @@ class ProductService:
     def _check_that_product_can_be_deleted(
         product: Product,
     ) -> Result[
-        ProductNotDeletableBecauseDeprecatedError
-        | ProductNotDeletableBecausePublishedError,
+        ProductInUndeletableDeprecatedStatusError
+        | ProductInUndeletablePublishedStatusError,
         None,
     ]:
         match product.status:
             case "draft":
                 return "success", None
             case "published":
-                return "failure", ProductNotDeletableBecausePublishedError(
+                return "failure", ProductInUndeletablePublishedStatusError(
                     id=product.id
                 )
             case "deprecated":
-                return "failure", ProductNotDeletableBecauseDeprecatedError(
+                return "failure", ProductInUndeletableDeprecatedStatusError(
                     id=product.id
                 )
             case _:  # pragma: no cover
@@ -119,7 +121,7 @@ class ProductService:
     @staticmethod
     def _check_that_status_update_is_allowed(
         product_update: _ProductUpdate,
-    ) -> Result[ProductStatusUpdateError, None]:
+    ) -> Result[ProductStatusTransitionNotAllowedError, None]:
         match product_update.before.status, product_update.after.status:
             case "draft", "draft" | "published" | "deprecated":
                 return "success", None
@@ -131,7 +133,7 @@ class ProductService:
                     "published",
                 )
             ):
-                error = ProductStatusUpdateError(
+                error = ProductStatusTransitionNotAllowedError(
                     before=product_update.before.status,
                     after=product_update.after.status,
                 )
