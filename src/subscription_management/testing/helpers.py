@@ -110,11 +110,11 @@ def to_product_creation_request_json(product: Product) -> _JsonObject:
     return {"id": str(product.id)} | to_product_update_request_json(product)
 
 
-# The product create-request and response bodies currently have an identical
-# shape (both `PostProductRequest` and `ProductResponse` include `id` plus the
-# same attributes), so the response helper reuses the creation-request helper.
-# If a response-only field is ever added, split these into independent helpers.
 def to_product_response_json(product: Product) -> _JsonObject:
+    # The product create-request and response bodies currently have an identical
+    # shape (both `PostProductRequest` and `ProductResponse` include `id` plus the
+    # same attributes), so the response helper reuses the creation-request helper.
+    # If a response-only field is ever added, split these into independent helpers.
     return to_product_creation_request_json(product)
 
 
