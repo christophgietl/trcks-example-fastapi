@@ -147,12 +147,6 @@ def to_subscription_update_request_json(
     }
 
 
-def to_subscription_with_product_response_json(
-    subscription: SubscriptionWithProduct,
-) -> _JsonObject:
-    return to_subscription_response_json(subscription, subscription.product)
-
-
 def to_user_creation_request_json(user: User) -> _JsonObject:
     return {"id": str(user.id), "email": user.email}
 
@@ -164,7 +158,7 @@ def to_user_response_json(
         "id": str(user.id),
         "email": user.email,
         "subscriptions": [
-            to_subscription_with_product_response_json(subscription)
+            to_subscription_response_json(subscription, subscription.product)
             for subscription in user.subscriptions_with_products
         ],
     }
