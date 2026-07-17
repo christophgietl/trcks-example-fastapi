@@ -1,10 +1,8 @@
 import dataclasses
-from typing import TYPE_CHECKING, final
+from typing import TYPE_CHECKING, Literal, final
 
 if TYPE_CHECKING:
     from uuid import UUID
-
-    from subscription_management.data_structures.domain.product import ProductStatus
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
@@ -44,14 +42,14 @@ class ProductNotSubscribableBecauseDraftError(_ProductErrorWithId):
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductPayloadNotUpdatableBecauseStatusError:
-    status: ProductStatus
+    status: Literal["published", "deprecated"]
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductStatusTransitionNotAllowedError:
-    before: ProductStatus
-    after: ProductStatus
+    before: Literal["published", "deprecated"]
+    after: Literal["draft", "published"]
 
 
 @final
