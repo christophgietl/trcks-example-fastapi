@@ -30,7 +30,7 @@ Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` va
 The package
 [`subscription_management.logic.routers`](src/subscription_management/logic/routers/)
 contains FastAPI routers that call and await the service class methods.
-Awaited values of type `trcks.Result` are then handled as follows:
+Awaited `trcks.Result` values are then handled as follows:
 The payload of `trcks.Success` values is returned.
 The payload of `trcks.Failure` values is mapped to an appropriate
-HTTP exception and raised.
+HTTP exception, which is then raised.
