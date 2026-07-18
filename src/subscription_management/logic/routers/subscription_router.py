@@ -93,10 +93,10 @@ async def delete_subscription(
 ) -> None:
     result = await subscription_service.delete_subscription(id_)
     match result:
-        case ("failure", SubscriptionWithIdDoesNotExistError(id=id_)):
+        case ("failure", SubscriptionWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Subscription with ID {id_} does not exist.",
+                detail=f"Subscription with ID {id_from_err} does not exist.",
             )
         case ("success", _):
             return
