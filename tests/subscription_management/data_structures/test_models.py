@@ -34,16 +34,15 @@ class TestSubscriptionModel:
         )
         await insert_products(session, product)
 
-        nonexistent_user_id = uuid7()
-        subscription_model = SubscriptionModel(
+        subscription_model_with_nonexistent_user = SubscriptionModel(
             id=uuid7(),
             is_active=True,
             product_id=product.id,
-            user_id=nonexistent_user_id,
+            user_id=uuid7(),
         )
         with pytest.raises(IntegrityError):
             async with session.begin():
-                session.add(subscription_model)
+                session.add(subscription_model_with_nonexistent_user)
 
     async def test_subscriptions_are_deleted_on_user_deletion(
         self, session: AsyncSession
