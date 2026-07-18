@@ -6,6 +6,10 @@ See Also:
 
 from typing import TYPE_CHECKING
 
+from subscription_management.data_structures.domain.user import (
+    User,
+    UserWithSubscriptionsWithProducts,
+)
 from subscription_management.logic.repositories.product_repository import (
     ProductRepository,
 )
@@ -23,10 +27,6 @@ if TYPE_CHECKING:
     from subscription_management.data_structures.domain.subscription import (
         SubscriptionWithProduct,
         SubscriptionWithUserIdAndProductId,
-    )
-    from subscription_management.data_structures.domain.user import (
-        User,
-        UserWithSubscriptionsWithProducts,
     )
 
 __docformat__ = "google"
@@ -152,13 +152,18 @@ def to_user_creation_request_json(user: User) -> _JsonObject:
 
 
 def to_user_response_json(
-    user: UserWithSubscriptionsWithProducts,
+    user: User | UserWithSubscriptionsWithProducts,
 ) -> _JsonObject:
+    subscriptions = (
+        user.subscriptions_with_products
+        if isinstance(user, UserWithSubscriptionsWithProducts)
+        else ()
+    )
     return {
         "id": str(user.id),
         "email": user.email,
         "subscriptions": [
             to_subscription_response_json(subscription, subscription.product)
-            for subscription in user.subscriptions_with_products
+            for subscription in subscriptions
         ],
     }

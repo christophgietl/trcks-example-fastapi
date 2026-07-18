@@ -46,13 +46,7 @@ async def test_create_user_adds_additional_user_to_database(
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == to_user_response_json(
-        UserWithSubscriptionsWithProducts(
-            id=additional_user.id,
-            email=additional_user.email,
-            subscriptions_with_products=(),
-        )
-    )
+    assert response.json() == to_user_response_json(additional_user)
 
     users_in_database = await select_users(session)
     assert frozenset(users_in_database) == frozenset(
@@ -383,13 +377,7 @@ async def test_read_users_returns_all_users(
                     ),
                 )
             ),
-            to_user_response_json(
-                UserWithSubscriptionsWithProducts(
-                    id=users[1].id,
-                    email=users[1].email,
-                    subscriptions_with_products=(),
-                )
-            ),
+            to_user_response_json(users[1]),
         )
     )
 
@@ -418,11 +406,7 @@ async def test_update_user_modifies_user_in_database(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == to_user_response_json(
-        UserWithSubscriptionsWithProducts(
-            id=users[0].id,
-            email=new_email,
-            subscriptions_with_products=(),
-        )
+        User(id=users[0].id, email=new_email)
     )
 
     users_in_database = await select_users(session)
