@@ -104,19 +104,27 @@ async def delete_subscription(
             assert_never(result)  # pyright: ignore[reportUnreachable]
 
 
-@subscription_router.get("/{id_}")
+@subscription_router.get(
+    "/{id_}",
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Subscription Not Found"}},
+)
 async def read_subscription_by_id(
     id_: UUID, subscription_service: SubscriptionServiceDep
 ) -> SubscriptionResponse:
-    result = await subscription_service.read_subscription_by_id(id_)
+    result = (
+        await Wrapper(id_)
+        .map_to_awaitable_result(subscription_service.read_subscription_by_id)
+        .map_success(SubscriptionResponse.from_subscription_with_product)
+        .core
+    )
     match result:
         case ("failure", SubscriptionWithIdDoesNotExistError(id=id_)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Subscription with ID {id_} does not exist.",
             )
-        case ("success", payload):
-            return SubscriptionResponse.from_subscription_with_product(payload)
+        case ("success", subscription_response):
+            return subscription_response
         case _:  # pragma: no cover
             assert_never(result)  # pyright: ignore[reportUnreachable]
 

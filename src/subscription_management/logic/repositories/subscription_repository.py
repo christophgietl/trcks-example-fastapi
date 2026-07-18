@@ -115,7 +115,7 @@ class SubscriptionRepository:
         self, id_: UUID
     ) -> Result[SubscriptionWithIdDoesNotExistError, SubscriptionModel]:
         subscription_model = await self._session.get(
-            SubscriptionModel, id_, options=[self._LOADER_OPTION]
+            SubscriptionModel, id_, options=(self._LOADER_OPTION,)
         )
         if subscription_model is None:
             return "failure", SubscriptionWithIdDoesNotExistError(id=id_)
