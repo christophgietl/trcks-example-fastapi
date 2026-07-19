@@ -5,6 +5,66 @@ that demonstrates type-safe railway-oriented programming with
 [`trcks`](https://pypi.org/project/trcks/).
 The example domain is subscription management.
 
+## Why railway-oriented programming?
+
+In a conventional FastAPI application, an endpoint that can fail
+raises an `HTTPException` deep in the call stack,
+or it raises a custom exception that an exception handler catches later.
+Either way, the failure never shows up in the function signature.
+A service method that returns `Subscription`
+gives no hint that it can also produce a 404 or a 409.
+The failure paths travel as exceptions, so a caller can forget to handle one,
+and the omission surfaces only at runtime.
+
+Railway-oriented programming (ROP) puts every *domain* error in the return type.
+Each operation runs on one of two tracks:
+the success track carries the value forward,
+and the failure track short-circuits the remaining steps.
+Technical errors, such as a lost database connection,
+still propagate as exceptions.
+Because every domain error is part of the return type,
+the type checker knows the exact union of possible failures,
+and it flags every caller that fails to handle one of them.
+The failure paths become explicit, exhaustive, and testable.
+
+For example, the service method that creates a subscription
+declares its four failure modes right in its signature:
+
+```python
+def create_subscription(
+    self, subscription: SubscriptionWithUserIdAndProductId
+) -> AwaitableResult[
+    ProductNotSubscribableBecauseStatusError
+    | ProductWithIdDoesNotExistError
+    | SubscriptionWithIdAlreadyExistsError
+    | UserWithIdDoesNotExistError,
+    SubscriptionWithProduct,
+]: ...
+```
+
+The router handles each failure explicitly.
+The trailing `assert_never` makes exhaustiveness a static type-checking guarantee:
+add a new domain error to the union,
+and the type checker reports every router that does not yet handle it.
+
+```python
+match result:
+    case ("failure", ProductNotSubscribableBecauseStatusError(...)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=...)
+    case ("failure", ProductWithIdDoesNotExistError(...)):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=...)
+    case ("failure", SubscriptionWithIdAlreadyExistsError(...)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=...)
+    case ("failure", UserWithIdDoesNotExistError(...)):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=...)
+    case ("success", subscription_response):
+        return subscription_response
+    case _:  # every failure above is handled, so this is unreachable
+        assert_never(result)
+```
+
+The rest of this document walks through the same running example in detail.
+
 ## Running the example application
 
 1. Install `uv` if you have not already done so.
@@ -74,11 +134,13 @@ The `create_subscription` method returns a union of
 `SubscriptionWithIdAlreadyExistsError`, and
 `UserWithIdDoesNotExistError`.
 Such a union arises because each step of a `trcks.oop.Wrapper` chain
-can contribute its own domain error.
-The generic type parameters of `trcks.oop.Wrapper` track these errors,
-so a static type checker infers the exact union instead of falling back to `Any`.
+can contribute its own domain error,
+and the generic type parameters of `trcks.oop.Wrapper` track them all.
 For example, the `_check_that_product_and_user_exist` helper in
 [`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
 reads the product and then the user,
 contributing a `ProductWithIdDoesNotExistError`
 and a `UserWithIdDoesNotExistError` respectively.
+As a result, the static type checker knows the exact union of failures
+(see [Why railway-oriented programming?](#why-railway-oriented-programming)),
+so the router must handle every one of them.
