@@ -99,6 +99,31 @@ maps each domain error to an appropriate HTTP exception.
 The following subsections use this flow to illustrate three patterns,
 each keeping its domain errors visible to the type checker.
 
+### Composing steps with `trcks.oop.Wrapper`
+
+A `trcks.oop.Wrapper` chain composes the steps of `create_subscription`
+into a single flat pipeline:
+
+```python
+return (
+    Wrapper(subscription)
+    .tap_to_awaitable_result(self._read_product_and_check_status)
+    .map_success_to_awaitable_result(
+        self._subscription_repository.create_subscription
+    )
+    .core
+)
+```
+
+Every step runs only on the success track.
+`tap_to_awaitable_result` runs a check without changing the carried value,
+and `map_success_to_awaitable_result` transforms the value on success.
+The first failure short-circuits the remaining steps.
+Each step can contribute its own domain error,
+so the error union grows along the chain,
+and the type checker tracks it.
+The final `.core` unwraps the `Wrapper` to a plain `trcks.AwaitableResult`.
+
 ### Pass-through domain errors
 
 Some domain errors travel unchanged from the repository to the router.
