@@ -65,7 +65,7 @@ match result:
 
 The rest of this document walks through the same running example in detail.
 
-## Composing steps with `trcks.oop.Wrapper`
+## Step composition with `trcks.oop.Wrapper`
 
 The `create_subscription` method of the service class in
 [`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
@@ -158,7 +158,7 @@ As a result, the static type checker knows the exact union of failures
 (see [Why railway-oriented programming?](#why-railway-oriented-programming)),
 so the router must handle every one of them.
 
-## Running the example application
+## Example application setup
 
 1. Install `uv` if you have not already done so.
 2. Clone the `trcks-example-fastapi` repository and `cd` into it.
