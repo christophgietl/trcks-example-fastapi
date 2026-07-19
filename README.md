@@ -65,24 +65,6 @@ match result:
 
 The rest of this document walks through the same running example in detail.
 
-## Project structure
-
-The package
-[`subscription_management.logic.routers`](src/subscription_management/logic/routers/)
-contains FastAPI routers that call and await the service class methods.
-Each router translates the awaited `trcks.Result` into an HTTP response.
-
-The package
-[`subscription_management.logic.services`](src/subscription_management/logic/services/)
-contains service classes that implement business logic on top of the repository
-classes.
-Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
-
-The package
-[`subscription_management.logic.repositories`](src/subscription_management/logic/repositories/)
-contains repository classes with public CRUD methods.
-These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
-
 ## Composing steps with `trcks.oop.Wrapper`
 
 The `create_subscription` method of the service class in
@@ -110,6 +92,24 @@ Each step can contribute its own domain error,
 so the error union grows along the chain,
 and the type checker tracks it.
 The final `.core` unwraps the `Wrapper` to a plain `trcks.AwaitableResult`.
+
+## Request flow
+
+The package
+[`subscription_management.logic.routers`](src/subscription_management/logic/routers/)
+contains FastAPI routers that call and await the service class methods.
+Each router translates the awaited `trcks.Result` into an HTTP response.
+
+The package
+[`subscription_management.logic.services`](src/subscription_management/logic/services/)
+contains service classes that implement business logic on top of the repository
+classes.
+Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
+
+The package
+[`subscription_management.logic.repositories`](src/subscription_management/logic/repositories/)
+contains repository classes with public CRUD methods.
+These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
 
 ## Domain-error patterns
 
