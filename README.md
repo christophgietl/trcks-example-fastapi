@@ -118,7 +118,7 @@ The router in
 maps each domain error from `create_subscription`
 to an appropriate HTTP exception.
 The following subsections use this flow to illustrate three patterns,
-each keeping its domain errors visible to the type checker.
+each keeping domain errors in the return type.
 
 ### Pass-through domain errors
 
