@@ -65,15 +65,6 @@ match result:
 
 The rest of this document walks through the same running example in detail.
 
-## Running the example application
-
-1. Install `uv` if you have not already done so.
-2. Clone the `trcks-example-fastapi` repository and `cd` into it.
-3. Start the development server by running `uv run fastapi dev`.
-
-*Note:* The repository includes a pre-configured SQLite database.
-No additional setup is required.
-
 ## Project structure
 
 The package
@@ -105,7 +96,8 @@ and then creates the subscription in the repository.
 The router in
 [`subscription_management.logic.routers.subscription_router`](src/subscription_management/logic/routers/subscription_router.py)
 maps each domain error to an appropriate HTTP exception.
-The following subsections use this flow to illustrate three patterns.
+The following subsections use this flow to illustrate three patterns,
+each keeping its domain errors visible to the type checker.
 
 ### Pass-through domain errors
 
@@ -137,10 +129,19 @@ Such a union arises because each step of a `trcks.oop.Wrapper` chain
 can contribute its own domain error,
 and the generic type parameters of `trcks.oop.Wrapper` track them all.
 For example, the `_check_that_product_and_user_exist` helper in
-[`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
+`subscription_repository`
 reads the product and then the user,
 contributing a `ProductWithIdDoesNotExistError`
 and a `UserWithIdDoesNotExistError` respectively.
 As a result, the static type checker knows the exact union of failures
 (see [Why railway-oriented programming?](#why-railway-oriented-programming)),
 so the router must handle every one of them.
+
+## Running the example application
+
+1. Install `uv` if you have not already done so.
+2. Clone the `trcks-example-fastapi` repository and `cd` into it.
+3. Start the development server by running `uv run fastapi dev`.
+
+*Note:* The repository includes a pre-configured SQLite database.
+No additional setup is required.
