@@ -86,22 +86,12 @@ The payload of `trcks.Success` values is returned.
 The payload of `trcks.Failure` values is mapped to an appropriate
 HTTP exception, which is then raised.
 
-## Railway-oriented programming patterns
+## Composing steps with `trcks.oop.Wrapper`
 
 The `create_subscription` method of the service class in
 [`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
 serves as a running example.
-Its `trcks.oop.Wrapper` chain checks the product status
-and then creates the subscription in the repository.
-The router in
-[`subscription_management.logic.routers.subscription_router`](src/subscription_management/logic/routers/subscription_router.py)
-maps each domain error to an appropriate HTTP exception.
-The following subsections use this flow to illustrate three patterns,
-each keeping its domain errors visible to the type checker.
-
-### Composing steps with `trcks.oop.Wrapper`
-
-A `trcks.oop.Wrapper` chain composes the steps of `create_subscription`
+Its `trcks.oop.Wrapper` chain composes the steps
 into a single flat pipeline:
 
 ```python
@@ -123,6 +113,15 @@ Each step can contribute its own domain error,
 so the error union grows along the chain,
 and the type checker tracks it.
 The final `.core` unwraps the `Wrapper` to a plain `trcks.AwaitableResult`.
+
+## Domain-error patterns
+
+The router in
+[`subscription_management.logic.routers.subscription_router`](src/subscription_management/logic/routers/subscription_router.py)
+maps each domain error from `create_subscription`
+to an appropriate HTTP exception.
+The following subsections use this flow to illustrate three patterns,
+each keeping its domain errors visible to the type checker.
 
 ### Pass-through domain errors
 
