@@ -34,3 +34,51 @@ Awaited `trcks.Result` values are then handled as follows:
 The payload of `trcks.Success` values is returned.
 The payload of `trcks.Failure` values is mapped to an appropriate
 HTTP exception, which is then raised.
+
+## Railway-oriented programming patterns
+
+The `create_subscription` method of the service class in
+[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
+serves as a running example.
+Its `trcks.oop.Wrapper` chain checks the product status
+and then creates the subscription in the repository.
+The router in
+[`subscription_management.logic.routers.subscription_router`](src/subscription_management/logic/routers/subscription_router.py)
+maps each domain error to an appropriate HTTP exception.
+The following subsections use this flow to illustrate three patterns.
+
+### Pass-through domain errors
+
+Some domain errors travel unchanged from the repository to the router.
+For example,
+[`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
+creates a `SubscriptionWithIdAlreadyExistsError`,
+the service forwards it unchanged,
+and the router maps it to an HTTP 409 exception.
+
+### Service-layer domain errors
+
+Other domain errors originate in the service layer as business-rule failures
+rather than database facts.
+For example, the product-status check in the chain
+creates a `ProductNotSubscribableBecauseStatusError`
+when the product is not subscribable,
+which the router maps to an HTTP 409 exception.
+
+### Unions of domain errors
+
+A single method may fail with several distinct domain errors.
+The `create_subscription` method returns a union of
+`ProductNotSubscribableBecauseStatusError`,
+`ProductWithIdDoesNotExistError`,
+`SubscriptionWithIdAlreadyExistsError`, and
+`UserWithIdDoesNotExistError`.
+Such a union arises because each step of a `trcks.oop.Wrapper` chain
+can contribute its own domain error.
+The generic type parameters of `trcks.oop.Wrapper` track these errors,
+so a static type checker infers the exact union instead of falling back to `Any`.
+For example, the `_check_that_product_and_user_exist` helper in
+[`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
+reads the product and then the user,
+contributing a `ProductWithIdDoesNotExistError`
+and a `UserWithIdDoesNotExistError` respectively.
