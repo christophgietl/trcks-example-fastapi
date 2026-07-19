@@ -76,9 +76,7 @@
 - Sort methods case-insensitively in alphabetical order within each class.
 - Place comments regarding implementation inside the respective function or class,
   not above it.
-- Quote type expressions in `typing.cast` calls (e.g. `cast("int", number)`).
-- Provide keyword arguments `name` and `obj` when creating `AttributeError` instances
-  (e.g. `raise AttributeError(msg, name=name, obj=self)`).
+- Quote type expressions in `typing.cast` calls (e.g. `cast("int", my_number)`).
 - Suppress `ruff` rule `TC001` when importing a `*Dep` type:
 
   ```python
