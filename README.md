@@ -8,12 +8,12 @@ The example domain is subscription management.
 ## Why railway-oriented programming?
 
 In a conventional FastAPI application, an endpoint that can fail
-raises an `HTTPException` deep in the call stack,
-or it raises a custom exception that an exception handler catches later.
+raises an `HTTPException` deep in the call stack.
+Alternatively, it raises a custom exception that an exception handler catches later.
 Either way, the failure never shows up in the function signature.
 A service method that returns `Subscription`
-gives no hint that it can also produce a 404 or a 409.
-The failure paths travel as exceptions, so a caller can forget to handle one,
+gives no hint that it can also raise an HTTP 404 or 409.
+The failure paths travel as exceptions, so a caller might forget to handle one,
 and the omission surfaces only at runtime.
 
 Railway-oriented programming (ROP) puts every *domain* error in the return type.
@@ -23,7 +23,7 @@ and the failure track short-circuits the remaining steps.
 Technical errors, such as a lost database connection,
 still propagate as exceptions.
 Because every domain error is part of the return type,
-the type checker knows the exact union of possible failures,
+the type checker knows the exact union of failures,
 and it flags every caller that fails to handle one of them.
 The failure paths become explicit, exhaustive, and testable.
 
@@ -43,8 +43,8 @@ def create_subscription(
 ```
 
 The router handles each failure explicitly.
-The trailing `assert_never` makes exhaustiveness a static type-checking guarantee:
-add a new domain error to the union,
+The trailing `assert_never` makes exhaustiveness a static type-checking guarantee.
+Add a new domain error to the union,
 and the type checker reports every router that does not yet handle it.
 
 ```python
@@ -153,8 +153,8 @@ For example, the `_check_that_product_and_user_exist` helper in
 `subscription_repository`
 reads the product and then the user,
 contributing a `ProductWithIdDoesNotExistError`
-and a `UserWithIdDoesNotExistError` respectively.
-As a result, the static type checker knows the exact union of failures
+and a `UserWithIdDoesNotExistError`, respectively.
+As a result, the type checker knows the exact union of failures
 (see [Why railway-oriented programming?](#why-railway-oriented-programming)),
 so the router must handle every one of them.
 
