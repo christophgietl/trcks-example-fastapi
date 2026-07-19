@@ -68,9 +68,9 @@ The rest of this document walks through the same running example in detail.
 ## Project structure
 
 The package
-[`subscription_management.logic.repositories`](src/subscription_management/logic/repositories/)
-contains repository classes with public CRUD methods.
-These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
+[`subscription_management.logic.routers`](src/subscription_management/logic/routers/)
+contains FastAPI routers that call and await the service class methods.
+Each router translates the awaited `trcks.Result` into an HTTP response.
 
 The package
 [`subscription_management.logic.services`](src/subscription_management/logic/services/)
@@ -79,12 +79,9 @@ classes.
 Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
 
 The package
-[`subscription_management.logic.routers`](src/subscription_management/logic/routers/)
-contains FastAPI routers that call and await the service class methods.
-Awaited `trcks.Result` values are then handled as follows:
-The payload of `trcks.Success` values is returned.
-The payload of `trcks.Failure` values is mapped to an appropriate
-HTTP exception, which is then raised.
+[`subscription_management.logic.repositories`](src/subscription_management/logic/repositories/)
+contains repository classes with public CRUD methods.
+These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
 
 ## Composing steps with `trcks.oop.Wrapper`
 
