@@ -131,3 +131,9 @@ uv run import-linter lint
 
 - Keep `AGENTS.md`, `CONTRIBUTING.md`, and `README.md` up to date when
   architecture, tooling, or features change.
+
+### `README.md`
+
+- `README.md` targets experienced FastAPI developers.
+- It excites interest in railway-oriented programming and conveys its advantages.
+- It uses the `create_subscription` flow as a running example.
