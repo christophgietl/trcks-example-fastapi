@@ -12,7 +12,8 @@ raises an `HTTPException` deep in the call stack.
 Alternatively, it raises a custom exception that an exception handler catches later.
 Either way, the failure never shows up in the function signature.
 A service method that returns `Subscription`
-gives no hint that it can also raise an HTTP 404 or 409.
+gives no hint that it can also raise an `HTTPException`
+with status code 404 or 409.
 The failure paths travel as exceptions, so a caller might forget to handle one,
 and the omission surfaces only at runtime.
 
