@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from fastapi import status
 
 if TYPE_CHECKING:
-    from httpx import AsyncClient
+    from httpx2 import AsyncClient
 
 
 async def test_read_health(client: AsyncClient) -> None:
