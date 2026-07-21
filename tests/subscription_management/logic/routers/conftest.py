@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from subscription_management.logic.main import app
 
