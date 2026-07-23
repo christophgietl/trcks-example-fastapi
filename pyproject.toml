@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "fastapi==0.139.1",
-    "fastapi-cli==0.0.29",
+    "fastapi-cli==0.0.32",
     "pydantic==2.13.4",
     "sqlalchemy[aiosqlite]==2.0.51",
     "trcks==0.6.2",
