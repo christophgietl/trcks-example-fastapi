@@ -6,7 +6,7 @@ before you run a single test.
 This repository demonstrates that promise with an example FastAPI application
 built on type-safe railway-oriented programming (ROP) with
 [`trcks`](https://pypi.org/project/trcks/),
-which represents every outcome as a `Success` or a `Failure`,
+which represents every domain outcome as a `Success` or a `Failure`,
 so domain errors travel in return values rather than exceptions.
 The example domain is subscription management.
 
@@ -57,7 +57,7 @@ It requires a running development server
 (see [How-to: Get the application running](#how-to-get-the-application-running)).
 Every request uses a fixed UUID, so rerunning the walkthrough returns
 `409 Conflict` responses. To start over, stop the development server,
-delete `database.sqlite3`, and restart the development server.
+then delete `database.sqlite3`, and then restart the development server.
 
 First, create a published product:
 
@@ -304,8 +304,8 @@ A single method may fail with several distinct domain errors.
 The `create_subscription` method returns a union of
 `ProductNotSubscribableBecauseStatusError`,
 `ProductWithIdDoesNotExistError`,
-`SubscriptionWithIdAlreadyExistsError`, and
-`UserWithIdDoesNotExistError`
+`SubscriptionWithIdAlreadyExistsError`,
+and `UserWithIdDoesNotExistError`
 because each step of a `trcks.oop.Wrapper` chain can contribute its own
 error, and the chain's generic type parameters track them all.
 For example, the `_check_that_product_and_user_exist` helper in
