@@ -29,6 +29,7 @@ def create_subscription(...) -> AwaitableResult[
 ]: ...
 ```
 
+The section
 [Explanation: The case for railway-oriented programming](#explanation-the-case-for-railway-oriented-programming)
 shows how this makes error handling explicit, exhaustive, and testable.
 
