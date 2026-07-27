@@ -6,7 +6,7 @@ before you run a single test.
 This repository demonstrates that promise with an example FastAPI application
 built on type-safe railway-oriented programming (ROP) with
 [`trcks`](https://pypi.org/project/trcks/),
-which represents every outcome as a `Success` or a `Failure`
+which represents every outcome as a `Success` or a `Failure`,
 so domain errors travel in return values rather than exceptions.
 The example domain is subscription management.
 
@@ -56,7 +56,8 @@ starting with the product and user it needs.
 It requires a running development server
 (see [How-to: Get the application running](#how-to-get-the-application-running)).
 Every request uses a fixed UUID, so rerunning the walkthrough returns
-`409 Conflict` responses; to start over, delete `database.sqlite3` and restart.
+`409 Conflict` responses; to start over, stop the development server,
+delete `database.sqlite3`, and restart it.
 
 First, create a published product:
 
@@ -270,7 +271,7 @@ calling the service with `map_to_awaitable_result`,
 and converting the domain model to a response schema with `map_success`.
 The repository classes compose their steps the same way; see the
 [`trcks` documentation](https://christophgietl.github.io/trcks/)
-for `Wrapper` and its methods in detail.
+for details on `Wrapper` and its methods.
 
 ## Explanation: Domain-error patterns
 
