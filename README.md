@@ -57,7 +57,7 @@ It requires a running development server
 (see [How-to: Get the application running](#how-to-get-the-application-running)).
 Every request uses a fixed UUID, so rerunning the walkthrough returns
 `409 Conflict` responses. To start over, stop the development server,
-then delete `database.sqlite3`, and then restart the development server.
+delete `database.sqlite3`, and then restart the development server.
 
 First, create a published product:
 
