@@ -46,12 +46,12 @@ let the type checker enforce exhaustive error handling.
    explore the endpoints.
 
 **Note:** The application creates its SQLite schema automatically on startup.
-[The tutorial below](#tutorial-create-your-first-subscription)
+[The following tutorial](#tutorial-create-your-first-subscription)
 populates it with sample data.
 
 ## Tutorial: Create your first subscription
 
-The following walkthrough creates a subscription from scratch,
+This walkthrough creates a subscription from scratch,
 starting with the product and user it needs.
 Every request uses a fixed UUID to keep the example reproducible.
 Rerunning the walkthrough therefore returns `409 Conflict` responses,
@@ -189,7 +189,7 @@ The following table contrasts the two approaches at a glance:
 | When do you notice an unhandled error?            | At runtime. | At type-check time.          |
 
 The `create_subscription` method in
-[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
+[`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py)
 serves as the running example throughout this document.
 It declares its four failure modes right in its signature:
 
@@ -226,7 +226,7 @@ match result:
 
 **Try it yourself:**
 Add a new domain error to the return type of `create_subscription` in
-[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py).
+[`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py).
 Then run `uv run pyright`.
 The new error now reaches the router unhandled,
 so `assert_never(result)` no longer receives `Never`.
@@ -239,7 +239,7 @@ starting with its step composition.
 ## Explanation: Step composition with `trcks.oop.Wrapper`
 
 The `create_subscription` method in
-[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
+[`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py)
 composes its steps as follows:
 
 ```python
@@ -267,9 +267,9 @@ describes `Wrapper` and its methods in detail.
 ## Explanation: Domain-error patterns
 
 The router in
-[`subscription_management.logic.routers.subscription_router`](src/subscription_management/logic/routers/subscription_router.py)
+[`subscription_router.py`](src/subscription_management/logic/routers/subscription_router.py)
 maps each domain error from `create_subscription` in
-[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
+[`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py)
 to an appropriate HTTP exception.
 The following subsections use this flow to illustrate three patterns,
 each keeping domain errors in the return type.
@@ -278,7 +278,7 @@ each keeping domain errors in the return type.
 
 Some domain errors travel unchanged from the repository to the router.
 For example,
-[`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
+[`subscription_repository.py`](src/subscription_management/logic/repositories/subscription_repository.py)
 creates a `SubscriptionWithIdAlreadyExistsError`, the service forwards it unchanged,
 and the router maps it to an HTTP 409 exception.
 
@@ -300,7 +300,7 @@ Such a union arises because each step of a `trcks.oop.Wrapper` chain
 can contribute its own domain error,
 and the generic type parameters of `trcks.oop.Wrapper` track them all.
 For example, the `_check_that_product_and_user_exist` helper in
-[`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
+[`subscription_repository.py`](src/subscription_management/logic/repositories/subscription_repository.py)
 reads the product and then the user,
 contributing a `ProductWithIdDoesNotExistError` and a `UserWithIdDoesNotExistError`,
 respectively.
