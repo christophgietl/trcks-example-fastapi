@@ -178,7 +178,7 @@ Each operation runs on one of two tracks: the success track carries the value fo
 and the failure track short-circuits the remaining steps.
 Technical errors, such as a lost database connection, still propagate as exceptions.
 Because every domain error is part of the return type, the type checker knows
-the exact union of failures and flags every caller that fails to handle one of
+the exact union of failures. It flags every caller that fails to handle one of
 them, so the failure paths become explicit, exhaustive, and testable.
 
 The following table contrasts the two approaches at a glance:
@@ -279,8 +279,8 @@ The router in
 [`subscription_router.py`](src/subscription_management/logic/routers/subscription_router.py)
 maps each domain error from `create_subscription` in
 [`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py)
-to an appropriate HTTP exception,
-illustrating three patterns that keep domain errors in the return type.
+to an appropriate HTTP exception. This section illustrates three patterns that
+keep domain errors in the return type.
 
 ### Pass-through domain errors
 
