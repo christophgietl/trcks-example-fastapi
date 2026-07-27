@@ -270,8 +270,8 @@ builds a similar chain, converting the request schema to a domain model with `ma
 calling the service with `map_to_awaitable_result`,
 and converting the domain model to a response schema with `map_success`.
 The repository classes compose their steps the same way; see the
-[`trcks` documentation](https://christophgietl.github.io/trcks/)
-for details on `Wrapper` and its methods.
+[`trcks` documentation](https://christophgietl.github.io/trcks/) for
+details on `Wrapper` and its methods.
 
 ## Explanation: Domain-error patterns
 
@@ -302,10 +302,12 @@ which the router maps to an HTTP 409 exception.
 
 A single method may fail with several distinct domain errors.
 The `create_subscription` method returns a union of
-`ProductNotSubscribableBecauseStatusError`, `ProductWithIdDoesNotExistError`,
-`SubscriptionWithIdAlreadyExistsError`, and `UserWithIdDoesNotExistError`,
-because each step of a `trcks.oop.Wrapper` chain can contribute its own error,
-and the chain's generic type parameters track them all.
+`ProductNotSubscribableBecauseStatusError`,
+`ProductWithIdDoesNotExistError`,
+`SubscriptionWithIdAlreadyExistsError`, and
+`UserWithIdDoesNotExistError`, because each step of a
+`trcks.oop.Wrapper` chain can contribute its own error, and the chain's
+generic type parameters track them all.
 For example, the `_check_that_product_and_user_exist` helper in
 [`subscription_repository.py`](src/subscription_management/logic/repositories/subscription_repository.py)
 reads the product and then the user, contributing a
