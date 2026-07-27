@@ -1,7 +1,7 @@
 # trcks-example-fastapi
 
 Forget a `case` for a domain error,
-and Pyright reports the exact file and line —
+and your type checker reports the exact file and line —
 before you run a single test.
 This repository demonstrates that promise with an example FastAPI application
 built on type-safe railway-oriented programming (ROP) with
