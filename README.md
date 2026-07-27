@@ -1,9 +1,5 @@
 # trcks-example-fastapi
 
-[![CI](https://github.com/christophgietl/trcks-example-fastapi/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/christophgietl/trcks-example-fastapi/actions/workflows/continuous-integration.yml)
-[![Python 3.14](https://img.shields.io/badge/python-3.14-blue)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-
 Forget a `case` for a domain error,
 and Pyright reports the exact file and line —
 before you run a single test.
