@@ -5,8 +5,8 @@ and your type checker reports the exact file and line —
 before you run a single test.
 This repository demonstrates that promise with an example FastAPI application
 built on type-safe railway-oriented programming (ROP) with
-[`trcks`](https://pypi.org/project/trcks/).
-The `trcks` library represents every operation's outcome as a `Success` or a `Failure`,
+[`trcks`](https://pypi.org/project/trcks/),
+which represents every outcome as a `Success` or a `Failure`
 so domain errors travel in return values rather than exceptions.
 The example domain is subscription management.
 
@@ -55,10 +55,8 @@ This walkthrough creates a subscription from scratch,
 starting with the product and user it needs.
 It requires a running development server
 (see [How-to: Get the application running](#how-to-get-the-application-running)).
-Every request uses a fixed UUID to keep the example reproducible.
-Rerunning the walkthrough therefore returns `409 Conflict` responses,
-because the IDs already exist.
-To start over, stop the server, delete `database.sqlite3`, and restart.
+Every request uses a fixed UUID, so rerunning the walkthrough returns
+`409 Conflict` responses; to start over, delete `database.sqlite3` and restart.
 
 First, create a published product:
 
@@ -178,10 +176,9 @@ and the omission surfaces only at runtime.
 Each operation runs on one of two tracks: the success track carries the value forward,
 and the failure track short-circuits the remaining steps.
 Technical errors, such as a lost database connection, still propagate as exceptions.
-Because every domain error is part of the return type,
-the type checker knows the exact union of failures,
-and it flags every caller that fails to handle one of them.
-The failure paths become explicit, exhaustive, and testable.
+Because every domain error is part of the return type, the type checker knows
+the exact union of failures and flags every caller that misses one,
+so the failure paths become explicit, exhaustive, and testable.
 
 The following table contrasts the two approaches at a glance:
 
@@ -268,13 +265,12 @@ The final `.core` unwraps the `Wrapper` to a plain `trcks.AwaitableResult`.
 Composition is not limited to the service layer.
 The `create_subscription` endpoint in
 [`subscription_router.py`](src/subscription_management/logic/routers/subscription_router.py)
-builds a similar chain:
-it converts the request schema to a domain model with `map`,
-calls the service with `map_to_awaitable_result`,
-and converts the domain model to a response schema with `map_success`.
-The repository classes compose their steps the same way.
-The [`trcks` documentation](https://christophgietl.github.io/trcks/)
-describes `Wrapper` and its methods in detail.
+builds a similar chain, converting the request schema to a domain model with `map`,
+calling the service with `map_to_awaitable_result`,
+and converting the domain model to a response schema with `map_success`.
+The repository classes compose their steps the same way; see the
+[`trcks` documentation](https://christophgietl.github.io/trcks/)
+for `Wrapper` and its methods in detail.
 
 ## Explanation: Domain-error patterns
 
@@ -282,9 +278,8 @@ The router in
 [`subscription_router.py`](src/subscription_management/logic/routers/subscription_router.py)
 maps each domain error from `create_subscription` in
 [`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py)
-to an appropriate HTTP exception.
-The following subsections use this flow to illustrate three patterns,
-each keeping domain errors in the return type.
+to an appropriate HTTP exception,
+illustrating three patterns that keep domain errors in the return type.
 
 ### Pass-through domain errors
 
@@ -307,18 +302,16 @@ which the router maps to an HTTP 409 exception.
 A single method may fail with several distinct domain errors.
 The `create_subscription` method returns a union of
 `ProductNotSubscribableBecauseStatusError`, `ProductWithIdDoesNotExistError`,
-`SubscriptionWithIdAlreadyExistsError`, and `UserWithIdDoesNotExistError`.
-Such a union arises because each step of a `trcks.oop.Wrapper` chain
-can contribute its own domain error,
-and the generic type parameters of `trcks.oop.Wrapper` track them all.
+`SubscriptionWithIdAlreadyExistsError`, and `UserWithIdDoesNotExistError`,
+because each step of a `trcks.oop.Wrapper` chain can contribute its own error,
+and the chain's generic type parameters track them all.
 For example, the `_check_that_product_and_user_exist` helper in
 [`subscription_repository.py`](src/subscription_management/logic/repositories/subscription_repository.py)
-reads the product and then the user,
-contributing a `ProductWithIdDoesNotExistError` and a `UserWithIdDoesNotExistError`,
-respectively.
-As a result, the type checker knows the exact union of failures
-(see [Explanation: The case for railway-oriented programming](#explanation-the-case-for-railway-oriented-programming)),
-so the router must handle every one of them.
+reads the product and then the user, contributing a
+`ProductWithIdDoesNotExistError` and a `UserWithIdDoesNotExistError`, respectively.
+The type checker therefore knows the exact union of failures
+(see [Explanation: The case for railway-oriented programming](#explanation-the-case-for-railway-oriented-programming))
+and requires the router to handle every one of them.
 
 ## Reference: Application layers
 
