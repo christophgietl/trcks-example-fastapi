@@ -148,7 +148,8 @@ curl --include \
   http://127.0.0.1:8000/subscriptions/
 ```
 
-The product-status check turns the domain error into `409 Conflict`:
+The product-status check creates a domain error,
+which the router maps to `409 Conflict`:
 
 ```json
 {
