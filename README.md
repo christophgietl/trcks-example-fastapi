@@ -57,7 +57,7 @@ It requires a running development server
 (see [How-to: Get the application running](#how-to-get-the-application-running)).
 Every request uses a fixed UUID, so rerunning the walkthrough returns
 `409 Conflict` responses. To start over, stop the development server,
-delete `database.sqlite3`, and restart it.
+delete `database.sqlite3`, and restart the development server.
 
 First, create a published product:
 
@@ -266,9 +266,9 @@ The final `.core` unwraps the `Wrapper` to a plain `trcks.AwaitableResult`.
 Composition is not limited to the service layer.
 The `create_subscription` endpoint in
 [`subscription_router.py`](src/subscription_management/logic/routers/subscription_router.py)
-builds a similar chain, converting the request schema to a domain model with `map`,
-calling the service with `map_to_awaitable_result`,
-and converting the domain model to a response schema with `map_success`.
+builds a similar chain. It converts the request schema to a domain model with
+`map`, calls the service with `map_to_awaitable_result`, and converts the
+domain model to a response schema with `map_success`.
 The repository classes compose their steps the same way; see the
 [`trcks` documentation](https://christophgietl.github.io/trcks/) for
 details on `Wrapper` and its methods.
