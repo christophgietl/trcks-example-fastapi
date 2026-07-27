@@ -56,7 +56,7 @@ starting with the product and user it needs.
 It requires a running development server
 (see [How-to: Get the application running](#how-to-get-the-application-running)).
 Every request uses a fixed UUID, so rerunning the walkthrough returns
-`409 Conflict` responses; to start over, stop the development server,
+`409 Conflict` responses. To start over, stop the development server,
 delete `database.sqlite3`, and restart it.
 
 First, create a published product:
@@ -178,8 +178,8 @@ Each operation runs on one of two tracks: the success track carries the value fo
 and the failure track short-circuits the remaining steps.
 Technical errors, such as a lost database connection, still propagate as exceptions.
 Because every domain error is part of the return type, the type checker knows
-the exact union of failures and flags every caller that misses one,
-so the failure paths become explicit, exhaustive, and testable.
+the exact union of failures and flags every caller that fails to handle one of
+them, so the failure paths become explicit, exhaustive, and testable.
 
 The following table contrasts the two approaches at a glance:
 
@@ -305,16 +305,17 @@ The `create_subscription` method returns a union of
 `ProductNotSubscribableBecauseStatusError`,
 `ProductWithIdDoesNotExistError`,
 `SubscriptionWithIdAlreadyExistsError`, and
-`UserWithIdDoesNotExistError`, because each step of a
-`trcks.oop.Wrapper` chain can contribute its own error, and the chain's
-generic type parameters track them all.
+`UserWithIdDoesNotExistError`,
+because each step of a `trcks.oop.Wrapper` chain can contribute its own
+error, and the chain's generic type parameters track them all.
 For example, the `_check_that_product_and_user_exist` helper in
 [`subscription_repository.py`](src/subscription_management/logic/repositories/subscription_repository.py)
 reads the product and then the user, contributing a
-`ProductWithIdDoesNotExistError` and a `UserWithIdDoesNotExistError`, respectively.
+`ProductWithIdDoesNotExistError` and a `UserWithIdDoesNotExistError`,
+respectively.
 The type checker therefore knows the exact union of failures
 (see [Explanation: The case for railway-oriented programming](#explanation-the-case-for-railway-oriented-programming))
-and requires the router to handle every one of them.
+and the router must handle every one of them.
 
 ## Reference: Application layers
 
