@@ -305,7 +305,7 @@ The `create_subscription` method returns a union of
 `ProductNotSubscribableBecauseStatusError`,
 `ProductWithIdDoesNotExistError`,
 `SubscriptionWithIdAlreadyExistsError`, and
-`UserWithIdDoesNotExistError`,
+`UserWithIdDoesNotExistError`
 because each step of a `trcks.oop.Wrapper` chain can contribute its own
 error, and the chain's generic type parameters track them all.
 For example, the `_check_that_product_and_user_exist` helper in
