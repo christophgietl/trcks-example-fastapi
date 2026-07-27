@@ -1,39 +1,204 @@
 # trcks-example-fastapi
 
-This repository contains an example FastAPI application
-that demonstrates type-safe railway-oriented programming with
+[![CI](https://github.com/christophgietl/trcks-example-fastapi/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/christophgietl/trcks-example-fastapi/actions/workflows/continuous-integration.yml)
+[![Python 3.14](https://img.shields.io/badge/python-3.14-blue)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+Forget a `case` for a domain error,
+and Pyright reports the exact file and line —
+before you run a single test.
+This repository demonstrates that promise with an example FastAPI application
+built on type-safe railway-oriented programming (ROP) with
 [`trcks`](https://pypi.org/project/trcks/).
+The `trcks` library represents every operation's outcome as a `Success` or a `Failure`,
+so domain errors travel in return values rather than exceptions.
 The example domain is subscription management.
 
-## Why railway-oriented programming?
+In a conventional FastAPI application, failures hide behind the signature:
 
-In a conventional FastAPI application, an endpoint that can fail
-raises an `HTTPException` deep in the call stack.
+```python
+async def create_subscription(...) -> SubscriptionWithProduct: ...
+# Also raises 404 and 409 exceptions. The signature does not tell.
+```
+
+With `trcks`, the same method declares every failure in its return type:
+
+```python
+def create_subscription(...) -> AwaitableResult[
+    ProductNotSubscribableBecauseStatusError
+    | ProductWithIdDoesNotExistError
+    | SubscriptionWithIdAlreadyExistsError
+    | UserWithIdDoesNotExistError,
+    SubscriptionWithProduct,
+]: ...
+```
+
+[Explanation: The case for railway-oriented programming](#explanation-the-case-for-railway-oriented-programming)
+shows how this makes error handling explicit, exhaustive, and testable.
+
+**Who is this for?** Experienced FastAPI developers who want to
+keep domain errors in their function signatures and
+let the type checker enforce exhaustive error handling.
+
+## How-to: Get the application running
+
+1. Install [`uv`](https://docs.astral.sh/uv/) if you have not already done so.
+2. Clone the `trcks-example-fastapi` repository and `cd` into it.
+3. Start the development server by running `uv run fastapi dev`.
+4. Open the interactive API documentation at <http://127.0.0.1:8000/docs> and
+   explore the endpoints.
+
+**Note:** The application creates its SQLite schema automatically on startup.
+[The tutorial below](#tutorial-create-your-first-subscription)
+populates it with sample data.
+
+## Tutorial: Create your first subscription
+
+The following walkthrough creates a subscription from scratch,
+starting with the product and user it needs.
+Every request uses a fixed UUID to keep the example reproducible.
+Rerunning the walkthrough therefore returns `409 Conflict` responses,
+because the IDs already exist.
+To start over, stop the server, delete `database.sqlite3`, and restart.
+
+First, create a published product:
+
+```shell
+curl --include \
+  --header "Content-Type: application/json" \
+  --data '{
+    "id": "11111111-1111-4111-8111-111111111111",
+    "monthly_fee_in_euros": "9.99",
+    "name": "Pro Plan",
+    "status": "published"
+  }' \
+  http://127.0.0.1:8000/products/
+```
+
+Then create a draft product:
+
+```shell
+curl --include \
+  --header "Content-Type: application/json" \
+  --data '{
+    "id": "22222222-2222-4222-8222-222222222222",
+    "monthly_fee_in_euros": "4.99",
+    "name": "Beta Plan",
+    "status": "draft"
+  }' \
+  http://127.0.0.1:8000/products/
+```
+
+Finally, create a user:
+
+```shell
+curl --include \
+  --header "Content-Type: application/json" \
+  --data '{
+    "id": "33333333-3333-4333-8333-333333333333",
+    "email": "ada@example.com"
+  }' \
+  http://127.0.0.1:8000/users/
+```
+
+With the product and user in place,
+the example now follows two tracks: success and failure.
+
+### Success track
+
+Subscribe the user to the published product:
+
+```shell
+curl --include \
+  --header "Content-Type: application/json" \
+  --data '{
+    "id": "44444444-4444-4444-8444-444444444444",
+    "is_active": true,
+    "user_id": "33333333-3333-4333-8333-333333333333",
+    "product_id": "11111111-1111-4111-8111-111111111111"
+  }' \
+  http://127.0.0.1:8000/subscriptions/
+```
+
+A valid request returns `201 Created` with the new subscription:
+
+```json
+{
+  "is_active": true,
+  "id": "44444444-4444-4444-8444-444444444444",
+  "product": {
+    "monthly_fee_in_euros": "9.99",
+    "name": "Pro Plan",
+    "status": "published",
+    "id": "11111111-1111-4111-8111-111111111111"
+  }
+}
+```
+
+### Failure track
+
+Subscribe the user to the draft product:
+
+```shell
+curl --include \
+  --header "Content-Type: application/json" \
+  --data '{
+    "id": "55555555-5555-4555-8555-555555555555",
+    "is_active": true,
+    "user_id": "33333333-3333-4333-8333-333333333333",
+    "product_id": "22222222-2222-4222-8222-222222222222"
+  }' \
+  http://127.0.0.1:8000/subscriptions/
+```
+
+The product-status check turns the domain error into `409 Conflict`:
+
+```json
+{
+  "detail": "Product with ID 22222222-2222-4222-8222-222222222222 is in draft status."
+}
+```
+
+Both tracks carry their outcome in the return type:
+a value on success and a domain error on failure.
+The following sections show how `trcks` makes that explicit, exhaustive, and testable.
+
+## Explanation: The case for railway-oriented programming
+
+In a **conventional FastAPI application**,
+an endpoint that can fail raises an `HTTPException` deep in the call stack.
 Alternatively, it raises a custom exception that an exception handler catches later.
 Either way, the failure never shows up in the function signature.
-A service method that returns `Subscription`
-gives no hint that it can also raise an `HTTPException`
-with status code 404 or 409.
-The failure paths travel as exceptions, so a caller might forget to handle one,
+A service method that returns `Subscription` gives no hint
+that it can also raise an `HTTPException` with status code 404 or 409.
+The failures travel as exceptions, so a caller might forget to handle one,
 and the omission surfaces only at runtime.
 
-Railway-oriented programming (ROP) puts every *domain* error in the return type.
-Each operation runs on one of two tracks:
-the success track carries the value forward,
+**Railway-oriented programming (ROP)** puts every *domain* error in the return type.
+Each operation runs on one of two tracks: the success track carries the value forward,
 and the failure track short-circuits the remaining steps.
-Technical errors, such as a lost database connection,
-still propagate as exceptions.
+Technical errors, such as a lost database connection, still propagate as exceptions.
 Because every domain error is part of the return type,
 the type checker knows the exact union of failures,
 and it flags every caller that fails to handle one of them.
 The failure paths become explicit, exhaustive, and testable.
 
-For example, the service method that creates a subscription
-declares its four failure modes right in its signature:
+The following table contrasts the two approaches at a glance:
+
+| Question                                          | Exceptions  | Railway-oriented programming |
+|---------------------------------------------------|-------------|------------------------------|
+| Are domain errors visible in function signatures? | No.         | Yes.                         |
+| Does the type checker catch unhandled errors?     | No.         | Yes.                         |
+| When do you notice an unhandled error?            | At runtime. | At type-check time.          |
+
+The `create_subscription` method in
+[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
+serves as the running example throughout this document.
+It declares its four failure modes right in its signature:
 
 ```python
 def create_subscription(
-    self, subscription: SubscriptionWithUserIdAndProductId
+        self, subscription: SubscriptionWithUserIdAndProductId
 ) -> AwaitableResult[
     ProductNotSubscribableBecauseStatusError
     | ProductWithIdDoesNotExistError
@@ -45,8 +210,6 @@ def create_subscription(
 
 The router handles each failure explicitly.
 The trailing `assert_never` makes exhaustiveness a static type-checking guarantee.
-Add a new domain error to the union,
-and the type checker reports every router that does not yet handle it.
 
 ```python
 match result:
@@ -64,59 +227,52 @@ match result:
         assert_never(result)
 ```
 
-The rest of this document walks through the same running example in detail.
+**Try it yourself:**
+Add a new domain error to the return type of `create_subscription` in
+[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py).
+Then run `uv run pyright`.
+The new error now reaches the router unhandled,
+so `assert_never(result)` no longer receives `Never`.
+Pyright reports the exact file and line of the router that needs a new `case`.
+You catch the gap before you run the application or write a test.
 
-## Step composition with `trcks.oop.Wrapper`
+The rest of this document shows how the application delivers on that promise,
+starting with its step composition.
 
-The `create_subscription` method of the service class in
+## Explanation: Step composition with `trcks.oop.Wrapper`
+
+The `create_subscription` method in
 [`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
-serves as a running example.
-Its `trcks.oop.Wrapper` chain composes the steps
-into a single flat pipeline:
+composes its steps as follows:
 
 ```python
 return (
-    Wrapper(subscription)
-    .tap_to_awaitable_result(self._read_product_and_check_status)
-    .map_success_to_awaitable_result(
-        self._subscription_repository.create_subscription
-    )
-    .core
+   Wrapper(subscription)
+   .tap_to_awaitable_result(self._read_product_and_check_status_is_published)
+   .map_success_to_awaitable_result(
+      self._subscription_repository.create_subscription
+   )
+   .core
 )
 ```
 
-Every step runs only on the success track.
-`tap_to_awaitable_result` runs a check without changing the carried value,
-and `map_success_to_awaitable_result` transforms the value on success.
+The chain starts from the plain wrapped value.
+`tap_to_awaitable_result` runs a check without changing the carried value.
+Every subsequent `*_success_*` step runs only on the success track.
+The `map_success_to_awaitable_result` method transforms the value on success.
 The first failure short-circuits the remaining steps.
 Each step can contribute its own domain error,
-so the error union grows along the chain,
-and the type checker tracks it.
+so the error union grows along the chain, and the type checker tracks it.
 The final `.core` unwraps the `Wrapper` to a plain `trcks.AwaitableResult`.
+The [`trcks` documentation](https://christophgietl.github.io/trcks/)
+describes `Wrapper` and its methods in detail.
 
-## Request flow
-
-The package
-[`subscription_management.logic.routers`](src/subscription_management/logic/routers/)
-contains FastAPI routers that call and await the service class methods.
-Each router translates the awaited `trcks.Result` into an HTTP response.
-
-The package
-[`subscription_management.logic.services`](src/subscription_management/logic/services/)
-contains service classes that implement business logic on top of the repository
-classes.
-Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
-
-The package
-[`subscription_management.logic.repositories`](src/subscription_management/logic/repositories/)
-contains repository classes with public CRUD methods.
-These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
-
-## Domain-error patterns
+## Explanation: Domain-error patterns
 
 The router in
 [`subscription_management.logic.routers.subscription_router`](src/subscription_management/logic/routers/subscription_router.py)
-maps each domain error from `create_subscription`
+maps each domain error from `create_subscription` in
+[`subscription_management.logic.services.subscription_service`](src/subscription_management/logic/services/subscription_service.py)
 to an appropriate HTTP exception.
 The following subsections use this flow to illustrate three patterns,
 each keeping domain errors in the return type.
@@ -126,8 +282,7 @@ each keeping domain errors in the return type.
 Some domain errors travel unchanged from the repository to the router.
 For example,
 [`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
-creates a `SubscriptionWithIdAlreadyExistsError`,
-the service forwards it unchanged,
+creates a `SubscriptionWithIdAlreadyExistsError`, the service forwards it unchanged,
 and the router maps it to an HTTP 409 exception.
 
 ### Service-layer domain errors
@@ -135,35 +290,41 @@ and the router maps it to an HTTP 409 exception.
 Other domain errors originate in the service layer as business-rule failures
 rather than database facts.
 For example, the product-status check in the chain
-creates a `ProductNotSubscribableBecauseStatusError`
-when the product is not subscribable,
+creates a `ProductNotSubscribableBecauseStatusError` when the product is not subscribable,
 which the router maps to an HTTP 409 exception.
 
 ### Unions of domain errors
 
 A single method may fail with several distinct domain errors.
 The `create_subscription` method returns a union of
-`ProductNotSubscribableBecauseStatusError`,
-`ProductWithIdDoesNotExistError`,
-`SubscriptionWithIdAlreadyExistsError`, and
-`UserWithIdDoesNotExistError`.
+`ProductNotSubscribableBecauseStatusError`, `ProductWithIdDoesNotExistError`,
+`SubscriptionWithIdAlreadyExistsError`, and `UserWithIdDoesNotExistError`.
 Such a union arises because each step of a `trcks.oop.Wrapper` chain
 can contribute its own domain error,
 and the generic type parameters of `trcks.oop.Wrapper` track them all.
 For example, the `_check_that_product_and_user_exist` helper in
-`subscription_repository`
+[`subscription_management.logic.repositories.subscription_repository`](src/subscription_management/logic/repositories/subscription_repository.py)
 reads the product and then the user,
-contributing a `ProductWithIdDoesNotExistError`
-and a `UserWithIdDoesNotExistError`, respectively.
+contributing a `ProductWithIdDoesNotExistError` and a `UserWithIdDoesNotExistError`,
+respectively.
 As a result, the type checker knows the exact union of failures
-(see [Why railway-oriented programming?](#why-railway-oriented-programming)),
+(see [Explanation: The case for railway-oriented programming](#explanation-the-case-for-railway-oriented-programming)),
 so the router must handle every one of them.
 
-## Example application setup
+## Reference: Application layers
 
-1. Install `uv` if you have not already done so.
-2. Clone the `trcks-example-fastapi` repository and `cd` into it.
-3. Start the development server by running `uv run fastapi dev`.
+The package
+[`subscription_management.logic.routers`](src/subscription_management/logic/routers/)
+contains FastAPI routers that call and await the service class methods.
+Each router translates the awaited `trcks.Result` into an HTTP response.
 
-*Note:* The repository includes a pre-configured SQLite database.
-No additional setup is required.
+The package
+[`subscription_management.logic.services`](src/subscription_management/logic/services/)
+contains service classes that implement business logic
+on top of the repository classes.
+Their public methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.
+
+The package
+[`subscription_management.logic.repositories`](src/subscription_management/logic/repositories/)
+contains repository classes with public CRUD methods.
+These methods return `trcks.AwaitableResult` or `trcks.AwaitableTuple` values.

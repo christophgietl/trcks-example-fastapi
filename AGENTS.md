@@ -135,3 +135,5 @@ uv run import-linter lint
 - Write documentation for experienced FastAPI developers.
 - Excite interest in ROP and convey its advantages.
 - Use the `create_subscription` flow as a running example in `README.md`.
+- Start every level 2 headline in `README.md` with a Diátaxis prefix
+  (i.e. `Tutorial:`, `How-to:`, `Reference:`, or `Explanation:`).

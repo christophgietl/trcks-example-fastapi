@@ -36,7 +36,7 @@ subscription_router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
         status.HTTP_409_CONFLICT: {
             "description": (
                 "Subscription ID already exists or "
-                "product is in draft/deprecated status"
+                "product is in draft or deprecated status"
             )
         },
     },
@@ -147,7 +147,7 @@ async def read_subscriptions(
             "description": "Not Found: subscription, user, or product does not exist"
         },
         status.HTTP_409_CONFLICT: {
-            "description": "Product is in draft/deprecated status"
+            "description": "Product is in draft or deprecated status"
         },
     },
 )
