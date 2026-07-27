@@ -1,6 +1,6 @@
 # trcks-example-fastapi
 
-Forget a `case` for a domain error,
+Forget to handle one of your domain errors,
 and your type checker reports the exact file and line —
 before you run a single test.
 This repository demonstrates that promise with an example FastAPI application
