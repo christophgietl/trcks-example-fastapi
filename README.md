@@ -53,6 +53,8 @@ populates it with sample data.
 
 This walkthrough creates a subscription from scratch,
 starting with the product and user it needs.
+It requires a running development server
+(see [How-to: Get the application running](#how-to-get-the-application-running)).
 Every request uses a fixed UUID to keep the example reproducible.
 Rerunning the walkthrough therefore returns `409 Conflict` responses,
 because the IDs already exist.
@@ -196,7 +198,7 @@ It declares its four failure modes right in its signature:
 
 ```python
 def create_subscription(
-        self, subscription: SubscriptionWithUserIdAndProductId
+    self, subscription: SubscriptionWithUserIdAndProductId
 ) -> AwaitableResult[
     ProductNotSubscribableBecauseStatusError
     | ProductWithIdDoesNotExistError
@@ -245,12 +247,12 @@ composes its steps as follows:
 
 ```python
 return (
-   Wrapper(subscription)
-   .tap_to_awaitable_result(self._read_product_and_check_status_is_published)
-   .map_success_to_awaitable_result(
-      self._subscription_repository.create_subscription
-   )
-   .core
+    Wrapper(subscription)
+    .tap_to_awaitable_result(self._read_product_and_check_status_is_published)
+    .map_success_to_awaitable_result(
+        self._subscription_repository.create_subscription
+    )
+    .core
 )
 ```
 
@@ -262,6 +264,15 @@ The first failure short-circuits the remaining steps.
 Each step can contribute its own domain error,
 so the error union grows along the chain, and the type checker tracks it.
 The final `.core` unwraps the `Wrapper` to a plain `trcks.AwaitableResult`.
+
+Composition is not limited to the service layer.
+The `create_subscription` endpoint in
+[`subscription_router.py`](src/subscription_management/logic/routers/subscription_router.py)
+builds a similar chain:
+it converts the request schema to a domain model with `map`,
+calls the service with `map_to_awaitable_result`,
+and converts the domain model to a response schema with `map_success`.
+The repository classes compose their steps the same way.
 The [`trcks` documentation](https://christophgietl.github.io/trcks/)
 describes `Wrapper` and its methods in detail.
 
