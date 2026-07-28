@@ -1,3 +1,4 @@
+import sqlite3
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, final
 
@@ -52,10 +53,16 @@ class UserRepository:
         try:
             scalars = await self._session.scalars(statement=statement)
         except IntegrityError as e:
-            match str(e.orig):
-                case "UNIQUE constraint failed: user.id":
+            match e.orig:
+                case sqlite3.IntegrityError(
+                    args=["UNIQUE constraint failed: user.id"],
+                    sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY,
+                ):
                     return "failure", UserWithIdAlreadyExistsError(id=user.id)
-                case "UNIQUE constraint failed: user.email":
+                case sqlite3.IntegrityError(
+                    args=["UNIQUE constraint failed: user.email"],
+                    sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
+                ):
                     return "failure", UserWithEmailAlreadyExistsError(email=user.email)
                 case _:  # pragma: no cover
                     raise
@@ -119,8 +126,11 @@ class UserRepository:
         try:
             user_model = await self._session.scalar(statement=statement)
         except IntegrityError as e:
-            match str(e.orig):
-                case "UNIQUE constraint failed: user.email":
+            match e.orig:
+                case sqlite3.IntegrityError(
+                    args=["UNIQUE constraint failed: user.email"],
+                    sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
+                ):
                     return "failure", UserWithEmailAlreadyExistsError(email=user.email)
                 case _:  # pragma: no cover
                     raise
