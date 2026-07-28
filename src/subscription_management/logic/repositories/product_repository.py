@@ -1,3 +1,4 @@
+import sqlite3
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, final
 
@@ -53,10 +54,14 @@ class ProductRepository:
         try:
             scalars = await self._session.scalars(statement=statement)
         except IntegrityError as e:
-            match str(e.orig):
-                case "UNIQUE constraint failed: product.id":
+            match e.orig:
+                case sqlite3.IntegrityError(
+                    sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY,
+                ):
                     return "failure", ProductWithIdAlreadyExistsError(id=product.id)
-                case "UNIQUE constraint failed: product.name":
+                case sqlite3.IntegrityError(
+                    sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
+                ):
                     return "failure", ProductWithNameAlreadyExistsError(
                         name=product.name
                     )
@@ -114,8 +119,10 @@ class ProductRepository:
         try:
             product_model = await self._session.scalar(statement=statement)
         except IntegrityError as e:
-            match str(e.orig):
-                case "UNIQUE constraint failed: product.name":
+            match e.orig:
+                case sqlite3.IntegrityError(
+                    sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
+                ):
                     return "failure", ProductWithNameAlreadyExistsError(
                         name=product.name
                     )

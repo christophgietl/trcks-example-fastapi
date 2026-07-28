@@ -1,3 +1,4 @@
+import sqlite3
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar, Final, final
 
@@ -87,8 +88,10 @@ class SubscriptionRepository:
         try:
             scalars = await self._session.scalars(statement=statement)
         except IntegrityError as e:
-            match str(e.orig):
-                case "UNIQUE constraint failed: subscription.id":
+            match e.orig:
+                case sqlite3.IntegrityError(
+                    sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY,
+                ):
                     return "failure", SubscriptionWithIdAlreadyExistsError(
                         id=subscription.id
                     )
