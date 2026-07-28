@@ -55,12 +55,10 @@ class UserRepository:
         except IntegrityError as e:
             match e.orig:
                 case sqlite3.IntegrityError(
-                    args=["UNIQUE constraint failed: user.id"],
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY,
                 ):
                     return "failure", UserWithIdAlreadyExistsError(id=user.id)
                 case sqlite3.IntegrityError(
-                    args=["UNIQUE constraint failed: user.email"],
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
                 ):
                     return "failure", UserWithEmailAlreadyExistsError(email=user.email)
@@ -128,7 +126,6 @@ class UserRepository:
         except IntegrityError as e:
             match e.orig:
                 case sqlite3.IntegrityError(
-                    args=["UNIQUE constraint failed: user.email"],
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
                 ):
                     return "failure", UserWithEmailAlreadyExistsError(email=user.email)

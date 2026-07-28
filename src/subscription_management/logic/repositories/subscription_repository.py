@@ -90,7 +90,6 @@ class SubscriptionRepository:
         except IntegrityError as e:
             match e.orig:
                 case sqlite3.IntegrityError(
-                    args=["UNIQUE constraint failed: subscription.id"],
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY,
                 ):
                     return "failure", SubscriptionWithIdAlreadyExistsError(

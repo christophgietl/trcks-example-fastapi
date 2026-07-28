@@ -56,12 +56,10 @@ class ProductRepository:
         except IntegrityError as e:
             match e.orig:
                 case sqlite3.IntegrityError(
-                    args=["UNIQUE constraint failed: product.id"],
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY,
                 ):
                     return "failure", ProductWithIdAlreadyExistsError(id=product.id)
                 case sqlite3.IntegrityError(
-                    args=["UNIQUE constraint failed: product.name"],
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
                 ):
                     return "failure", ProductWithNameAlreadyExistsError(
@@ -123,7 +121,6 @@ class ProductRepository:
         except IntegrityError as e:
             match e.orig:
                 case sqlite3.IntegrityError(
-                    args=["UNIQUE constraint failed: product.name"],
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
                 ):
                     return "failure", ProductWithNameAlreadyExistsError(
