@@ -60,7 +60,8 @@ class UserRepository:
                     return "failure", UserWithIdAlreadyExistsError(id=user.id)
                 case sqlite3.IntegrityError(
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
-                ):
+                    args=[str(msg), *_],
+                ) if "user.email" in msg:
                     return "failure", UserWithEmailAlreadyExistsError(email=user.email)
                 case _:  # pragma: no cover
                     raise
@@ -127,7 +128,8 @@ class UserRepository:
             match e.orig:
                 case sqlite3.IntegrityError(
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
-                ):
+                    args=[str(msg), *_],
+                ) if "user.email" in msg:
                     return "failure", UserWithEmailAlreadyExistsError(email=user.email)
                 case _:  # pragma: no cover
                     raise

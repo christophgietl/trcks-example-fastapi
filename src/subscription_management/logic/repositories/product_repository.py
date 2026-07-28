@@ -61,7 +61,8 @@ class ProductRepository:
                     return "failure", ProductWithIdAlreadyExistsError(id=product.id)
                 case sqlite3.IntegrityError(
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
-                ):
+                    args=[str(msg), *_],
+                ) if "product.name" in msg:
                     return "failure", ProductWithNameAlreadyExistsError(
                         name=product.name
                     )
@@ -122,7 +123,8 @@ class ProductRepository:
             match e.orig:
                 case sqlite3.IntegrityError(
                     sqlite_errorcode=sqlite3.SQLITE_CONSTRAINT_UNIQUE,
-                ):
+                    args=[str(msg), *_],
+                ) if "product.name" in msg:
                     return "failure", ProductWithNameAlreadyExistsError(
                         name=product.name
                     )
