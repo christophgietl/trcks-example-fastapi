@@ -21,7 +21,7 @@
   - `testing` contains test helpers.
   - `logic` contains business logic and data access, with five sublayers:
     app entry point, routers, services, repositories, and database.
-  - `data_structures` contains data classes and models, with two sublevels:
+  - `data_structures` contains data classes and models, with two sublayers:
     ORM models and API schemas above domain classes.
 
 ### Data structures
