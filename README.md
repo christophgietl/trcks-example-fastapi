@@ -7,7 +7,7 @@ This example FastAPI application keeps that promise
 with the [`trcks`](https://pypi.org/project/trcks/) library
 for type-safe railway-oriented programming (ROP).
 `trcks` represents every domain outcome as a `Success` or a `Failure`,
-so domain errors travel in return values instead of as exceptions.
+so domain errors travel in return values instead of exceptions.
 The example domain is subscription management.
 
 In a conventional FastAPI application, failures hide behind the signature:
