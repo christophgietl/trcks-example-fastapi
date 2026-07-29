@@ -114,7 +114,7 @@ uv run pre-commit run --all-files             # all hooks
 uv run pre-commit run --all-files ruff-check  # one hook
 # Run static type checks:
 uv run pyright
-# Run unit tests:
+# Run tests:
 uv run pytest
 # Enforce rules for the imports within and between Python packages:
 uv run import-linter lint
