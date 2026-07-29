@@ -1,7 +1,8 @@
 # Contributing to `trcks-example-fastapi`
 
 Thank you for considering contributing to `trcks-example-fastapi`!
-The following sections describe how to set up and use a development environment.
+The following sections describe how to set up your development environment and
+list the development tools it provides.
 
 ## How-to: Set up your development environment
 
