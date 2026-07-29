@@ -3,11 +3,11 @@
 Forget to handle one of your domain errors,
 and your type checker reports the exact file and line —
 before you run a single test.
-This repository demonstrates that promise with an example FastAPI application
-built on type-safe railway-oriented programming (ROP) with
-[`trcks`](https://pypi.org/project/trcks/),
-which represents every domain outcome as a `Success` or a `Failure`,
-so domain errors travel in return values rather than exceptions.
+This example FastAPI application keeps that promise
+with the [`trcks`](https://pypi.org/project/trcks/) library
+for type-safe railway-oriented programming (ROP).
+`trcks` represents every domain outcome as a `Success` or a `Failure`,
+so domain errors travel in return values instead of as exceptions.
 The example domain is subscription management.
 
 In a conventional FastAPI application, failures hide behind the signature:
