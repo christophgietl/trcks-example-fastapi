@@ -16,15 +16,13 @@
 
 ### Application layers
 
-- The package `subscription_management` has three layers: `testing`, `logic`,
+- `subscription_management` has three layers: `testing`, `logic`,
   and `data_structures`.
-- `subscription_management.testing` contains test helpers.
-- `subscription_management.logic` contains business logic and data access.
-  It has five sublayers: the app entry point, routers, services,
-  repositories, and the database.
-- `subscription_management.data_structures` contains data classes and models.
-  It has two sublayers: ORM models and API schemas at one level,
-  and domain classes at the level below.
+  - `testing` contains test helpers.
+  - `logic` contains business logic and data access, with five sublayers:
+    app entry point, routers, services, repositories, and database.
+  - `data_structures` contains data classes and models, with two sublevels:
+    ORM models and API schemas above domain classes.
 
 ### Data structures
 
