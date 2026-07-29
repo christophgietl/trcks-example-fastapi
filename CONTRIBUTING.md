@@ -1,21 +1,9 @@
 # Contributing to `trcks-example-fastapi`
 
 Thank you for considering contributing to `trcks-example-fastapi`!
-The following section describes how to set up and use a development environment.
+The following sections describe how to set up and use a development environment.
 
-## Development environment
-
-`trcks-example-fastapi` uses the following developer tools:
-
-- [import-linter](https://import-linter.readthedocs.io)
-  for enforcing rules for the imports within and between Python packages
-- [pre-commit](https://pre-commit.com) for managing Git hooks
-  (particularly for code formatting and linting)
-- [pyright](https://microsoft.github.io/pyright/) for static type checking
-- [pytest](https://pytest.org) for testing
-- [uv](https://docs.astral.sh/uv/) for dependency management
-
-### Setup
+## How-to: Set up your development environment
 
 Please follow these steps to set up your development environment:
 
@@ -30,7 +18,17 @@ Please follow these steps to set up your development environment:
    pre-commit installed at .git/hooks/pre-commit
    ```
 
-### Usage
+## Reference: Development tools
+
+`trcks-example-fastapi` uses the following developer tools:
+
+- [import-linter](https://import-linter.readthedocs.io)
+  for enforcing rules for the imports within and between Python packages
+- [pre-commit](https://pre-commit.com) for managing Git hooks
+  (particularly for code formatting and linting)
+- [pyright](https://microsoft.github.io/pyright/) for static type checking
+- [pytest](https://pytest.org) for testing
+- [uv](https://docs.astral.sh/uv/) for dependency management
 
 Check [the section "Development tools" in `AGENTS.md`](AGENTS.md#development-tools)
 for instructions on how to use the development tools.
