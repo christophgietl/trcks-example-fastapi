@@ -33,9 +33,10 @@ The section
 [Explanation: The case for railway-oriented programming](#explanation-the-case-for-railway-oriented-programming)
 shows how this makes error handling explicit, exhaustive, and testable.
 
-**Who is this for?** Experienced FastAPI developers who want to
-keep domain errors in their function signatures and
-let the type checker enforce exhaustive error handling.
+> [!NOTE]
+> Who is this for? Experienced FastAPI developers who want to
+> keep domain errors in their function signatures and
+> let the type checker enforce exhaustive error handling.
 
 ## How-to: Get the application running
 
@@ -45,9 +46,10 @@ let the type checker enforce exhaustive error handling.
 4. Open the interactive API documentation at <http://127.0.0.1:8000/docs> and
    explore the endpoints.
 
-**Note:** The application creates its SQLite schema automatically on startup.
-[The following tutorial](#tutorial-create-your-first-subscription)
-populates it with sample data.
+> [!NOTE]
+> The application creates its SQLite schema automatically on startup.
+> [The following tutorial](#tutorial-create-your-first-subscription)
+> populates it with sample data.
 
 ## Tutorial: Create your first subscription
 
@@ -225,14 +227,14 @@ match result:
         assert_never(result)
 ```
 
-**Try it yourself:**
-Add a new domain error to the return type of `create_subscription` in
-[`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py).
-Then run `uv run pyright`.
-The new error now reaches the router unhandled,
-so `assert_never(result)` no longer receives `Never`.
-Pyright reports the exact file and line of the router that needs a new `case`.
-You catch the gap before you run the application or write a test.
+> [!TIP]
+> Add a new domain error to the return type of `create_subscription` in
+> [`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py).
+> Then run `uv run pyright`.
+> The new error now reaches the router unhandled,
+> so `assert_never(result)` no longer receives `Never`.
+> Pyright reports the exact file and line of the router that needs a new `case`.
+> You catch the gap before you run the application or write a test.
 
 The rest of this document shows how the application delivers on that promise,
 starting with its step composition.
