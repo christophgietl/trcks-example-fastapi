@@ -228,7 +228,8 @@ match result:
 ```
 
 > [!TIP]
-> **Try it yourself:** Add a new domain error to the return type of `create_subscription` in
+> **Try it yourself:** Add a new domain error to the return type of
+> `create_subscription` in
 > [`subscription_service.py`](src/subscription_management/logic/services/subscription_service.py).
 > Then run `uv run pyright`.
 > The new error now reaches the router unhandled,
