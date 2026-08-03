@@ -19,7 +19,7 @@ updates:
         patterns:
           - "*"
     schedule:
-      interval: daily
+      interval: weekly
   - package-ecosystem: uv
     allow:
       - dependency-type: all
