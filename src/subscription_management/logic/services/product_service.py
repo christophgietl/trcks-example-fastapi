@@ -117,10 +117,7 @@ class ProductService:
             case (
                 ("published", "draft")
                 | ("deprecated", "draft")
-                | (
-                    "deprecated",
-                    "published",
-                )
+                | ("deprecated", "published")
             ):
                 error = ProductStatusTransitionNotAllowedError(
                     id=product_update.before.id,
