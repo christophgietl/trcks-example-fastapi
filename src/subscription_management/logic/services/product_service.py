@@ -38,7 +38,7 @@ type ProductServiceDep = Annotated[ProductService, Depends()]
 
 
 @final
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, slots=True)
 class _ProductUpdate:
     before: Product
     after: Product
@@ -55,11 +55,7 @@ class ProductService:
         return (
             Wrapper(new_product.id)
             .map_to_awaitable_result(self.read_product_by_id)
-            .map_success(
-                lambda old_product: _ProductUpdate(
-                    before=old_product, after=new_product
-                )
-            )
+            .map_success(_ProductUpdate, after=new_product)
             .core
         )
 
