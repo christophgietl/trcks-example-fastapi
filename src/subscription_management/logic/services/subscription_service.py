@@ -47,7 +47,7 @@ class SubscriptionService:
     _subscription_repository: SubscriptionRepositoryDep
 
     @staticmethod
-    def _check_product_status_is_published(
+    def _ensure_product_status_is_published(
         product: Product,
     ) -> Result[ProductNotSubscribableBecauseStatusError, None]:
         match product.status:
@@ -60,13 +60,13 @@ class SubscriptionService:
             case _:  # pragma: no cover
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]
 
-    def _read_product_and_check_status_is_published(
+    def _read_product_and_ensure_status_is_published(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[_ProductNotSubscribableError, None]:
         return (
             Wrapper(subscription.product_id)
             .map_to_awaitable_result(self._product_repository.read_product_by_id)
-            .map_success_to_result(self._check_product_status_is_published)
+            .map_success_to_result(self._ensure_product_status_is_published)
             .core
         )
 
@@ -80,7 +80,7 @@ class SubscriptionService:
     ]:
         return (
             Wrapper(subscription)
-            .tap_to_awaitable_result(self._read_product_and_check_status_is_published)
+            .tap_to_awaitable_result(self._read_product_and_ensure_status_is_published)
             .map_success_to_awaitable_result(
                 self._subscription_repository.create_subscription
             )
@@ -110,7 +110,7 @@ class SubscriptionService:
     ]:
         return (
             Wrapper(subscription)
-            .tap_to_awaitable_result(self._read_product_and_check_status_is_published)
+            .tap_to_awaitable_result(self._read_product_and_ensure_status_is_published)
             .map_success_to_awaitable_result(
                 self._subscription_repository.update_subscription
             )

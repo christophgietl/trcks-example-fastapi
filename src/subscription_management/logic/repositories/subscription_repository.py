@@ -56,7 +56,7 @@ class SubscriptionRepository:
     _session: AsyncSessionDep
     _user_repository: UserRepositoryDep
 
-    def _check_that_product_and_user_exist(
+    def _ensure_that_product_and_user_exist(
         self, subscription: SubscriptionWithUserIdAndProductId
     ) -> AwaitableResult[_ProductOrUserDoesNotExistError, None]:
         return (
@@ -164,7 +164,7 @@ class SubscriptionRepository:
             # about which foreign key failed.
             # Therefore, we read the related entities first
             # in order to provide more specific `Failure`s:
-            .tap_to_awaitable_result(self._check_that_product_and_user_exist)
+            .tap_to_awaitable_result(self._ensure_that_product_and_user_exist)
             .map_success_to_awaitable_result(self._create_subscription)
             .map_success(SubscriptionModel.to_subscription_with_product)
             .core
@@ -209,7 +209,7 @@ class SubscriptionRepository:
             # about which foreign key failed.
             # Therefore, we read the related entities first
             # in order to provide more specific `Failure`s:
-            .tap_to_awaitable_result(self._check_that_product_and_user_exist)
+            .tap_to_awaitable_result(self._ensure_that_product_and_user_exist)
             .map_success_to_awaitable_result(self._update_subscription)
             .map_success(SubscriptionModel.to_subscription_with_product)
             .core
