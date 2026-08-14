@@ -59,18 +59,18 @@ class ProductService:
             .core
         )
 
-    def _check_by_id_that_product_can_be_deleted(
+    def _ensure_by_id_that_product_can_be_deleted(
         self, id_: UUID
     ) -> AwaitableResult[_DeleteProductError, None]:
         return (
             Wrapper(id_)
             .map_to_awaitable_result(self.read_product_by_id)
-            .map_success_to_result(self._check_that_product_can_be_deleted)
+            .map_success_to_result(self._ensure_that_product_can_be_deleted)
             .core
         )
 
     @staticmethod
-    def _check_that_payload_update_is_allowed(
+    def _ensure_that_payload_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[ProductPayloadNotUpdatableBecauseStatusError, None]:
         payload_is_identical = product_update.before == dataclasses.replace(
@@ -91,7 +91,7 @@ class ProductService:
                 assert_never(pair)  # pyright: ignore[reportUnreachable]
 
     @staticmethod
-    def _check_that_product_can_be_deleted(
+    def _ensure_that_product_can_be_deleted(
         product: Product,
     ) -> Result[
         ProductNotDeletableBecauseStatusError,
@@ -108,7 +108,7 @@ class ProductService:
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]
 
     @staticmethod
-    def _check_that_status_update_is_allowed(
+    def _ensure_that_status_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[ProductStatusTransitionNotAllowedError, None]:
         match product_update.before.status, product_update.after.status:
@@ -132,14 +132,14 @@ class ProductService:
             case _ as pair:  # pragma: no cover
                 assert_never(pair)  # pyright: ignore[reportUnreachable]
 
-    def _check_that_update_is_allowed(
+    def _ensure_that_update_is_allowed(
         self, new_product: Product
     ) -> AwaitableResult[_UpdateNotAllowedError, None]:
         return (
             Wrapper(new_product)
             .map_to_awaitable_result(self._add_old_product)
-            .tap_success_to_result(self._check_that_status_update_is_allowed)
-            .tap_success_to_result(self._check_that_payload_update_is_allowed)
+            .tap_success_to_result(self._ensure_that_status_update_is_allowed)
+            .tap_success_to_result(self._ensure_that_payload_update_is_allowed)
             .map_success(lambda _: None)
             .core
         )
@@ -156,7 +156,7 @@ class ProductService:
     ) -> AwaitableResult[_DeleteProductError, Product]:
         return (
             Wrapper(id_)
-            .tap_to_awaitable_result(self._check_by_id_that_product_can_be_deleted)
+            .tap_to_awaitable_result(self._ensure_by_id_that_product_can_be_deleted)
             .map_success_to_awaitable_result(self._product_repository.delete_product)
             .core
         )
@@ -182,7 +182,7 @@ class ProductService:
     ]:
         return (
             Wrapper(product)
-            .tap_to_awaitable_result(self._check_that_update_is_allowed)
+            .tap_to_awaitable_result(self._ensure_that_update_is_allowed)
             .map_success_to_awaitable_result(self._product_repository.update_product)
             .core
         )

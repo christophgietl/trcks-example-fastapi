@@ -246,7 +246,7 @@ composes its steps as follows:
 ```python
 return (
     Wrapper(subscription)
-    .tap_to_awaitable_result(self._read_product_and_check_status_is_published)
+    .tap_to_awaitable_result(self._read_product_and_ensure_status_is_published)
     .map_success_to_awaitable_result(
         self._subscription_repository.create_subscription
     )
@@ -308,7 +308,7 @@ The `create_subscription` method returns a union of
 and `UserWithIdDoesNotExistError`
 because each step of a `trcks.oop.Wrapper` chain can contribute its own
 error, and the chain's generic type parameters track them all.
-For example, the `_check_that_product_and_user_exist` helper in
+For example, the `_ensure_that_product_and_user_exist` helper in
 [`subscription_repository.py`](src/subscription_management/logic/repositories/subscription_repository.py)
 reads the product and then the user, contributing a
 `ProductWithIdDoesNotExistError` and a `UserWithIdDoesNotExistError`,
