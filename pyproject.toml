@@ -249,11 +249,6 @@ runtime-evaluated-decorators = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.rumdl]
-exclude = [
-    ".agents/skills/library-skills/",  # managed by library-skills
-]
-
 [tool.uv]
 add-bounds = "exact"
 required-version = "~=0.12.0"
