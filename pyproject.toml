@@ -251,7 +251,7 @@ convention = "google"
 
 [tool.rumdl]
 exclude = [
-    ".agents/",  # managed by library-skills
+    ".agents/skills/library-skills/",  # managed by library-skills
 ]
 
 [tool.uv]
