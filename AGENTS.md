@@ -116,6 +116,8 @@ uv run pyright
 uv run pytest
 # Enforce rules for the imports within and between Python packages:
 uv run import-linter lint
+# Install the FastAPI library skill for coding agents:
+uv run library-skills install --skill fastapi --yes
 ```
 
 ## Testing strategy

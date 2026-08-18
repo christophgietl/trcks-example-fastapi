@@ -329,6 +329,20 @@ wheels = [
 ]
 
 [[package]]
+name = "library-skills"
+version = "0.0.19"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "rich-toolkit" },
+    { name = "typer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/4b/fb85dd4c93a8ec99b0e04d12ca81fc08a755ee43c2061069e1d87f6abb66/library_skills-0.0.19.tar.gz", hash = "sha256:fe58b3a06e9ba757f1b48113199a6af93fc15008c9d0a3add543f508576a8516", size = 44098, upload-time = "2026-06-21T16:16:25.793Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/37/e5/d8ab3376068360b6e9dc65fb66c52d5b2d5f2b60e34f51aa2e5cf64c5f26/library_skills-0.0.19-py3-none-any.whl", hash = "sha256:99cc10b900860bd354f1ca4a1724f0ce51f5b40246775c1db63567c91e920c6e", size = 25050, upload-time = "2026-06-21T16:16:24.928Z" },
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -671,6 +685,7 @@ dev = [
     { name = "anyio" },
     { name = "httpx2" },
     { name = "import-linter" },
+    { name = "library-skills" },
     { name = "pre-commit" },
     { name = "pyright", extra = ["nodejs"] },
     { name = "pytest" },
@@ -692,6 +707,7 @@ dev = [
     { name = "anyio", specifier = "==4.14.2" },
     { name = "httpx2", specifier = "==2.10.0" },
     { name = "import-linter", specifier = "==2.13" },
+    { name = "library-skills", specifier = "==0.0.19" },
     { name = "pre-commit", specifier = "==4.6.2" },
     { name = "pyright", extras = ["nodejs"], specifier = "==1.1.411" },
     { name = "pytest", specifier = "==9.1.1" },
