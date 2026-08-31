@@ -19,4 +19,4 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: christophgietl/uv-actions/set-up-uv-and-pre-commit-for-copilot@83513e97a94eb488fb9b2500d4585f65e19eab4a # 2026.7.21.12
+      - uses: christophgietl/uv-actions/set-up-uv-and-pre-commit-for-copilot@d231379b0f63cd19bc39d7e5b4d5057a2daffc17 # 2026.8.24
