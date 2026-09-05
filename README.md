@@ -247,9 +247,7 @@ composes its steps as follows:
 return (
     Wrapper(subscription)
     .tap_to_awaitable_result(self._read_product_and_ensure_status_is_published)
-    .map_success_to_awaitable_result(
-        self._subscription_repository.create_subscription
-    )
+    .map_success_to_awaitable_result(self._subscription_repository.create_subscription)
     .core
 )
 ```
