@@ -87,7 +87,7 @@ class ProductService:
                     status=product_update.before.status,
                 )
                 return "failure", error
-            case _ as pair:  # pragma: no cover
+            case pair:  # pragma: no cover
                 assert_never(pair)  # pyright: ignore[reportUnreachable]
 
     @staticmethod
@@ -129,7 +129,7 @@ class ProductService:
                 return "success", None
             case "deprecated", "deprecated":
                 return "success", None
-            case _ as pair:  # pragma: no cover
+            case pair:  # pragma: no cover
                 assert_never(pair)  # pyright: ignore[reportUnreachable]
 
     def _ensure_that_update_is_allowed(
