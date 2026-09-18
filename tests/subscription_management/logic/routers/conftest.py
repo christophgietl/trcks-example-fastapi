@@ -15,7 +15,7 @@ __docformat__ = "google"
 
 
 @pytest.fixture
-def _app(engine: AsyncEngine) -> Generator[FastAPI]:  # pyright: ignore[reportUnusedFunction]
+def _app(engine: AsyncEngine) -> Generator[FastAPI]:
     """Set up the database for `app` and yield `app`.
 
     Note:

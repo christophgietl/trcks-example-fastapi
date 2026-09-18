@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def _database_url(tmp_path: Path) -> str:  # pyright: ignore[reportUnusedFunction]
+def _database_url(tmp_path: Path) -> str:
     file = tmp_path / "database.sqlite"
     return f"sqlite+aiosqlite:///{file}"
 
