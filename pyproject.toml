@@ -23,7 +23,7 @@ dependencies = [
     "fastapi==0.141.1",
     "fastapi-cli==0.0.32",
     "pydantic==2.13.5",
-    "sqlalchemy[aiosqlite]==2.0.52",
+    "sqlalchemy[aiosqlite]==2.0.53",
     "trcks==0.7.3",
 ]
 name = "subscription-management"
