@@ -24,7 +24,7 @@ dependencies = [
     "fastapi-cli==0.0.32",
     "pydantic==2.13.5",
     "sqlalchemy[aiosqlite]==2.0.54",
-    "trcks==0.7.3",
+    "trcks==0.8.0",
 ]
 name = "subscription-management"
 requires-python = "==3.14.*"
