@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: christophgietl/uv-actions/set-up-uv@d231379b0f63cd19bc39d7e5b4d5057a2daffc17 # 2026.8.24
+      - uses: christophgietl/uv-actions/set-up-uv@6f912829b4e872ce326aea1cdb09f7894b84a2ca # 2026.9.18
       - run: uv build --verbose
   lint-and-test:
     runs-on: ubuntu-latest
@@ -20,10 +20,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: christophgietl/uv-actions/set-up-uv@d231379b0f63cd19bc39d7e5b4d5057a2daffc17 # 2026.8.24
+      - uses: christophgietl/uv-actions/set-up-uv@6f912829b4e872ce326aea1cdb09f7894b84a2ca # 2026.9.18
         with:
           install-and-cache-dependencies: true
-      - uses: christophgietl/uv-actions/set-up-pre-commit@d231379b0f63cd19bc39d7e5b4d5057a2daffc17 # 2026.8.24
+      - uses: christophgietl/uv-actions/set-up-pre-commit@6f912829b4e872ce326aea1cdb09f7894b84a2ca # 2026.9.18
         with:
           cache-key-suffix: lint-and-test
       - run: uv run --no-sync pre-commit run --all-files --show-diff-on-failure
