@@ -31,6 +31,11 @@ updates:
     cooldown:
       default-days: 7
     directory: /
+    groups:
+      uv-minor-and-patch:
+        update-types:
+          - minor
+          - patch
     schedule:
       interval: daily
       time: "00:41"
