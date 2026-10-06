@@ -20,7 +20,7 @@ classifiers = [
     "Private :: Do Not Upload",
 ]
 dependencies = [
-    "fastapi==0.141.1",
+    "fastapi==0.142.1",
     "fastapi-cli==0.0.32",
     "pydantic==2.13.5",
     "sqlalchemy[aiosqlite]==2.1.1",
