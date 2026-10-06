@@ -119,18 +119,19 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.141.1"
+version = "0.142.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
+    { name = "opentelemetry-api" },
     { name = "pydantic" },
     { name = "starlette" },
     { name = "typing-extensions" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/02/91e3416a8fdd715abb903a952a6bec7cdd8d14eed55d415fc8595524c319/fastapi-0.141.1.tar.gz", hash = "sha256:e8822fc40db1e1858054d7a949a888695bc9bdce70139178e33bd2871a453ca1", size = 425799, upload-time = "2026-07-29T17:18:05.568Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/d4/96b417c2ec88df6be2fe90010e6e23c5323eeb2160c6cb0108f99707c130/fastapi-0.142.1.tar.gz", hash = "sha256:761663e3e6939da45f997a6f68362abc0fa9d8606e76d504f15f806d2281581d", size = 466491, upload-time = "2026-09-29T22:36:22.34Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/03/10388a42375ee7e4ac9b94eb2c5c569c8b5795e377e701c9ac3ad63de890/fastapi-0.141.1-py3-none-any.whl", hash = "sha256:bfb91aa2d334c61cb35ba9a116fc123b3d3df31640b801cf57a7a78ec3f603b3", size = 131954, upload-time = "2026-07-29T17:18:04.364Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/17/bb503d4b3bea614eae48ffecafe192b097082e8afcf3f2dbde3d78438cc4/fastapi-0.142.1-py3-none-any.whl", hash = "sha256:7eea2b5b1632ed43de2c090b3a43b7d92267189dfbbd55a967307ed763b6c57a", size = 144481, upload-time = "2026-09-29T22:36:19.603Z" },
 ]
 
 [[package]]
@@ -393,6 +394,18 @@ wheels = [
 ]
 
 [[package]]
+name = "opentelemetry-api"
+version = "1.45.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2e/02/6e0ae9cc61bd3169d401077b507b3ebc344745171e1051ab430be012dcd9/opentelemetry_api-1.45.1.tar.gz", hash = "sha256:aa38ed19bcc084ba42782a73255b3582283eced7ad6dddbd6695189e69adfb75", size = 72804, upload-time = "2026-10-06T17:32:58.133Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/41/f7dcf80b81ee8e71c1a2b59f14208bc723edbd89ed027a73b175abf6348e/opentelemetry_api-1.45.1-py3-none-any.whl", hash = "sha256:b31553efa588ae44bc306f863c785c5333a9ecc091248c6ee68b4b6c87fdedfb", size = 60256, upload-time = "2026-10-06T17:32:33.506Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "26.3"
 source = { registry = "https://pypi.org/simple" }
@@ -403,11 +416,11 @@ wheels = [
 
 [[package]]
 name = "platformdirs"
-version = "4.12.1"
+version = "4.12.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c3/8a/84ef03c1c83eacd7cc4540b05428a93b5cd4e42f62fb0b98ac2cb6ed3a6d/platformdirs-4.12.1.tar.gz", hash = "sha256:38da801a4af303033cbffccb39030db22bf0473e6414309b02acebeee7ca8bf1", size = 59427, upload-time = "2026-09-28T05:05:16.264Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/17/c8/721b3855fe457da514fe249247d404b9b39c5d16532278f70ebaa6acf18b/platformdirs-4.12.2.tar.gz", hash = "sha256:eab5f70271a490ef74618bb314fbb86e3c7e82fa3b9c922c2ea0e0a1a155d329", size = 59353, upload-time = "2026-09-29T18:27:56.009Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/31/1521c38d175108ac395941adbcb9f11e085340bed81ad166e8ad8c21c17b/platformdirs-4.12.1-py3-none-any.whl", hash = "sha256:7f251621befae78b2cb74616f9fc99d3fa3db0afba5035987731f8dcd430337d", size = 33011, upload-time = "2026-09-28T05:05:15.06Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/89/446044f33aba0348d35e433f56d12206d010a5281a1df54054d4cfb82388/platformdirs-4.12.2-py3-none-any.whl", hash = "sha256:29dbf06d96c500bc6bdbce75fb0a14d63279c93b1842f97e72a135b33e856983", size = 32457, upload-time = "2026-09-29T18:27:54.43Z" },
 ]
 
 [[package]]
@@ -708,7 +721,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", specifier = "==0.141.1" },
+    { name = "fastapi", specifier = "==0.142.1" },
     { name = "fastapi-cli", specifier = "==0.0.32" },
     { name = "pydantic", specifier = "==2.13.5" },
     { name = "sqlalchemy", extras = ["aiosqlite"], specifier = "==2.1.1" },
@@ -832,17 +845,18 @@ wheels = [
 
 [[package]]
 name = "virtualenv"
-version = "21.13.0"
+version = "21.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "distlib" },
     { name = "filelock" },
+    { name = "packaging" },
     { name = "platformdirs" },
     { name = "python-discovery" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/31/0b/825cbfd46beb2cc96c46403141081190c1afd1a348d0232a4ebcb6dcd362/virtualenv-21.13.0.tar.gz", hash = "sha256:e8aa144aabba43ffd9058e1fd1a02012b1915f8cb915acc16ad50aba9c13bfdc", size = 5399552, upload-time = "2026-09-26T16:42:09.321Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7c/0c/e419d453f81fee6c01b40f30a38e45a9418c6877b1edee00bc71aedcf7b2/virtualenv-21.14.0.tar.gz", hash = "sha256:c3c0dbdf7259316edbb993020206ee7f7664a33063292dcc4a618e4c04cdf450", size = 5462847, upload-time = "2026-09-29T20:25:31.412Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c5/2c/8b107f9e029da006c39af38a0a150dde57ecce48b495c79917d1ad963821/virtualenv-21.13.0-py3-none-any.whl", hash = "sha256:ca16ceba89e58d8e2f376769349c63f3ed66f79881ae68bc13e19a9d50e0e987", size = 5486498, upload-time = "2026-09-26T16:42:07.106Z" },
+    { url = "https://files.pythonhosted.org/packages/63/f2/a30b7520172f30a351d6a4c718e7daf4e9f09ac070838f576c1c340f26e1/virtualenv-21.14.0-py3-none-any.whl", hash = "sha256:c345b0b744c70e7df7e33be20ea1ba5309db1cca3c98eacc10afb0276cf99356", size = 5486534, upload-time = "2026-09-29T20:25:28.898Z" },
 ]
 
 [[package]]
