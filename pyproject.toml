@@ -8,7 +8,7 @@ dev = [
     "httpx2==2.13.1", # provides ASGITransport and AsyncClient used for testing
     "import-linter==2.15",
     "library-skills==0.0.19",
-    "pre-commit==4.6.2",
+    "pre-commit==4.7.0",
     "pyright[nodejs]==1.1.414",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
