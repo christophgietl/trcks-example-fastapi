@@ -13,7 +13,9 @@ from subscription_management.data_structures.domain.product import (
 
 
 class _ProductSchemaWithoutId(BaseModel, frozen=True):
-    monthly_fee_in_euros: Annotated[Decimal, Field(decimal_places=2, ge=0)]
+    monthly_fee_in_euros: Annotated[
+        Decimal, Field(decimal_places=2, ge=Decimal("0.00"))
+    ]
     name: str
     status: ProductStatus
 
