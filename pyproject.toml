@@ -5,7 +5,7 @@ requires = ["uv_build<1"] # check tool.uv.required-version for tighter version c
 [dependency-groups]
 dev = [
     "anyio==4.15.1", # provides pytest plugin for testing async code
-    "httpx2==2.13.1", # provides ASGITransport and AsyncClient used for testing
+    "httpx2==2.14.0", # provides ASGITransport and AsyncClient used for testing
     "import-linter==2.15",
     "library-skills==0.0.19",
     "pre-commit==4.7.0",
@@ -20,10 +20,10 @@ classifiers = [
     "Private :: Do Not Upload",
 ]
 dependencies = [
-    "fastapi==0.143.2",
+    "fastapi==0.146.0",
     "fastapi-cli==0.0.32",
     "pydantic==2.14.1",
-    "sqlalchemy[aiosqlite]==2.1.4",
+    "sqlalchemy[aiosqlite]==2.1.5",
     "trcks==0.9.1",
 ]
 name = "subscription-management"
