@@ -1,6 +1,6 @@
 # pyright: reportUninitializedInstanceVariable=false
 # See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
-from typing import final
+from typing import Self, final
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -39,13 +39,13 @@ class PutUserRequest(_UserSchemaWithoutId, frozen=True):
 class UserResponse(_UserSchemaWithId, frozen=True):
     subscriptions: tuple[SubscriptionResponse, ...]
 
-    @staticmethod
+    @classmethod
     def from_user_with_subscriptions_with_products(
-        user: UserWithSubscriptionsWithProducts,
-    ) -> UserResponse:
+        cls, user: UserWithSubscriptionsWithProducts
+    ) -> Self:
         subscriptions = (
             TupleWrapper(user.subscriptions_with_products)
             .map(SubscriptionResponse.from_subscription_with_product)
             .core
         )
-        return UserResponse(id=user.id, email=user.email, subscriptions=subscriptions)
+        return cls(id=user.id, email=user.email, subscriptions=subscriptions)

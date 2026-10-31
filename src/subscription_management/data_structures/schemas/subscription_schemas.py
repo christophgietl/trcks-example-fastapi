@@ -1,6 +1,6 @@
 # pyright: reportUninitializedInstanceVariable=false
 # See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
-from typing import TYPE_CHECKING, final
+from typing import TYPE_CHECKING, Self, final
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -62,11 +62,11 @@ class PutSubscriptionRequest(_SubscriptionSchemaWithoutId, frozen=True):
 class SubscriptionResponse(_SubscriptionSchemaWithId, frozen=True):
     product: ProductResponse
 
-    @staticmethod
+    @classmethod
     def from_subscription_with_product(
-        subscription: SubscriptionWithProduct,
-    ) -> SubscriptionResponse:
-        return SubscriptionResponse(
+        cls, subscription: SubscriptionWithProduct
+    ) -> Self:
+        return cls(
             id=subscription.id,
             is_active=subscription.is_active,
             product=ProductResponse.from_product(subscription.product),
