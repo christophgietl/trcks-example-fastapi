@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
+from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.domain.product_error import (
     ProductNotSubscribableBecauseStatusError,
     ProductWithIdDoesNotExistError,
@@ -51,11 +52,11 @@ class SubscriptionService:
         product: Product,
     ) -> Result[ProductNotSubscribableBecauseStatusError, None]:
         match product.status:
-            case "draft" | "deprecated":
+            case ProductStatus.DRAFT | ProductStatus.DEPRECATED:
                 return "failure", ProductNotSubscribableBecauseStatusError(
                     id=product.id, status=product.status
                 )
-            case "published":
+            case ProductStatus.PUBLISHED:
                 return "success", None
             case _:  # pragma: no cover
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]

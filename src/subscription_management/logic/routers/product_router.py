@@ -88,7 +88,7 @@ async def delete_product(id_: UUID, product_service: ProductServiceDep) -> None:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
                     f"Product with ID {id_from_err} cannot be deleted "
-                    f"because its status is {product_status}."
+                    f"because its status is {product_status.value}."
                 ),
             )
         case ("failure", ProductWithIdDoesNotExistError(id=id_from_err)):
@@ -208,7 +208,8 @@ async def update_product(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
                     f"Product with ID {id_from_err} cannot have non-status "
-                    f"attributes modified because its status is {product_status}."
+                    f"attributes modified because its status is "
+                    f"{product_status.value}."
                 ),
             )
         case (
@@ -221,7 +222,7 @@ async def update_product(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
                     f"Product with ID {id_from_err} cannot change status "
-                    f"from {before} to {after}."
+                    f"from {before.value} to {after.value}."
                 ),
             )
         case ("success", product_response):

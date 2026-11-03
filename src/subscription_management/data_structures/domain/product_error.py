@@ -1,6 +1,10 @@
 import dataclasses
 from typing import TYPE_CHECKING, Literal, final
 
+from subscription_management.data_structures.domain.product import (  # noqa: TC001
+    ProductStatus,
+)
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -18,26 +22,26 @@ class _ProductErrorWithName:
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductNotDeletableBecauseStatusError(_ProductErrorWithId):
-    status: Literal["published", "deprecated"]
+    status: Literal[ProductStatus.PUBLISHED, ProductStatus.DEPRECATED]
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductNotSubscribableBecauseStatusError(_ProductErrorWithId):
-    status: Literal["draft", "deprecated"]
+    status: Literal[ProductStatus.DRAFT, ProductStatus.DEPRECATED]
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductPayloadNotUpdatableBecauseStatusError(_ProductErrorWithId):
-    status: Literal["published", "deprecated"]
+    status: Literal[ProductStatus.PUBLISHED, ProductStatus.DEPRECATED]
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductStatusTransitionNotAllowedError(_ProductErrorWithId):
-    before: Literal["published", "deprecated"]
-    after: Literal["draft", "published"]
+    before: Literal[ProductStatus.PUBLISHED, ProductStatus.DEPRECATED]
+    after: Literal[ProductStatus.DRAFT, ProductStatus.PUBLISHED]
 
 
 @final

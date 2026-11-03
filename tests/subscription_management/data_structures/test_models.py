@@ -5,7 +5,10 @@ from uuid import uuid7
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from subscription_management.data_structures.domain.product import Product
+from subscription_management.data_structures.domain.product import (
+    Product,
+    ProductStatus,
+)
 from subscription_management.data_structures.domain.subscription import (
     SubscriptionWithUserIdAndProductId,
 )
@@ -30,7 +33,7 @@ class TestSubscriptionModel:
             id=uuid7(),
             monthly_fee_in_euros=Decimal("9.99"),
             name="Product 1",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         )
         await insert_products(session, product)
 
@@ -51,7 +54,7 @@ class TestSubscriptionModel:
             id=uuid7(),
             monthly_fee_in_euros=Decimal("9.99"),
             name="Product 1",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         )
         await insert_products(session, product)
         user = User(id=uuid7(), email="user@example.com")

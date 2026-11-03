@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
+from subscription_management.data_structures.domain.product import ProductStatus
 from subscription_management.data_structures.domain.product_error import (
     ProductNotDeletableBecauseStatusError,
     ProductPayloadNotUpdatableBecauseStatusError,
@@ -77,11 +78,16 @@ class ProductService:
             product_update.after, status=product_update.before.status
         )
         match payload_is_identical, product_update.before.status:
-            case True, "draft" | "published" | "deprecated":
+            case (
+                True,
+                ProductStatus.DRAFT
+                | ProductStatus.PUBLISHED
+                | ProductStatus.DEPRECATED,
+            ):
                 return "success", None
-            case False, "draft":
+            case False, ProductStatus.DRAFT:
                 return "success", None
-            case False, "published" | "deprecated":
+            case False, ProductStatus.PUBLISHED | ProductStatus.DEPRECATED:
                 error = ProductPayloadNotUpdatableBecauseStatusError(
                     id=product_update.before.id,
                     status=product_update.before.status,
@@ -98,9 +104,9 @@ class ProductService:
         None,
     ]:
         match product.status:
-            case "draft":
+            case ProductStatus.DRAFT:
                 return "success", None
-            case "published" | "deprecated":
+            case ProductStatus.PUBLISHED | ProductStatus.DEPRECATED:
                 return "failure", ProductNotDeletableBecauseStatusError(
                     id=product.id, status=product.status
                 )
@@ -112,12 +118,14 @@ class ProductService:
         product_update: _ProductUpdate,
     ) -> Result[ProductStatusTransitionNotAllowedError, None]:
         match product_update.before.status, product_update.after.status:
-            case "draft", "draft" | "published" | "deprecated":
+            case ProductStatus.DRAFT, (
+                ProductStatus.DRAFT | ProductStatus.PUBLISHED | ProductStatus.DEPRECATED
+            ):
                 return "success", None
             case (
-                ("published", "draft")
-                | ("deprecated", "draft")
-                | ("deprecated", "published")
+                (ProductStatus.PUBLISHED, ProductStatus.DRAFT)
+                | (ProductStatus.DEPRECATED, ProductStatus.DRAFT)
+                | (ProductStatus.DEPRECATED, ProductStatus.PUBLISHED)
             ):
                 error = ProductStatusTransitionNotAllowedError(
                     id=product_update.before.id,
@@ -125,9 +133,11 @@ class ProductService:
                     after=product_update.after.status,
                 )
                 return "failure", error
-            case "published", "published" | "deprecated":
+            case ProductStatus.PUBLISHED, (
+                ProductStatus.PUBLISHED | ProductStatus.DEPRECATED
+            ):
                 return "success", None
-            case "deprecated", "deprecated":
+            case ProductStatus.DEPRECATED, ProductStatus.DEPRECATED:
                 return "success", None
             case _ as pair:  # pragma: no cover
                 assert_never(pair)  # pyright: ignore[reportUnreachable]

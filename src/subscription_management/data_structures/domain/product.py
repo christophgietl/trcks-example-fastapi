@@ -1,11 +1,10 @@
 import dataclasses
-from typing import TYPE_CHECKING, Literal, final
+import enum
+from typing import TYPE_CHECKING, final
 
 if TYPE_CHECKING:
     from decimal import Decimal
     from uuid import UUID
-
-type ProductStatus = Literal["draft", "published", "deprecated"]
 
 
 @final
@@ -15,3 +14,9 @@ class Product:
     monthly_fee_in_euros: Decimal
     name: str
     status: ProductStatus
+
+
+class ProductStatus(enum.Enum):
+    DEPRECATED = "deprecated"
+    DRAFT = "draft"
+    PUBLISHED = "published"

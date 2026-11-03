@@ -99,6 +99,7 @@ ignore_imports = [
     "** -> dataclasses",
     "** -> datetime",
     "** -> decimal",
+    "** -> enum",
     "** -> fastapi",
     "** -> pydantic",
     "** -> sqlalchemy",

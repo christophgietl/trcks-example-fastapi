@@ -60,7 +60,7 @@ async def create_subscription(
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_} is in {product_status} status.",
+                detail=f"Product with ID {id_} is in {product_status.value} status.",
             )
         case ("failure", ProductWithIdDoesNotExistError(id=id_)):
             raise HTTPException(
@@ -172,7 +172,10 @@ async def update_subscription(
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with ID {id_from_err} is in {product_status} status.",
+                detail=(
+                    f"Product with ID {id_from_err} is in "
+                    f"{product_status.value} status."
+                ),
             )
         case ("failure", ProductWithIdDoesNotExistError(id=id_from_err)):
             raise HTTPException(

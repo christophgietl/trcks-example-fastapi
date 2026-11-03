@@ -4,7 +4,10 @@ from uuid import uuid7
 
 import pytest
 
-from subscription_management.data_structures.domain.product import Product
+from subscription_management.data_structures.domain.product import (
+    Product,
+    ProductStatus,
+)
 from subscription_management.data_structures.domain.product_error import (
     ProductWithIdDoesNotExistError,
 )
@@ -39,7 +42,7 @@ class TestProductRepository:
             id=uuid7(),
             monthly_fee_in_euros=Decimal("4.99"),
             name="Unknown Product",
-            status="draft",
+            status=ProductStatus.DRAFT,
         )
         result = await repository.update_product(nonexistent_product)
 

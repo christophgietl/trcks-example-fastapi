@@ -4,7 +4,10 @@ from uuid import uuid7
 
 from fastapi import status
 
-from subscription_management.data_structures.domain.product import Product
+from subscription_management.data_structures.domain.product import (
+    Product,
+    ProductStatus,
+)
 from subscription_management.data_structures.domain.subscription import (
     SubscriptionWithProduct,
     SubscriptionWithUserIdAndProductId,
@@ -170,13 +173,13 @@ async def test_delete_user_also_removes_subscriptions_but_keeps_products(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("9.99"),
             name="Product 1",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
         Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("19.99"),
             name="Product 2",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
     )
     await insert_products(session, *products)
@@ -233,7 +236,7 @@ async def test_read_user_by_email_returns_user(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="test@example.com")
@@ -288,7 +291,7 @@ async def test_read_user_by_id_returns_user(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="test@example.com")
@@ -343,7 +346,7 @@ async def test_read_users_returns_all_users(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     users = (

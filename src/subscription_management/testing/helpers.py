@@ -114,7 +114,7 @@ def to_product_update_request_json(product: Product) -> _JsonObject:
     return {
         "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
         "name": product.name,
-        "status": product.status,
+        "status": product.status.value,
     }
 
 

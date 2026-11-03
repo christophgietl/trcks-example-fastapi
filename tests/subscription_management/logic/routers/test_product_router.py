@@ -33,13 +33,13 @@ async def test_create_product_adds_additional_product_to_database(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("6.99"),
             name="Product 1",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
         Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("3.25"),
             name="Product 2",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
     )
     await insert_products(session, *products)
@@ -48,7 +48,7 @@ async def test_create_product_adds_additional_product_to_database(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 3",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     response = await client.post(
         "/products/", json=to_product_creation_request_json(additional_product)
@@ -69,7 +69,7 @@ async def test_create_product_with_existing_id_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("5.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -77,7 +77,7 @@ async def test_create_product_with_existing_id_fails(
         id=product.id,
         monthly_fee_in_euros=Decimal("8.49"),
         name="Different Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     response = await client.post(
         "/products/", json=to_product_creation_request_json(conflicting_product)
@@ -100,7 +100,7 @@ async def test_create_product_with_existing_name_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("5.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -108,7 +108,7 @@ async def test_create_product_with_existing_name_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("8.49"),
         name=product.name,
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     response = await client.post(
         "/products/", json=to_product_creation_request_json(conflicting_product)
@@ -131,13 +131,13 @@ async def test_delete_product_removes_draft_product_from_database(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("0.89"),
         name="Product 1",
-        status="draft",
+        status=ProductStatus.DRAFT,
     )
     published_product = Product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("0.69"),
         name="Product 2",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, draft_product, published_product)
 
@@ -158,7 +158,7 @@ async def test_delete_product_with_nonexistent_id_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("2.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -174,7 +174,10 @@ async def test_delete_product_with_nonexistent_id_fails(
     assert products_in_database == (product,)
 
 
-@pytest.mark.parametrize("product_status", ["published", "deprecated"])
+@pytest.mark.parametrize(
+    "product_status",
+    [ProductStatus.PUBLISHED, ProductStatus.DEPRECATED],
+)
 async def test_delete_product_with_non_draft_status_fails(
     client: AsyncClient,
     product_status: ProductStatus,
@@ -194,7 +197,7 @@ async def test_delete_product_with_non_draft_status_fails(
     assert response.json() == {
         "detail": (
             f"Product with ID {product.id} cannot be deleted "
-            f"because its status is {product.status}."
+            f"because its status is {product.status.value}."
         )
     }
 
@@ -210,7 +213,7 @@ async def test_read_product_by_id_returns_product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -228,7 +231,7 @@ async def test_read_product_by_id_with_nonexistent_id_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -249,7 +252,7 @@ async def test_read_product_by_name_returns_product(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -267,7 +270,7 @@ async def test_read_product_by_name_with_nonexistent_name_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("1.99"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -289,13 +292,13 @@ async def test_read_products_returns_all_products(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("4.99"),
             name="Product 1",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
         Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("2.99"),
             name="Product 2",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
     )
     await insert_products(session, *products)
@@ -317,7 +320,10 @@ async def test_read_products_returns_empty_list_when_no_products(
     assert response.json() == []
 
 
-@pytest.mark.parametrize("product_status", ["published", "deprecated"])
+@pytest.mark.parametrize(
+    "product_status",
+    [ProductStatus.PUBLISHED, ProductStatus.DEPRECATED],
+)
 async def test_update_product_cannot_change_non_status_attributes_of_published_product(
     client: AsyncClient,
     session: AsyncSession,
@@ -334,7 +340,7 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
     product_update = {
         "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
         "name": "Updated Product",
-        "status": product.status,
+        "status": product.status.value,
     }
     response = await client.put(f"/products/{product.id}", json=product_update)
 
@@ -342,7 +348,7 @@ async def test_update_product_cannot_change_non_status_attributes_of_published_p
     assert response.json() == {
         "detail": (
             f"Product with ID {product.id} cannot have non-status attributes "
-            f"modified because its status is {product_status}."
+            f"modified because its status is {product_status.value}."
         )
     }
 
@@ -359,19 +365,19 @@ async def test_update_product_modifies_product_in_database(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("1.00"),
             name="Original Product",
-            status="draft",
+            status=ProductStatus.DRAFT,
         ),
         Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("2.00"),
             name="Other Product",
-            status="draft",
+            status=ProductStatus.DRAFT,
         ),
     )
     await insert_products(session, *products)
 
     updated_product = dataclasses.replace(
-        products[0], name="Updated Product", status="published"
+        products[0], name="Updated Product", status=ProductStatus.PUBLISHED
     )
     response = await client.put(
         f"/products/{updated_product.id}",
@@ -387,7 +393,11 @@ async def test_update_product_modifies_product_in_database(
 
 @pytest.mark.parametrize(
     ("initial_status", "target_status"),
-    [("published", "draft"), ("deprecated", "draft"), ("deprecated", "published")],
+    [
+        (ProductStatus.PUBLISHED, ProductStatus.DRAFT),
+        (ProductStatus.DEPRECATED, ProductStatus.DRAFT),
+        (ProductStatus.DEPRECATED, ProductStatus.PUBLISHED),
+    ],
 )
 async def test_update_product_status_forbidden_transitions_fail(
     client: AsyncClient,
@@ -408,7 +418,7 @@ async def test_update_product_status_forbidden_transitions_fail(
         json={
             "monthly_fee_in_euros": str(product.monthly_fee_in_euros),
             "name": product.name,
-            "status": target_status,
+            "status": target_status.value,
         },
     )
 
@@ -416,7 +426,7 @@ async def test_update_product_status_forbidden_transitions_fail(
     assert response.json() == {
         "detail": (
             f"Product with ID {product.id} cannot change status from "
-            f"{initial_status} to {target_status}."
+            f"{initial_status.value} to {target_status.value}."
         )
     }
 
@@ -433,13 +443,13 @@ async def test_update_product_with_existing_name_fails(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("1.10"),
             name="Original Product",
-            status="draft",
+            status=ProductStatus.DRAFT,
         ),
         Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("1.20"),
             name="Existing Product",
-            status="draft",
+            status=ProductStatus.DRAFT,
         ),
     )
     await insert_products(session, *products)
@@ -449,7 +459,7 @@ async def test_update_product_with_existing_name_fails(
         json={
             "monthly_fee_in_euros": str(products[0].monthly_fee_in_euros),
             "name": products[1].name,
-            "status": products[0].status,
+            "status": products[0].status.value,
         },
     )
 
@@ -470,7 +480,7 @@ async def test_update_product_with_nonexistent_id_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("5.55"),
         name="Test Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
 
@@ -493,7 +503,7 @@ async def test_update_product_with_nonexistent_id_fails(
     assert products_in_database == (product,)
 
 
-@pytest.mark.parametrize("product_status", ["draft", "published", "deprecated"])
+@pytest.mark.parametrize("product_status", ProductStatus)
 async def test_update_product_without_changes_succeeds(
     client: AsyncClient,
     session: AsyncSession,

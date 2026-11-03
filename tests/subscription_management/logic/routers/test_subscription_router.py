@@ -38,7 +38,7 @@ async def test_create_subscription_adds_subscription_to_database(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     users = (
@@ -83,7 +83,10 @@ async def test_create_subscription_adds_subscription_to_database(
     )
 
 
-@pytest.mark.parametrize("product_status", ["draft", "deprecated"])
+@pytest.mark.parametrize(
+    "product_status",
+    [ProductStatus.DRAFT, ProductStatus.DEPRECATED],
+)
 async def test_create_subscription_for_non_published_product_fails(
     client: AsyncClient,
     session: AsyncSession,
@@ -112,7 +115,7 @@ async def test_create_subscription_for_non_published_product_fails(
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
-        "detail": f"Product with ID {product.id} is in {product_status} status."
+        "detail": f"Product with ID {product.id} is in {product_status.value} status."
     }
 
     subscriptions_in_database = await select_subscriptions(session)
@@ -127,7 +130,7 @@ async def test_create_subscription_with_existing_id_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     users = (
@@ -175,7 +178,7 @@ async def test_create_subscription_with_nonexistent_user_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="user@example.com")
@@ -243,7 +246,7 @@ async def test_delete_subscription_removes_subscription_from_database(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     users = (
@@ -290,7 +293,7 @@ async def test_delete_subscription_with_nonexistent_id_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="user@example.com")
@@ -328,13 +331,13 @@ async def test_read_subscriptions_returns_all_subscriptions(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("9.99"),
             name="Product 1",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
         Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("19.99"),
             name="Product 2",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
     )
     await insert_products(session, *products)
@@ -387,7 +390,7 @@ async def test_read_subscription_by_id_returns_subscription(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="user@example.com")
@@ -427,13 +430,13 @@ async def test_update_subscription_updates_subscription_in_database(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("9.99"),
             name="Product 1",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
         Product(
             id=uuid7(),
             monthly_fee_in_euros=Decimal("19.99"),
             name="Product 2",
-            status="published",
+            status=ProductStatus.PUBLISHED,
         ),
     )
     await insert_products(session, *products)
@@ -476,7 +479,10 @@ async def test_update_subscription_updates_subscription_in_database(
     )
 
 
-@pytest.mark.parametrize("product_status", ["draft", "deprecated"])
+@pytest.mark.parametrize(
+    "product_status",
+    [ProductStatus.DRAFT, ProductStatus.DEPRECATED],
+)
 async def test_update_subscription_to_non_published_product_fails(
     client: AsyncClient,
     session: AsyncSession,
@@ -486,7 +492,7 @@ async def test_update_subscription_to_non_published_product_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Published Product",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     non_published_product = Product(
         id=uuid7(),
@@ -519,7 +525,8 @@ async def test_update_subscription_to_non_published_product_fails(
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
         "detail": (
-            f"Product with ID {non_published_product.id} is in {product_status} status."
+            f"Product with ID {non_published_product.id} is in "
+            f"{product_status.value} status."
         )
     }
 
@@ -541,7 +548,7 @@ async def test_update_subscription_with_nonexistent_id_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="user@example.com")
@@ -586,7 +593,7 @@ async def test_update_subscription_with_nonexistent_user_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="user@example.com")
@@ -633,7 +640,7 @@ async def test_update_subscription_with_nonexistent_product_fails(
         id=uuid7(),
         monthly_fee_in_euros=Decimal("9.99"),
         name="Product 1",
-        status="published",
+        status=ProductStatus.PUBLISHED,
     )
     await insert_products(session, product)
     user = User(id=uuid7(), email="user@example.com")
