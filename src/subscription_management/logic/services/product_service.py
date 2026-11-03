@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, assert_never, final
+from typing import TYPE_CHECKING, Annotated, Literal, cast, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -74,27 +74,19 @@ class ProductService:
     def _ensure_that_payload_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[ProductPayloadNotUpdatableBecauseStatusError, None]:
+        if product_update.before.status == ProductStatus.DRAFT:
+            return "success", None
+
         payload_is_identical = product_update.before == dataclasses.replace(
             product_update.after, status=product_update.before.status
         )
-        match payload_is_identical, product_update.before.status:
-            case (
-                True,
-                ProductStatus.DRAFT
-                | ProductStatus.PUBLISHED
-                | ProductStatus.DEPRECATED,
-            ):
-                return "success", None
-            case False, ProductStatus.DRAFT:
-                return "success", None
-            case False, ProductStatus.PUBLISHED | ProductStatus.DEPRECATED:
-                error = ProductPayloadNotUpdatableBecauseStatusError(
-                    id=product_update.before.id,
-                    status=product_update.before.status,
-                )
-                return "failure", error
-            case _ as pair:  # pragma: no cover
-                assert_never(pair)  # pyright: ignore[reportUnreachable]
+        if payload_is_identical:
+            return "success", None
+
+        return "failure", ProductPayloadNotUpdatableBecauseStatusError(
+            id=product_update.before.id,
+            status=product_update.before.status,
+        )
 
     @staticmethod
     def _ensure_that_product_can_be_deleted(
@@ -103,44 +95,29 @@ class ProductService:
         ProductNotDeletableBecauseStatusError,
         None,
     ]:
-        match product.status:
-            case ProductStatus.DRAFT:
-                return "success", None
-            case ProductStatus.PUBLISHED | ProductStatus.DEPRECATED:
-                return "failure", ProductNotDeletableBecauseStatusError(
-                    id=product.id, status=product.status
-                )
-            case _:  # pragma: no cover
-                assert_never(product.status)  # pyright: ignore[reportUnreachable]
+        if product.status == ProductStatus.DRAFT:
+            return "success", None
+        return "failure", ProductNotDeletableBecauseStatusError(
+            id=product.id, status=product.status
+        )
 
     @staticmethod
     def _ensure_that_status_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[ProductStatusTransitionNotAllowedError, None]:
-        match product_update.before.status, product_update.after.status:
-            case ProductStatus.DRAFT, (
-                ProductStatus.DRAFT | ProductStatus.PUBLISHED | ProductStatus.DEPRECATED
-            ):
-                return "success", None
-            case (
-                (ProductStatus.PUBLISHED, ProductStatus.DRAFT)
-                | (ProductStatus.DEPRECATED, ProductStatus.DRAFT)
-                | (ProductStatus.DEPRECATED, ProductStatus.PUBLISHED)
-            ):
-                error = ProductStatusTransitionNotAllowedError(
-                    id=product_update.before.id,
-                    before=product_update.before.status,
-                    after=product_update.after.status,
-                )
-                return "failure", error
-            case ProductStatus.PUBLISHED, (
-                ProductStatus.PUBLISHED | ProductStatus.DEPRECATED
-            ):
-                return "success", None
-            case ProductStatus.DEPRECATED, ProductStatus.DEPRECATED:
-                return "success", None
-            case _ as pair:  # pragma: no cover
-                assert_never(pair)  # pyright: ignore[reportUnreachable]
+        if product_update.before.status > product_update.after.status:
+            return "failure", ProductStatusTransitionNotAllowedError(
+                id=product_update.before.id,
+                before=cast(
+                    "Literal[ProductStatus.PUBLISHED, ProductStatus.DEPRECATED]",
+                    product_update.before.status,
+                ),
+                after=cast(
+                    "Literal[ProductStatus.DRAFT, ProductStatus.PUBLISHED]",
+                    product_update.after.status,
+                ),
+            )
+        return "success", None
 
     def _ensure_that_update_is_allowed(
         self, new_product: Product
