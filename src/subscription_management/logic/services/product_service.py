@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, cast, final
+from typing import TYPE_CHECKING, Annotated, final
 
 from fastapi import Depends
 from trcks.oop import Wrapper
@@ -108,14 +108,8 @@ class ProductService:
         if product_update.before.status > product_update.after.status:
             return "failure", ProductStatusTransitionNotAllowedError(
                 id=product_update.before.id,
-                before=cast(
-                    "Literal[ProductStatus.PUBLISHED, ProductStatus.DEPRECATED]",
-                    product_update.before.status,
-                ),
-                after=cast(
-                    "Literal[ProductStatus.DRAFT, ProductStatus.PUBLISHED]",
-                    product_update.after.status,
-                ),
+                before=product_update.before.status,
+                after=product_update.after.status,
             )
         return "success", None
 

@@ -40,8 +40,8 @@ class ProductPayloadNotUpdatableBecauseStatusError(_ProductErrorWithId):
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class ProductStatusTransitionNotAllowedError(_ProductErrorWithId):
-    before: Literal[ProductStatus.PUBLISHED, ProductStatus.DEPRECATED]
-    after: Literal[ProductStatus.DRAFT, ProductStatus.PUBLISHED]
+    before: ProductStatus
+    after: ProductStatus
 
 
 @final
