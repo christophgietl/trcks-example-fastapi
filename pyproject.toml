@@ -101,6 +101,7 @@ ignore_imports = [
     "** -> decimal",
     "** -> enum",
     "** -> fastapi",
+    "** -> functools",
     "** -> pydantic",
     "** -> sqlalchemy",
     "** -> sqlite3",
