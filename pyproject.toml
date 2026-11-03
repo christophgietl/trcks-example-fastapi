@@ -27,7 +27,7 @@ dependencies = [
     "trcks==0.9.1",
 ]
 name = "subscription-management"
-requires-python = "==3.14.*"
+requires-python = "==3.15.*"
 version = "0.0.0"
 
 [tool.fastapi]
