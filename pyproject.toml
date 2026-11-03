@@ -10,7 +10,7 @@ dev = [
     "library-skills==0.0.19",
     "pre-commit==4.7.0",
     "pyright[nodejs]==1.1.414",
-    "pytest==9.1.1",
+    "pytest==9.2.0",
     "pytest-cov==7.1.0",
     "trcks[pyright]", # check project.dependencies for version
 ]
