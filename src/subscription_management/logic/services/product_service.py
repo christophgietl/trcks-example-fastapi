@@ -73,22 +73,19 @@ class ProductService:
     def _ensure_that_payload_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[ProductPayloadNotUpdatableBecauseStatusError, None]:
+        if product_update.before.status == "draft":
+            return "success", None
+
         payload_is_identical = product_update.before == dataclasses.replace(
             product_update.after, status=product_update.before.status
         )
-        match payload_is_identical, product_update.before.status:
-            case True, "draft" | "published" | "deprecated":
-                return "success", None
-            case False, "draft":
-                return "success", None
-            case False, "published" | "deprecated":
-                error = ProductPayloadNotUpdatableBecauseStatusError(
-                    id=product_update.before.id,
-                    status=product_update.before.status,
-                )
-                return "failure", error
-            case _ as pair:  # pragma: no cover
-                assert_never(pair)  # pyright: ignore[reportUnreachable]
+        if payload_is_identical:
+            return "success", None
+
+        return "failure", ProductPayloadNotUpdatableBecauseStatusError(
+            id=product_update.before.id,
+            status=product_update.before.status,
+        )
 
     @staticmethod
     def _ensure_that_product_can_be_deleted(
@@ -97,40 +94,31 @@ class ProductService:
         ProductNotDeletableBecauseStatusError,
         None,
     ]:
-        match product.status:
-            case "draft":
-                return "success", None
-            case "published" | "deprecated":
-                return "failure", ProductNotDeletableBecauseStatusError(
-                    id=product.id, status=product.status
-                )
-            case _:  # pragma: no cover
-                assert_never(product.status)  # pyright: ignore[reportUnreachable]
+        if product.status == "draft":
+            return "success", None
+        return "failure", ProductNotDeletableBecauseStatusError(
+            id=product.id, status=product.status
+        )
 
     @staticmethod
     def _ensure_that_status_update_is_allowed(
         product_update: _ProductUpdate,
     ) -> Result[ProductStatusTransitionNotAllowedError, None]:
         match product_update.before.status, product_update.after.status:
-            case "draft", "draft" | "published" | "deprecated":
-                return "success", None
             case (
-                ("published", "draft")
-                | ("deprecated", "draft")
-                | ("deprecated", "published")
+                ("draft", "draft" | "published" | "deprecated")
+                | ("published", "published" | "deprecated")
+                | ("deprecated", "deprecated")
             ):
-                error = ProductStatusTransitionNotAllowedError(
+                return "success", None
+            case ("published", "draft") | ("deprecated", "draft" | "published"):
+                return "failure", ProductStatusTransitionNotAllowedError(
                     id=product_update.before.id,
                     before=product_update.before.status,
                     after=product_update.after.status,
                 )
-                return "failure", error
-            case "published", "published" | "deprecated":
-                return "success", None
-            case "deprecated", "deprecated":
-                return "success", None
-            case _ as pair:  # pragma: no cover
-                assert_never(pair)  # pyright: ignore[reportUnreachable]
+            case _ as status_update:  # pragma: no cover
+                assert_never(status_update)  # pyright: ignore[reportUnreachable]
 
     def _ensure_that_update_is_allowed(
         self, new_product: Product
