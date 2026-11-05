@@ -1,70 +1,58 @@
-# AI coding agent instructions for `trcks-example-fastapi`
+# Coding agent instructions for `trcks-example-fastapi`
 
 ## Project requirements
 
-- `trcks-example-fastapi` is an example FastAPI application.
-  It follows FastAPI best practices.
-- `trcks-example-fastapi` demonstrates type-safe
-  railway-oriented programming (ROP) with `trcks`.
-  It returns domain errors instead of raising them.
+The repository `trcks-example-fastapi` contains an example application that
+follows FastAPI best practices and
+demonstrates type-safe railway-oriented programming (ROP) with `trcks`.
+It returns domain errors instead of raising them.
 
 ## Project decisions
 
-- The example domain _subscription management_ illustrates ROP in FastAPI.
+- The example application lives in the _subscription management_ domain.
 
 ## Architecture decisions
 
-### Application layers
+### Import contracts
 
-- `subscription_management` has three layers: `testing`, `logic`,
-  and `data_structures`.
-  - `testing` contains test helpers.
-  - `logic` contains business logic and data access, with five sublayers:
-    app entry point, routers, services, repositories, and database.
-  - `data_structures` contains data classes and models, with two sublayers:
-    ORM models and API schemas above domain classes.
+The section `tool.importlinter.contracts` in [pyproject.toml](pyproject.toml)
+must contain at least:
+
+- exhaustive `layers` contracts that restrict each layer
+  to importing only the layers below it
+- `protected` contracts that restrict which modules may import
+  specific modules, subpackages, or external packages
 
 ### Data structures
 
 - Collections of values are tuples (e.g. `tuple[SubscriptionWithProduct, ...]`).
-- Public domain models are frozen, immutable, and final data classes.
+- Domain models are frozen and immutable data classes.
+  If public, they are also final.
 - Domain errors are frozen dataclasses defined in a dedicated `*_error`
   module next to their entity (e.g. `ProductWithIdDoesNotExistError` in
   `subscription_management.data_structures.domain.product_error`).
-  Each error carries the relevant identifier (`id`, `email`, or `name`).
+  Each error carries at least the relevant identifier (e.g. `id`, `email`, or `name`).
 - ORM models use SQLAlchemy's declarative dataclass mapping style
   (i.e. `DeclarativeBase` combined with `MappedAsDataclass`).
 - ORM models and request schemas provide `to_*` methods
   that convert them to domain models.
-- Response schemas provide `from_*` methods (except for `HealthResponse`)
-  that convert domain models to response schemas.
+- Response schemas provide `from_*` methods (except for `HealthResponse`).
+  These methods convert domain models to response schemas.
 
 ### Logic
 
 - Repository classes handle all database operations.
-  They use SQLAlchemy's ORM-enabled delete, insert, select, and update methods
-  as well as `AsyncSession.get` (except for `DummyRepository`).
+  They use SQLAlchemy's ORM-enabled delete, insert, select, and update syntax
+  and `sqlalchemy.ext.asyncio.AsyncSession.get` (except for `DummyRepository`).
 - Service classes handle all business logic.
-- Public methods of repository and service classes take
+- Public repository and service methods take
   `str` values, `uuid.UUID` values, domain models, or no arguments.
   They return domain models wrapped in `trcks.AwaitableResult` or `trcks.AwaitableTuple`
-  (except for the `DummyRepository` and `DummyService`).
-- Routers await service methods. They handle awaited `trcks.Result` as follows:
-  - `trcks.Success` values are returned with
+  (except for `DummyRepository` and `DummyService`).
+- Routers await service methods and handle their output:
+  - They return `trcks.Success` payloads with
     an appropriate HTTP success status code.
-  - `trcks.Failure` payloads are mapped to an appropriate HTTP exception,
-    which is then raised.
-
-### Import contracts
-
-`tool.importlinter.contracts` in `pyproject.toml` must contain at least:
-
-- `layers` contracts that restrict each layer to importing only
-  the layers below it.
-- `protected` contracts that restrict which modules in the same layer or
-  a higher layer may import specific modules.
-- `protected` contracts that restrict which internal modules may import
-  specific external packages.
+  - They map `trcks.Failure` payloads to appropriate HTTP exceptions and raise them.
 
 ## Code style
 
@@ -74,7 +62,6 @@
 - Sort methods case-insensitively in alphabetical order within each class.
 - Place comments regarding implementation inside the respective function or class,
   not above it.
-- Quote type expressions in `typing.cast` calls (e.g. `cast("int", my_number)`).
 - Suppress `ruff` rule `TC001` when importing a `*Dep` type:
 
   ```python
@@ -98,7 +85,7 @@ comments, but not in code, paths, URLs, commands, or identifiers:
 - Prefer "or" over slashes to express alternatives
   (e.g. "success or failure" instead of "success/failure").
 - Prefer "or" over "and/or"
-  (e.g. "success or failure" instead of "success and/or failure").
+  (e.g. "a user or a product" instead of "a user and/or a product").
 
 ## Development tools
 
@@ -114,26 +101,29 @@ uv run pre-commit run --all-files ruff-check  # one hook
 uv run pyright
 # Run tests:
 uv run pytest
-# Enforce rules for the imports within and between Python packages:
+# Enforce import rules:
 uv run import-linter lint
-# Install the FastAPI library skill for coding agents:
+# Install a library skill:
 uv run library-skills install --skill fastapi --yes
 ```
 
 ## Testing strategy
 
-- Prefer integration tests. They must cover every router and endpoint,
-  asserting on HTTP responses and, where applicable, database side effects.
+- Prefer integration tests.
+- Cover every router and endpoint.
+- Assert on HTTP responses and, where applicable, database side effects.
 - Data-structure tests exercise ORM models directly
   (e.g. foreign key constraints and cascade deletes).
 - Test coverage must stay at 100% (`--cov-fail-under=100`).
 
 ## Documentation requirements
 
-- Keep `AGENTS.md`, `CONTRIBUTING.md`, and `README.md` up to date
-  when architecture, tooling, features, or implementation change.
 - Write documentation for experienced FastAPI developers.
 - Excite interest in ROP and convey its advantages.
-- Use the `create_subscription` flow as a running example in `README.md`.
-- Start every level 2 headline in `README.md` and `CONTRIBUTING.md` with a
-  Diátaxis prefix (i.e. `Tutorial:`, `How-to:`, `Reference:`, or `Explanation:`).
+- Use the `create_subscription` flow as a running example in [README.md](README.md).
+- Start every level 2 headline in [README.md](README.md) and
+  [CONTRIBUTING.md](CONTRIBUTING.md) with a Diátaxis prefix
+  (i.e. `Tutorial:`, `How-to:`, `Reference:`, or `Explanation:`).
+- Keep [this file](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), and
+  [README.md](README.md) up to date when architecture, tooling, features, or
+  implementation change.
