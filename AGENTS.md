@@ -34,10 +34,16 @@ must contain at least:
   Each error carries at least the relevant identifier (e.g. `id`, `email`, or `name`).
 - ORM models use SQLAlchemy's declarative dataclass mapping style
   (i.e. `DeclarativeBase` combined with `MappedAsDataclass`).
-- ORM models and request schemas provide `to_*` methods
-  that convert them to domain models.
-- Response schemas provide `from_*` methods (except for `HealthResponse`).
-  These methods convert domain models to response schemas.
+- ORM models provide `to_*` methods that convert them to domain models.
+- Request and response schemas are `TypedDict`s.
+- The `*_schemas` modules provide `to_*` functions that convert request
+  schemas to domain models. These functions end in `_from_post_request`
+  or `_from_put_request`, and the latter also take the `id_` parameter
+  from the URL path.
+- The `*_schemas` modules provide `from_*` functions that convert domain
+  models to response schemas. The `health_schemas` module provides
+  `create_health_response` because `HealthResponse` does not correspond
+  to a domain model.
 
 ### Logic
 

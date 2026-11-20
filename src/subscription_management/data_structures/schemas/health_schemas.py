@@ -1,13 +1,17 @@
-# pyright: reportUninitializedInstanceVariable=false
-# See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
 from datetime import UTC, datetime
-from typing import Literal, final
-
-from pydantic import BaseModel, Field
+from typing import Literal, TypedDict, final
 
 
 @final
-class HealthResponse(BaseModel, frozen=True):
-    service: Literal["trcks-example-fastapi"] = "trcks-example-fastapi"
-    status: Literal["healthy"] = "healthy"
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+class HealthResponse(TypedDict):
+    service: Literal["trcks-example-fastapi"]
+    status: Literal["healthy"]
+    timestamp: datetime
+
+
+def create_health_response() -> HealthResponse:
+    return {
+        "service": "trcks-example-fastapi",
+        "status": "healthy",
+        "timestamp": datetime.now(UTC),
+    }

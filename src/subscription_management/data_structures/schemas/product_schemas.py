@@ -1,10 +1,8 @@
-# pyright: reportUninitializedInstanceVariable=false
-# See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
 from decimal import Decimal
-from typing import Annotated, Self, final
+from typing import Annotated, TypedDict, final
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from subscription_management.data_structures.domain.product import (
     Product,
@@ -12,7 +10,7 @@ from subscription_management.data_structures.domain.product import (
 )
 
 
-class _ProductSchemaWithoutId(BaseModel, frozen=True):
+class _ProductSchemaWithoutId(TypedDict):
     monthly_fee_in_euros: Annotated[
         Decimal, Field(decimal_places=2, ge=Decimal("0.00"))
     ]
@@ -20,39 +18,51 @@ class _ProductSchemaWithoutId(BaseModel, frozen=True):
     status: ProductStatus
 
 
-class _ProductSchemaWithId(_ProductSchemaWithoutId, frozen=True):
+class _ProductSchemaWithId(_ProductSchemaWithoutId):
     id: UUID
 
 
 @final
-class PostProductRequest(_ProductSchemaWithId, frozen=True):
-    def to_product(self) -> Product:
-        return Product(
-            id=self.id,
-            monthly_fee_in_euros=self.monthly_fee_in_euros,
-            name=self.name,
-            status=self.status,
-        )
+class PostProductRequest(_ProductSchemaWithId):
+    pass
 
 
 @final
-class PutProductRequest(_ProductSchemaWithoutId, frozen=True):
-    def to_product(self, id_: UUID) -> Product:
-        return Product(
-            id=id_,
-            monthly_fee_in_euros=self.monthly_fee_in_euros,
-            name=self.name,
-            status=self.status,
-        )
+class PutProductRequest(_ProductSchemaWithoutId):
+    pass
 
 
 @final
-class ProductResponse(_ProductSchemaWithId, frozen=True):
-    @classmethod
-    def from_product(cls, product: Product) -> Self:
-        return cls(
-            id=product.id,
-            monthly_fee_in_euros=product.monthly_fee_in_euros,
-            name=product.name,
-            status=product.status,
-        )
+class ProductResponse(_ProductSchemaWithId):
+    pass
+
+
+def from_product(product: Product) -> ProductResponse:
+    return {
+        "id": product.id,
+        "monthly_fee_in_euros": product.monthly_fee_in_euros,
+        "name": product.name,
+        "status": product.status,
+    }
+
+
+def to_product_from_post_request(
+    post_product_request: PostProductRequest,
+) -> Product:
+    return Product(
+        id=post_product_request["id"],
+        monthly_fee_in_euros=post_product_request["monthly_fee_in_euros"],
+        name=post_product_request["name"],
+        status=post_product_request["status"],
+    )
+
+
+def to_product_from_put_request(
+    put_product_request: PutProductRequest, id_: UUID
+) -> Product:
+    return Product(
+        id=id_,
+        monthly_fee_in_euros=put_product_request["monthly_fee_in_euros"],
+        name=put_product_request["name"],
+        status=put_product_request["status"],
+    )

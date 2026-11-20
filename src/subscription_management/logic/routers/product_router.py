@@ -17,6 +17,9 @@ from subscription_management.data_structures.schemas.product_schemas import (
     PostProductRequest,
     ProductResponse,
     PutProductRequest,
+    from_product,
+    to_product_from_post_request,
+    to_product_from_put_request,
 )
 from subscription_management.logic.services.product_service import ProductServiceDep
 
@@ -40,9 +43,9 @@ async def create_product(
 ) -> ProductResponse:
     result = (
         await Wrapper(post_product_request)
-        .map(PostProductRequest.to_product)
+        .map(to_product_from_post_request)
         .map_to_awaitable_result(product_service.create_product)
-        .map_success(ProductResponse.from_product)
+        .map_success(from_product)
         .core
     )
     match result:
@@ -112,7 +115,7 @@ async def read_product_by_name(
     result = (
         await Wrapper(name)
         .map_to_awaitable_result(product_service.read_product_by_name)
-        .map_success(ProductResponse.from_product)
+        .map_success(from_product)
         .core
     )
     match result:
@@ -137,7 +140,7 @@ async def read_product_by_id(
     result = (
         await Wrapper(id_)
         .map_to_awaitable_result(product_service.read_product_by_id)
-        .map_success(ProductResponse.from_product)
+        .map_success(from_product)
         .core
     )
     match result:
@@ -157,9 +160,7 @@ async def read_products(
     product_service: ProductServiceDep,
 ) -> tuple[ProductResponse, ...]:
     return await (
-        AwaitableTupleWrapper(product_service.read_products())
-        .map(ProductResponse.from_product)
-        .core
+        AwaitableTupleWrapper(product_service.read_products()).map(from_product).core
     )
 
 
@@ -182,9 +183,9 @@ async def update_product(
 ) -> ProductResponse:
     result = (
         await Wrapper(id_)
-        .map(put_product_request.to_product)
+        .map(lambda id_: to_product_from_put_request(put_product_request, id_))
         .map_to_awaitable_result(product_service.update_product)
-        .map_success(ProductResponse.from_product)
+        .map_success(from_product)
         .core
     )
     match result:
