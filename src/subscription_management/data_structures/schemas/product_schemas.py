@@ -4,11 +4,15 @@ from decimal import Decimal
 from typing import Annotated, Self, final
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import MISSING, BaseModel, Field
 
+from subscription_management.data_structures.domain.do_not_update import (
+    DO_NOT_UPDATE,
+)
 from subscription_management.data_structures.domain.product import (
     Product,
     ProductStatus,
+    ProductUpdate,
 )
 
 
@@ -36,13 +40,23 @@ class PostProductRequest(_ProductSchemaWithId, frozen=True):
 
 
 @final
-class PutProductRequest(_ProductSchemaWithoutId, frozen=True):
-    def to_product(self, id_: UUID) -> Product:
-        return Product(
+class PutProductRequest(BaseModel, frozen=True):
+    monthly_fee_in_euros: Annotated[
+        Decimal | MISSING, Field(decimal_places=2, ge=Decimal("0.00"))
+    ] = MISSING
+    name: str | MISSING = MISSING
+    status: ProductStatus | MISSING = MISSING
+
+    def to_product_update(self, id_: UUID) -> ProductUpdate:
+        return ProductUpdate(
             id=id_,
-            monthly_fee_in_euros=self.monthly_fee_in_euros,
-            name=self.name,
-            status=self.status,
+            monthly_fee_in_euros=(
+                self.monthly_fee_in_euros
+                if self.monthly_fee_in_euros is not MISSING
+                else DO_NOT_UPDATE
+            ),
+            name=self.name if self.name is not MISSING else DO_NOT_UPDATE,
+            status=self.status if self.status is not MISSING else DO_NOT_UPDATE,
         )
 
 

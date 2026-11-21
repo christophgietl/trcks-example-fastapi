@@ -36,6 +36,13 @@ must contain at least:
   (i.e. `DeclarativeBase` combined with `MappedAsDataclass`).
 - ORM models and request schemas provide `to_*` methods
   that convert them to domain models.
+- Partial updates use update models whose attributes carry either the new value
+  or the `DO_NOT_UPDATE` sentinel from
+  `subscription_management.data_structures.domain.do_not_update`
+  (e.g. `ProductUpdate` in
+  `subscription_management.data_structures.domain.product`).
+  `Put*` request schemas mark omitted attributes with `pydantic.MISSING`
+  and map them to the `DO_NOT_UPDATE` sentinel in their `to_*` methods.
 - Response schemas provide `from_*` methods (except for `HealthResponse`).
   These methods convert domain models to response schemas.
 
@@ -45,6 +52,9 @@ must contain at least:
   They use SQLAlchemy's ORM-enabled delete, insert, select, and update syntax
   and `sqlalchemy.ext.asyncio.AsyncSession.get` (except for `DummyRepository`).
 - Service classes handle all business logic.
+- Services resolve `DO_NOT_UPDATE` sentinels:
+  They read the current entity, merge the update model into it,
+  and pass a merged domain model to the repository.
 - Public repository and service methods take
   `str` values, `uuid.UUID` values, domain models, or no arguments.
   They return domain models wrapped in `trcks.AwaitableResult` or `trcks.AwaitableTuple`

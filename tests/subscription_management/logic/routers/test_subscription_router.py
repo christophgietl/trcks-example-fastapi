@@ -1,3 +1,4 @@
+import dataclasses
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import uuid7
@@ -20,6 +21,7 @@ from subscription_management.testing.helpers import (
     insert_users,
     select_subscriptions,
     sorted_by_id,
+    to_product_update_request_json,
     to_subscription_creation_request_json,
     to_subscription_response_json,
     to_subscription_update_request_json,
@@ -418,6 +420,58 @@ async def test_read_subscription_by_id_returns_404_when_subscription_does_not_ex
     }
 
 
+async def test_update_subscription_partially_modifies_subscription_in_database(
+    client: AsyncClient,
+    session: AsyncSession,
+) -> None:
+    products = (
+        Product(
+            id=uuid7(),
+            monthly_fee_in_euros=Decimal("9.99"),
+            name="Product 1",
+            status="published",
+        ),
+        Product(
+            id=uuid7(),
+            monthly_fee_in_euros=Decimal("19.99"),
+            name="Product 2",
+            status="published",
+        ),
+    )
+    await insert_products(session, *products)
+    users = (
+        User(id=uuid7(), email="user1@example.com"),
+        User(id=uuid7(), email="user2@example.com"),
+    )
+    await insert_users(session, *users)
+    subscription = SubscriptionWithUserIdAndProductId(
+        id=uuid7(),
+        is_active=True,
+        user_id=users[0].id,
+        product_id=products[0].id,
+    )
+    await insert_subscriptions(session, subscription)
+
+    response = await client.put(
+        f"/subscriptions/{subscription.id}", json={"is_active": False}
+    )
+
+    updated_subscription = dataclasses.replace(subscription, is_active=False)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == to_subscription_response_json(
+        updated_subscription, products[0]
+    )
+
+    subscriptions_in_database = await select_subscriptions(session)
+    assert subscriptions_in_database == (
+        SubscriptionWithProduct(
+            id=subscription.id,
+            is_active=False,
+            product=products[0],
+        ),
+    )
+
+
 async def test_update_subscription_updates_subscription_in_database(
     client: AsyncClient,
     session: AsyncSession,
@@ -529,6 +583,87 @@ async def test_update_subscription_to_non_published_product_fails(
             id=subscription.id,
             is_active=subscription.is_active,
             product=published_product,
+        ),
+    )
+
+
+async def test_update_subscription_with_current_non_published_product_fails(
+    client: AsyncClient,
+    session: AsyncSession,
+) -> None:
+    product = Product(
+        id=uuid7(),
+        monthly_fee_in_euros=Decimal("9.99"),
+        name="Test Product",
+        status="published",
+    )
+    await insert_products(session, product)
+    user = User(id=uuid7(), email="user@example.com")
+    await insert_users(session, user)
+    subscription = SubscriptionWithUserIdAndProductId(
+        id=uuid7(),
+        is_active=True,
+        user_id=user.id,
+        product_id=product.id,
+    )
+    await insert_subscriptions(session, subscription)
+
+    deprecated_product = dataclasses.replace(product, status="deprecated")
+    response = await client.put(
+        f"/products/{product.id}",
+        json=to_product_update_request_json(deprecated_product),
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = await client.put(f"/subscriptions/{subscription.id}", json={})
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json() == {
+        "detail": f"Product with ID {product.id} is in deprecated status."
+    }
+
+    subscriptions_in_database = await select_subscriptions(session)
+    assert subscriptions_in_database == (
+        SubscriptionWithProduct(
+            id=subscription.id,
+            is_active=subscription.is_active,
+            product=deprecated_product,
+        ),
+    )
+
+
+async def test_update_subscription_with_empty_body_succeeds(
+    client: AsyncClient,
+    session: AsyncSession,
+) -> None:
+    product = Product(
+        id=uuid7(),
+        monthly_fee_in_euros=Decimal("9.99"),
+        name="Product 1",
+        status="published",
+    )
+    await insert_products(session, product)
+    user = User(id=uuid7(), email="user@example.com")
+    await insert_users(session, user)
+    subscription = SubscriptionWithUserIdAndProductId(
+        id=uuid7(),
+        is_active=True,
+        user_id=user.id,
+        product_id=product.id,
+    )
+    await insert_subscriptions(session, subscription)
+
+    response = await client.put(f"/subscriptions/{subscription.id}", json={})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == to_subscription_response_json(subscription, product)
+
+    subscriptions_in_database = await select_subscriptions(session)
+    assert subscriptions_in_database == (
+        SubscriptionWithProduct(
+            id=subscription.id,
+            is_active=subscription.is_active,
+            product=product,
         ),
     )
 

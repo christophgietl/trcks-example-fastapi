@@ -154,7 +154,7 @@ async def update_user(
 ) -> UserResponse:
     result = (
         await Wrapper(id_)
-        .map(put_user_request.to_user)
+        .map(put_user_request.to_user_update)
         .map_to_awaitable_result(user_service.update_user)
         .map_success(UserResponse.from_user_with_subscriptions_with_products)
         .core

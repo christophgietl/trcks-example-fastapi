@@ -18,6 +18,7 @@ from subscription_management.data_structures.domain.product import (
 )
 from subscription_management.data_structures.domain.subscription import (
     SubscriptionWithProduct,
+    SubscriptionWithUserIdAndProductId,
 )
 from subscription_management.data_structures.domain.user import (
     UserWithSubscriptionsWithProducts,
@@ -64,6 +65,16 @@ class SubscriptionModel(_BaseModel):
             id=self.id,
             is_active=self.is_active,
             product=self.product.to_product(),
+        )
+
+    def to_subscription_with_user_id_and_product_id(
+        self,
+    ) -> SubscriptionWithUserIdAndProductId:
+        return SubscriptionWithUserIdAndProductId(
+            id=self.id,
+            is_active=self.is_active,
+            user_id=self.user_id,
+            product_id=self.product_id,
         )
 
 

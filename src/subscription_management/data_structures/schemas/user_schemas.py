@@ -3,11 +3,15 @@
 from typing import Self, final
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import MISSING, BaseModel
 from trcks.oop import TupleWrapper
 
+from subscription_management.data_structures.domain.do_not_update import (
+    DO_NOT_UPDATE,
+)
 from subscription_management.data_structures.domain.user import (
     User,
+    UserUpdate,
     UserWithSubscriptionsWithProducts,
 )
 from subscription_management.data_structures.schemas.subscription_schemas import (
@@ -30,9 +34,14 @@ class PostUserRequest(_UserSchemaWithId, frozen=True):
 
 
 @final
-class PutUserRequest(_UserSchemaWithoutId, frozen=True):
-    def to_user(self, id_: UUID) -> User:
-        return User(id=id_, email=self.email)
+class PutUserRequest(BaseModel, frozen=True):
+    email: str | MISSING = MISSING
+
+    def to_user_update(self, id_: UUID) -> UserUpdate:
+        return UserUpdate(
+            id=id_,
+            email=self.email if self.email is not MISSING else DO_NOT_UPDATE,
+        )
 
 
 @final

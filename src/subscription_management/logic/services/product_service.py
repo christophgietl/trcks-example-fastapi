@@ -5,6 +5,10 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
+from subscription_management.data_structures.domain.do_not_update import (
+    DO_NOT_UPDATE,
+)
+from subscription_management.data_structures.domain.product import Product
 from subscription_management.data_structures.domain.product_error import (
     ProductNotDeletableBecauseStatusError,
     ProductPayloadNotUpdatableBecauseStatusError,
@@ -23,7 +27,7 @@ if TYPE_CHECKING:
 
     from trcks import AwaitableResult, AwaitableTuple, Result
 
-    from subscription_management.data_structures.domain.product import Product
+    from subscription_management.data_structures.domain.product import ProductUpdate
 
 type _DeleteProductError = (
     ProductNotDeletableBecauseStatusError | ProductWithIdDoesNotExistError
@@ -50,12 +54,12 @@ class ProductService:
     _product_repository: ProductRepositoryDep
 
     def _add_old_product(
-        self, new_product: Product
+        self, product_update: ProductUpdate
     ) -> AwaitableResult[ProductWithIdDoesNotExistError, _ProductUpdate]:
         return (
-            Wrapper(new_product.id)
+            Wrapper(product_update.id)
             .map_to_awaitable_result(self.read_product_by_id)
-            .map_success(_ProductUpdate, after=new_product)
+            .map_success(self._merge_product_update, product_update=product_update)
             .core
         )
 
@@ -120,16 +124,30 @@ class ProductService:
             case _ as status_update:  # pragma: no cover
                 assert_never(status_update)  # pyright: ignore[reportUnreachable]
 
-    def _ensure_that_update_is_allowed(
-        self, new_product: Product
-    ) -> AwaitableResult[_UpdateNotAllowedError, None]:
-        return (
-            Wrapper(new_product)
-            .map_to_awaitable_result(self._add_old_product)
-            .tap_success_to_result(self._ensure_that_status_update_is_allowed)
-            .tap_success_to_result(self._ensure_that_payload_update_is_allowed)
-            .map_success(lambda _: None)
-            .core
+    @staticmethod
+    def _merge_product_update(
+        before: Product, product_update: ProductUpdate
+    ) -> _ProductUpdate:
+        return _ProductUpdate(
+            before=before,
+            after=Product(
+                id=before.id,
+                monthly_fee_in_euros=(
+                    product_update.monthly_fee_in_euros
+                    if product_update.monthly_fee_in_euros is not DO_NOT_UPDATE
+                    else before.monthly_fee_in_euros
+                ),
+                name=(
+                    product_update.name
+                    if product_update.name is not DO_NOT_UPDATE
+                    else before.name
+                ),
+                status=(
+                    product_update.status
+                    if product_update.status is not DO_NOT_UPDATE
+                    else before.status
+                ),
+            ),
         )
 
     def create_product(
@@ -163,14 +181,17 @@ class ProductService:
         return self._product_repository.read_products()
 
     def update_product(
-        self, product: Product
+        self, product_update: ProductUpdate
     ) -> AwaitableResult[
         _UpdateNotAllowedError | ProductWithNameAlreadyExistsError,
         Product,
     ]:
         return (
-            Wrapper(product)
-            .tap_to_awaitable_result(self._ensure_that_update_is_allowed)
+            Wrapper(product_update)
+            .map_to_awaitable_result(self._add_old_product)
+            .tap_success_to_result(self._ensure_that_status_update_is_allowed)
+            .tap_success_to_result(self._ensure_that_payload_update_is_allowed)
+            .map_success(lambda merged_update: merged_update.after)
             .map_success_to_awaitable_result(self._product_repository.update_product)
             .core
         )

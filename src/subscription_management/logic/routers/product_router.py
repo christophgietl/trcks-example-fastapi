@@ -182,7 +182,7 @@ async def update_product(
 ) -> ProductResponse:
     result = (
         await Wrapper(id_)
-        .map(put_product_request.to_product)
+        .map(put_product_request.to_product_update)
         .map_to_awaitable_result(product_service.update_product)
         .map_success(ProductResponse.from_product)
         .core
