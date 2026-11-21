@@ -1,9 +1,6 @@
-# pyright: reportUninitializedInstanceVariable=false
-# See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
-from typing import Self, final
+from typing import TypedDict, final
 from uuid import UUID
 
-from pydantic import BaseModel
 from trcks.oop import TupleWrapper
 
 from subscription_management.data_structures.domain.user import (
@@ -12,40 +9,51 @@ from subscription_management.data_structures.domain.user import (
 )
 from subscription_management.data_structures.schemas.subscription_schemas import (
     SubscriptionResponse,
+    map_subscription_with_product_to_subscription_response,
 )
 
 
-class _UserSchemaWithoutId(BaseModel, frozen=True):
+class _UserSchemaWithoutId(TypedDict):
     email: str
 
 
-class _UserSchemaWithId(_UserSchemaWithoutId, frozen=True):
+class _UserSchemaWithId(_UserSchemaWithoutId):
     id: UUID
 
 
 @final
-class PostUserRequest(_UserSchemaWithId, frozen=True):
-    def to_user(self) -> User:
-        return User(id=self.id, email=self.email)
+class PostUserRequest(_UserSchemaWithId):
+    pass
 
 
 @final
-class PutUserRequest(_UserSchemaWithoutId, frozen=True):
-    def to_user(self, id_: UUID) -> User:
-        return User(id=id_, email=self.email)
+class PutUserRequest(_UserSchemaWithoutId):
+    pass
 
 
 @final
-class UserResponse(_UserSchemaWithId, frozen=True):
+class UserResponse(_UserSchemaWithId):
     subscriptions: tuple[SubscriptionResponse, ...]
 
-    @classmethod
-    def from_user_with_subscriptions_with_products(
-        cls, user: UserWithSubscriptionsWithProducts
-    ) -> Self:
-        subscriptions = (
-            TupleWrapper(user.subscriptions_with_products)
-            .map(SubscriptionResponse.from_subscription_with_product)
-            .core
-        )
-        return cls(id=user.id, email=user.email, subscriptions=subscriptions)
+
+def map_post_user_request_to_user(request: PostUserRequest) -> User:
+    return User(**request)
+
+
+def map_put_user_request_to_user(id_: UUID, request: PutUserRequest) -> User:
+    return User(id=id_, **request)
+
+
+def map_user_with_subscriptions_with_products_to_user_response(
+    user: UserWithSubscriptionsWithProducts,
+) -> UserResponse:
+    subscriptions = (
+        TupleWrapper(user.subscriptions_with_products)
+        .map(map_subscription_with_product_to_subscription_response)
+        .core
+    )
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        subscriptions=subscriptions,
+    )

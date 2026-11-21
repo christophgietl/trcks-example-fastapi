@@ -17,6 +17,9 @@ from subscription_management.data_structures.schemas.product_schemas import (
     PostProductRequest,
     ProductResponse,
     PutProductRequest,
+    map_post_product_request_to_product,
+    map_product_to_product_response,
+    map_put_product_request_to_product,
 )
 from subscription_management.logic.services.product_service import ProductServiceDep
 
@@ -40,9 +43,9 @@ async def create_product(
 ) -> ProductResponse:
     result = (
         await Wrapper(post_product_request)
-        .map(PostProductRequest.to_product)
+        .map(map_post_product_request_to_product)
         .map_to_awaitable_result(product_service.create_product)
-        .map_success(ProductResponse.from_product)
+        .map_success(map_product_to_product_response)
         .core
     )
     match result:
@@ -112,7 +115,7 @@ async def read_product_by_name(
     result = (
         await Wrapper(name)
         .map_to_awaitable_result(product_service.read_product_by_name)
-        .map_success(ProductResponse.from_product)
+        .map_success(map_product_to_product_response)
         .core
     )
     match result:
@@ -137,7 +140,7 @@ async def read_product_by_id(
     result = (
         await Wrapper(id_)
         .map_to_awaitable_result(product_service.read_product_by_id)
-        .map_success(ProductResponse.from_product)
+        .map_success(map_product_to_product_response)
         .core
     )
     match result:
@@ -158,7 +161,7 @@ async def read_products(
 ) -> tuple[ProductResponse, ...]:
     return await (
         AwaitableTupleWrapper(product_service.read_products())
-        .map(ProductResponse.from_product)
+        .map(map_product_to_product_response)
         .core
     )
 
@@ -182,9 +185,9 @@ async def update_product(
 ) -> ProductResponse:
     result = (
         await Wrapper(id_)
-        .map(put_product_request.to_product)
+        .map(map_put_product_request_to_product, put_product_request)
         .map_to_awaitable_result(product_service.update_product)
-        .map_success(ProductResponse.from_product)
+        .map_success(map_product_to_product_response)
         .core
     )
     match result:
