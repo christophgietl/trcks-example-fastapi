@@ -18,10 +18,15 @@ class _User:
     email: str | DO_NOT_UPDATE
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class _UserWithRequiredEmail(_User):
+    email: str
+
+
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class User(_User):
-    email: str
+class User(_UserWithRequiredEmail):
+    pass
 
 
 @final
@@ -32,6 +37,5 @@ class UserUpdate(_User):
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class UserWithSubscriptionsWithProducts(_User):
-    email: str
+class UserWithSubscriptionsWithProducts(_UserWithRequiredEmail):
     subscriptions_with_products: tuple[SubscriptionWithProduct, ...]

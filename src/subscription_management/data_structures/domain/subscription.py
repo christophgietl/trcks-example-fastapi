@@ -16,11 +16,16 @@ class _Subscription:
     is_active: bool | DO_NOT_UPDATE
 
 
-@final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class SubscriptionUpdate(_Subscription):
+class _SubscriptionWithUserIdAndProductId(_Subscription):
     user_id: UUID | DO_NOT_UPDATE
     product_id: UUID | DO_NOT_UPDATE
+
+
+@final
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class SubscriptionUpdate(_SubscriptionWithUserIdAndProductId):
+    pass
 
 
 @final
@@ -32,7 +37,7 @@ class SubscriptionWithProduct(_Subscription):
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class SubscriptionWithUserIdAndProductId(_Subscription):
+class SubscriptionWithUserIdAndProductId(_SubscriptionWithUserIdAndProductId):
     is_active: bool
     user_id: UUID
     product_id: UUID
