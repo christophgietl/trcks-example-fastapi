@@ -1,7 +1,7 @@
 # pyright: reportUninitializedInstanceVariable=false
 # See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
 from decimal import Decimal
-from typing import Annotated, Self, final
+from typing import Annotated, Final, Self, final
 from uuid import UUID
 
 from pydantic import MISSING, BaseModel, Field
@@ -15,11 +15,17 @@ from subscription_management.data_structures.domain.product import (
     ProductUpdate,
 )
 
+_FEE_IN_EUROS_FIELD: Final = Field(decimal_places=2, ge=Decimal("0.00"))
 
-class _ProductSchemaWithoutId(BaseModel, frozen=True):
-    monthly_fee_in_euros: Annotated[
-        Decimal, Field(decimal_places=2, ge=Decimal("0.00"))
-    ]
+
+class _PartialProductSchemaWithoutId(BaseModel, frozen=True):
+    monthly_fee_in_euros: Annotated[Decimal, _FEE_IN_EUROS_FIELD] | MISSING
+    name: str | MISSING
+    status: ProductStatus | MISSING
+
+
+class _ProductSchemaWithoutId(_PartialProductSchemaWithoutId, frozen=True):
+    monthly_fee_in_euros: Annotated[Decimal, _FEE_IN_EUROS_FIELD]
     name: str
     status: ProductStatus
 
@@ -40,10 +46,8 @@ class PostProductRequest(_ProductSchemaWithId, frozen=True):
 
 
 @final
-class PutProductRequest(BaseModel, frozen=True):
-    monthly_fee_in_euros: Annotated[
-        Decimal | MISSING, Field(decimal_places=2, ge=Decimal("0.00"))
-    ] = MISSING
+class PutProductRequest(_PartialProductSchemaWithoutId, frozen=True):
+    monthly_fee_in_euros: Annotated[Decimal, _FEE_IN_EUROS_FIELD] | MISSING = MISSING
     name: str | MISSING = MISSING
     status: ProductStatus | MISSING = MISSING
 
