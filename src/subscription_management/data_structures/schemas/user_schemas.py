@@ -19,7 +19,11 @@ from subscription_management.data_structures.schemas.subscription_schemas import
 )
 
 
-class _UserSchemaWithoutId(BaseModel, frozen=True):
+class _PartialUserSchemaWithoutId(BaseModel, frozen=True):
+    email: str | MISSING
+
+
+class _UserSchemaWithoutId(_PartialUserSchemaWithoutId, frozen=True):
     email: str
 
 
@@ -34,7 +38,7 @@ class PostUserRequest(_UserSchemaWithId, frozen=True):
 
 
 @final
-class PutUserRequest(BaseModel, frozen=True):
+class PutUserRequest(_PartialUserSchemaWithoutId, frozen=True):
     email: str | MISSING = MISSING
 
     def to_user_update(self, id_: UUID) -> UserUpdate:

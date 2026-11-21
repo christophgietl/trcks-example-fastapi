@@ -22,7 +22,11 @@ if TYPE_CHECKING:
     )
 
 
-class _SubscriptionSchemaWithoutId(BaseModel, frozen=True):
+class _PartialSubscriptionSchemaWithoutId(BaseModel, frozen=True):
+    is_active: bool | MISSING
+
+
+class _SubscriptionSchemaWithoutId(_PartialSubscriptionSchemaWithoutId, frozen=True):
     is_active: bool
 
 
@@ -47,7 +51,7 @@ class PostSubscriptionRequest(_SubscriptionSchemaWithId, frozen=True):
 
 
 @final
-class PutSubscriptionRequest(BaseModel, frozen=True):
+class PutSubscriptionRequest(_PartialSubscriptionSchemaWithoutId, frozen=True):
     is_active: bool | MISSING = MISSING
     user_id: UUID | MISSING = MISSING
     product_id: UUID | MISSING = MISSING
