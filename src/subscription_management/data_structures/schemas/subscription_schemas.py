@@ -1,18 +1,14 @@
-from typing import TYPE_CHECKING, TypedDict, final
+from typing import TypedDict, final
 from uuid import UUID
 
 from subscription_management.data_structures.domain.subscription import (
+    SubscriptionWithProduct,
     SubscriptionWithUserIdAndProductId,
 )
 from subscription_management.data_structures.schemas.product_schemas import (
     ProductResponse,
     map_product_to_product_response,
 )
-
-if TYPE_CHECKING:
-    from subscription_management.data_structures.domain.subscription import (
-        SubscriptionWithProduct,
-    )
 
 
 class _SubscriptionSchemaWithoutId(TypedDict):

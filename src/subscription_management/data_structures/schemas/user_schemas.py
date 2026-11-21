@@ -1,18 +1,16 @@
-from typing import TYPE_CHECKING, TypedDict, final
+from typing import TypedDict, final
 from uuid import UUID
 
 from trcks.oop import TupleWrapper
 
-from subscription_management.data_structures.domain.user import User
+from subscription_management.data_structures.domain.user import (
+    User,
+    UserWithSubscriptionsWithProducts,
+)
 from subscription_management.data_structures.schemas.subscription_schemas import (
     SubscriptionResponse,
     map_subscription_with_product_to_subscription_response,
 )
-
-if TYPE_CHECKING:
-    from subscription_management.data_structures.domain.user import (
-        UserWithSubscriptionsWithProducts,
-    )
 
 
 class _UserSchemaWithoutId(TypedDict):
