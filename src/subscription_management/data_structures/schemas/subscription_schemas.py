@@ -55,12 +55,10 @@ class PutSubscriptionRequest(BaseModel, frozen=True):
     def to_subscription_update(self, id_: UUID) -> SubscriptionUpdate:
         return SubscriptionUpdate(
             id=id_,
-            is_active=(
-                self.is_active if self.is_active is not MISSING else DO_NOT_UPDATE
-            ),
-            user_id=(self.user_id if self.user_id is not MISSING else DO_NOT_UPDATE),
+            is_active=(DO_NOT_UPDATE if self.is_active is MISSING else self.is_active),
+            user_id=(DO_NOT_UPDATE if self.user_id is MISSING else self.user_id),
             product_id=(
-                self.product_id if self.product_id is not MISSING else DO_NOT_UPDATE
+                DO_NOT_UPDATE if self.product_id is MISSING else self.product_id
             ),
         )
 

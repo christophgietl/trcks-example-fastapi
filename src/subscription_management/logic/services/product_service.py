@@ -133,19 +133,19 @@ class ProductService:
             after=Product(
                 id=before.id,
                 monthly_fee_in_euros=(
-                    product_update.monthly_fee_in_euros
-                    if product_update.monthly_fee_in_euros is not DO_NOT_UPDATE
-                    else before.monthly_fee_in_euros
+                    before.monthly_fee_in_euros
+                    if product_update.monthly_fee_in_euros is DO_NOT_UPDATE
+                    else product_update.monthly_fee_in_euros
                 ),
                 name=(
-                    product_update.name
-                    if product_update.name is not DO_NOT_UPDATE
-                    else before.name
+                    before.name
+                    if product_update.name is DO_NOT_UPDATE
+                    else product_update.name
                 ),
                 status=(
-                    product_update.status
-                    if product_update.status is not DO_NOT_UPDATE
-                    else before.status
+                    before.status
+                    if product_update.status is DO_NOT_UPDATE
+                    else product_update.status
                 ),
             ),
         )

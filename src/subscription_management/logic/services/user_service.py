@@ -54,9 +54,9 @@ class UserService:
         return User(
             id=before.id,
             email=(
-                user_update.email
-                if user_update.email is not DO_NOT_UPDATE
-                else before.email
+                before.email
+                if user_update.email is DO_NOT_UPDATE
+                else user_update.email
             ),
         )
 

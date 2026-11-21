@@ -51,12 +51,12 @@ class PutProductRequest(BaseModel, frozen=True):
         return ProductUpdate(
             id=id_,
             monthly_fee_in_euros=(
-                self.monthly_fee_in_euros
-                if self.monthly_fee_in_euros is not MISSING
-                else DO_NOT_UPDATE
+                DO_NOT_UPDATE
+                if self.monthly_fee_in_euros is MISSING
+                else self.monthly_fee_in_euros
             ),
-            name=self.name if self.name is not MISSING else DO_NOT_UPDATE,
-            status=self.status if self.status is not MISSING else DO_NOT_UPDATE,
+            name=DO_NOT_UPDATE if self.name is MISSING else self.name,
+            status=DO_NOT_UPDATE if self.status is MISSING else self.status,
         )
 
 

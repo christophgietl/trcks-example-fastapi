@@ -91,19 +91,19 @@ class SubscriptionService:
         return SubscriptionWithUserIdAndProductId(
             id=before.id,
             is_active=(
-                subscription_update.is_active
-                if subscription_update.is_active is not DO_NOT_UPDATE
-                else before.is_active
+                before.is_active
+                if subscription_update.is_active is DO_NOT_UPDATE
+                else subscription_update.is_active
             ),
             user_id=(
-                subscription_update.user_id
-                if subscription_update.user_id is not DO_NOT_UPDATE
-                else before.user_id
+                before.user_id
+                if subscription_update.user_id is DO_NOT_UPDATE
+                else subscription_update.user_id
             ),
             product_id=(
-                subscription_update.product_id
-                if subscription_update.product_id is not DO_NOT_UPDATE
-                else before.product_id
+                before.product_id
+                if subscription_update.product_id is DO_NOT_UPDATE
+                else subscription_update.product_id
             ),
         )
 

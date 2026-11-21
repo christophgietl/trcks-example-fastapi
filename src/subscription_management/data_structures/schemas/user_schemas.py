@@ -40,7 +40,7 @@ class PutUserRequest(BaseModel, frozen=True):
     def to_user_update(self, id_: UUID) -> UserUpdate:
         return UserUpdate(
             id=id_,
-            email=self.email if self.email is not MISSING else DO_NOT_UPDATE,
+            email=DO_NOT_UPDATE if self.email is MISSING else self.email,
         )
 
 
