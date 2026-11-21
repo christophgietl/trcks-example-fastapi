@@ -13,14 +13,12 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class _Subscription:
     id: UUID
-    is_active: bool
+    is_active: bool | DO_NOT_UPDATE
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class SubscriptionUpdate:
-    id: UUID
-    is_active: bool | DO_NOT_UPDATE
+class SubscriptionUpdate(_Subscription):
     user_id: UUID | DO_NOT_UPDATE
     product_id: UUID | DO_NOT_UPDATE
 
@@ -28,11 +26,13 @@ class SubscriptionUpdate:
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionWithProduct(_Subscription):
+    is_active: bool
     product: Product
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class SubscriptionWithUserIdAndProductId(_Subscription):
+    is_active: bool
     user_id: UUID
     product_id: UUID

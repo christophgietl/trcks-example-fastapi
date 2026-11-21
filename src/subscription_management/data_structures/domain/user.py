@@ -15,23 +15,23 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class _User:
     id: UUID
-    email: str
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class User(_User):
-    pass
-
-
-@final
-@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class UserUpdate:
-    id: UUID
     email: str | DO_NOT_UPDATE
 
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class User(_User):
+    email: str
+
+
+@final
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class UserUpdate(_User):
+    pass
+
+
+@final
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class UserWithSubscriptionsWithProducts(_User):
+    email: str
     subscriptions_with_products: tuple[SubscriptionWithProduct, ...]

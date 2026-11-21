@@ -12,10 +12,17 @@ if TYPE_CHECKING:
 type ProductStatus = Literal["draft", "published", "deprecated"]
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class _Product:
+    id: UUID
+    monthly_fee_in_euros: Decimal | DO_NOT_UPDATE
+    name: str | DO_NOT_UPDATE
+    status: ProductStatus | DO_NOT_UPDATE
+
+
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class Product:
-    id: UUID
+class Product(_Product):
     monthly_fee_in_euros: Decimal
     name: str
     status: ProductStatus
@@ -23,8 +30,5 @@ class Product:
 
 @final
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
-class ProductUpdate:
-    id: UUID
-    monthly_fee_in_euros: Decimal | DO_NOT_UPDATE
-    name: str | DO_NOT_UPDATE
-    status: ProductStatus | DO_NOT_UPDATE
+class ProductUpdate(_Product):
+    pass
