@@ -37,32 +37,20 @@ class ProductResponse(_ProductSchemaWithId):
     pass
 
 
-def from_product(product: Product) -> ProductResponse:
-    return {
-        "id": product.id,
-        "monthly_fee_in_euros": product.monthly_fee_in_euros,
-        "name": product.name,
-        "status": product.status,
-    }
+def map_post_product_request_to_product(request: PostProductRequest) -> Product:
+    return Product(**request)
 
 
-def to_product_from_post_request(
-    post_product_request: PostProductRequest,
-) -> Product:
-    return Product(
-        id=post_product_request["id"],
-        monthly_fee_in_euros=post_product_request["monthly_fee_in_euros"],
-        name=post_product_request["name"],
-        status=post_product_request["status"],
+def map_product_to_product_response(product: Product) -> ProductResponse:
+    return ProductResponse(
+        id=product.id,
+        monthly_fee_in_euros=product.monthly_fee_in_euros,
+        name=product.name,
+        status=product.status,
     )
 
 
-def to_product_from_put_request(
-    put_product_request: PutProductRequest, id_: UUID
+def map_put_product_request_to_product(
+    id_: UUID, request: PutProductRequest
 ) -> Product:
-    return Product(
-        id=id_,
-        monthly_fee_in_euros=put_product_request["monthly_fee_in_euros"],
-        name=put_product_request["name"],
-        status=put_product_request["status"],
-    )
+    return Product(id=id_, **request)

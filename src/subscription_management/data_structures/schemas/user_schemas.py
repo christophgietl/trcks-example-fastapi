@@ -6,7 +6,7 @@ from trcks.oop import TupleWrapper
 from subscription_management.data_structures.domain.user import User
 from subscription_management.data_structures.schemas.subscription_schemas import (
     SubscriptionResponse,
-    from_subscription_with_product,
+    map_subscription_with_product_to_subscription_response,
 )
 
 if TYPE_CHECKING:
@@ -38,20 +38,24 @@ class UserResponse(_UserSchemaWithId):
     subscriptions: tuple[SubscriptionResponse, ...]
 
 
-def from_user_with_subscriptions_with_products(
+def map_post_user_request_to_user(request: PostUserRequest) -> User:
+    return User(**request)
+
+
+def map_put_user_request_to_user(id_: UUID, request: PutUserRequest) -> User:
+    return User(id=id_, **request)
+
+
+def map_user_with_subscriptions_with_products_to_user_response(
     user: UserWithSubscriptionsWithProducts,
 ) -> UserResponse:
     subscriptions = (
         TupleWrapper(user.subscriptions_with_products)
-        .map(from_subscription_with_product)
+        .map(map_subscription_with_product_to_subscription_response)
         .core
     )
-    return {"id": user.id, "email": user.email, "subscriptions": subscriptions}
-
-
-def to_user_from_post_request(post_user_request: PostUserRequest) -> User:
-    return User(id=post_user_request["id"], email=post_user_request["email"])
-
-
-def to_user_from_put_request(put_user_request: PutUserRequest, id_: UUID) -> User:
-    return User(id=id_, email=put_user_request["email"])
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        subscriptions=subscriptions,
+    )

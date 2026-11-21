@@ -36,14 +36,14 @@ must contain at least:
   (i.e. `DeclarativeBase` combined with `MappedAsDataclass`).
 - ORM models provide `to_*` methods that convert them to domain models.
 - Request and response schemas are `TypedDict`s.
-- The `*_schemas` modules provide `to_*` functions that convert request
-  schemas to domain models. These functions end in `_from_post_request`
-  or `_from_put_request`, and the latter also take the `id_` parameter
-  from the URL path.
-- The `*_schemas` modules provide `from_*` functions that convert domain
-  models to response schemas. The `health_schemas` module provides
-  `create_health_response` because `HealthResponse` does not correspond
-  to a domain model.
+- The `*_schemas` modules provide `map_<source>_to_<target>` functions
+  that convert between request schemas, domain models, and response
+  schemas (e.g. `map_post_product_request_to_product`). The PUT request
+  conversion functions take the `id_` parameter from the URL path first,
+  so routers can pass the request schema as a trailing argument to
+  `Wrapper.map`.
+- The `health_schemas` module provides `create_health_response` because
+  `HealthResponse` does not correspond to a domain model.
 
 ### Logic
 

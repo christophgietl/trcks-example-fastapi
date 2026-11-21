@@ -6,7 +6,7 @@ from subscription_management.data_structures.domain.subscription import (
 )
 from subscription_management.data_structures.schemas.product_schemas import (
     ProductResponse,
-    from_product,
+    map_product_to_product_response,
 )
 
 if TYPE_CHECKING:
@@ -40,33 +40,23 @@ class SubscriptionResponse(_SubscriptionSchemaWithId):
     product: ProductResponse
 
 
-def from_subscription_with_product(
+def map_post_subscription_request_to_subscription_with_user_id_and_product_id(
+    request: PostSubscriptionRequest,
+) -> SubscriptionWithUserIdAndProductId:
+    return SubscriptionWithUserIdAndProductId(**request)
+
+
+def map_put_subscription_request_to_subscription_with_user_id_and_product_id(
+    id_: UUID, request: PutSubscriptionRequest
+) -> SubscriptionWithUserIdAndProductId:
+    return SubscriptionWithUserIdAndProductId(id=id_, **request)
+
+
+def map_subscription_with_product_to_subscription_response(
     subscription: SubscriptionWithProduct,
 ) -> SubscriptionResponse:
-    return {
-        "id": subscription.id,
-        "is_active": subscription.is_active,
-        "product": from_product(subscription.product),
-    }
-
-
-def to_subscription_with_user_id_and_product_id_from_post_request(
-    post_subscription_request: PostSubscriptionRequest,
-) -> SubscriptionWithUserIdAndProductId:
-    return SubscriptionWithUserIdAndProductId(
-        id=post_subscription_request["id"],
-        is_active=post_subscription_request["is_active"],
-        user_id=post_subscription_request["user_id"],
-        product_id=post_subscription_request["product_id"],
-    )
-
-
-def to_subscription_with_user_id_and_product_id_from_put_request(
-    put_subscription_request: PutSubscriptionRequest, id_: UUID
-) -> SubscriptionWithUserIdAndProductId:
-    return SubscriptionWithUserIdAndProductId(
-        id=id_,
-        is_active=put_subscription_request["is_active"],
-        user_id=put_subscription_request["user_id"],
-        product_id=put_subscription_request["product_id"],
+    return SubscriptionResponse(
+        id=subscription.id,
+        is_active=subscription.is_active,
+        product=map_product_to_product_response(subscription.product),
     )

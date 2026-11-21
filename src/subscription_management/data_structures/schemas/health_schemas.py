@@ -10,8 +10,8 @@ class HealthResponse(TypedDict):
 
 
 def create_health_response() -> HealthResponse:
-    return {
-        "service": "trcks-example-fastapi",
-        "status": "healthy",
-        "timestamp": datetime.now(UTC),
-    }
+    return HealthResponse(
+        service="trcks-example-fastapi",
+        status="healthy",
+        timestamp=datetime.now(UTC),
+    )
