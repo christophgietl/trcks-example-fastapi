@@ -122,7 +122,7 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.162.5"
+version = "0.163.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
@@ -133,23 +133,23 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4e/7b/ae546e10f153fcf9a6afd8b9fe4730bdfeb8fdcb93178d54122973ef3f4c/fastapi-0.162.5.tar.gz", hash = "sha256:1ca37f64f61c99cebd38636e67525fb721c5e8c1169f07f2a35d73b0a63265d4", size = 531785, upload-time = "2026-11-11T22:29:53.177Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/62/19000d0f3699cacaeffe8a3c4cc7046d87aac3291163ffeb2ef08b82d859/fastapi-0.163.1.tar.gz", hash = "sha256:3d364b02a68b67292e833ff2dfed3b8dc3aeadf73e271c15316c6c166668792f", size = 544796, upload-time = "2026-11-15T09:51:31.271Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/19/5b9abfa67a29b862e509911eef40f4901f78aa48de32ad1f939b5c2b165e/fastapi-0.162.5-py3-none-any.whl", hash = "sha256:5303c67415fde762889ca337db79d27b755b8bd09cef314fa7a4340bb30bfd2b", size = 151782, upload-time = "2026-11-11T22:29:51.47Z" },
+    { url = "https://files.pythonhosted.org/packages/20/b6/2424da1e40825d3fc54539621811f34e21472499677c9490e4967270e38e/fastapi-0.163.1-py3-none-any.whl", hash = "sha256:68f2d8050f5c3583121c0d203046cc7def5c16a7d6c43a0e7707a8ea610fe2d3", size = 154541, upload-time = "2026-11-15T09:51:29.726Z" },
 ]
 
 [[package]]
 name = "fastapi-cli"
-version = "0.0.33"
+version = "0.0.34"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "rich-toolkit" },
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/41/8c/d2fe2da44fe68a442bbfea5e6436e2de7829c0c2d419a7c314e2e91ae95f/fastapi_cli-0.0.33.tar.gz", hash = "sha256:94f19bcde4bd6ae26328292ac864082543262b7ee9f5d11bd7224614c22fb958", size = 26627, upload-time = "2026-11-11T09:18:05.981Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/5e/3a9e46c4cd730cfe564a86553772b00e5bcebf773da470941ea862ca0b2b/fastapi_cli-0.0.34.tar.gz", hash = "sha256:7eeb74cf83edd75d22a9289713db03d8a0be3ed7a8daa48a3703a12d4f2a4615", size = 26477, upload-time = "2026-11-13T16:44:56.651Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/07/7b9b4bccb46032067de7a4584aef096ee720dcc26ef56c4b09beb970d45c/fastapi_cli-0.0.33-py3-none-any.whl", hash = "sha256:699b95a4b0fc6d54152c9c0e3550f79ac66641717cfb0333c2fbb53ad291767e", size = 14646, upload-time = "2026-11-11T09:18:04.93Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/3a/55c60f574ee03db3b11a21ea42f4f784e36163c22b2800eebc725f23f028/fastapi_cli-0.0.34-py3-none-any.whl", hash = "sha256:4a1185b66308c7543e98957426a8ecd205d58853514cb9a68c78066f2e6e467b", size = 14472, upload-time = "2026-11-13T16:44:55.565Z" },
 ]
 
 [[package]]
@@ -337,16 +337,16 @@ wheels = [
 
 [[package]]
 name = "library-skills"
-version = "0.0.20"
+version = "0.0.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
     { name = "rich-toolkit" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/70/52/9679e8d3446e163f7a172c7c68d3d217678ce40594ca8029049d79f3344c/library_skills-0.0.20.tar.gz", hash = "sha256:6d5292db837ffd651a82552c59920f427ff1bbae7fe6b505a7f2c2fdaac04df5", size = 46110, upload-time = "2026-11-10T19:32:45.075Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/c3/5874a194e9591b77b316f1cf4068b5b34abcf2a09e8e40915e89e6346e20/library_skills-0.0.21.tar.gz", hash = "sha256:285b7d8b8f5d772478ac89ed6ca9fa45ca0ac695e2425a43df68930f47a59004", size = 45965, upload-time = "2026-11-13T16:37:48.696Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/72/02e8a6da6a4b14921df880657274e42b0fb8fb0bab2c765a0a3b172cd2c7/library_skills-0.0.20-py3-none-any.whl", hash = "sha256:c72c7498ab8d105af0c36c4a52fa978e5ccdc646d6f786f3eef358e84a8e42d3", size = 25039, upload-time = "2026-11-10T19:32:44.094Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/f9/9b614f03edbad5a0ba9357da612ebb9fd37a59844cb68e743f8681655f05/library_skills-0.0.21-py3-none-any.whl", hash = "sha256:c0a5b79afcfcb922e004e757bda25c88b04ad8945d826b9d939b474b7bf5fabe", size = 24901, upload-time = "2026-11-13T16:37:47.802Z" },
 ]
 
 [[package]]
@@ -703,8 +703,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", specifier = "==0.162.5" },
-    { name = "fastapi-cli", specifier = "==0.0.33" },
+    { name = "fastapi", specifier = "==0.163.1" },
+    { name = "fastapi-cli", specifier = "==0.0.34" },
     { name = "pydantic", specifier = "==2.14.3" },
     { name = "sqlalchemy", extras = ["aiosqlite"], specifier = "==2.1.8" },
     { name = "trcks", specifier = "==0.9.1" },
@@ -715,7 +715,7 @@ dev = [
     { name = "anyio", specifier = "==4.16.0" },
     { name = "httpx2", specifier = "==2.16.0" },
     { name = "import-linter", specifier = "==2.16" },
-    { name = "library-skills", specifier = "==0.0.20" },
+    { name = "library-skills", specifier = "==0.0.21" },
     { name = "pre-commit", specifier = "==4.7.0" },
     { name = "pyright", extras = ["nodejs"], specifier = "==1.1.414" },
     { name = "pytest", specifier = "==9.2.0" },
