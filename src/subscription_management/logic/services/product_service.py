@@ -8,7 +8,10 @@ from trcks.oop import Wrapper
 from subscription_management.data_structures.domain.do_not_update import (
     DO_NOT_UPDATE,
 )
-from subscription_management.data_structures.domain.product import Product
+from subscription_management.data_structures.domain.product import (
+    Product,
+    ProductUpdate,
+)
 from subscription_management.data_structures.domain.product_error import (
     ProductNotDeletableBecauseStatusError,
     ProductPayloadNotUpdatableBecauseStatusError,
@@ -27,25 +30,15 @@ if TYPE_CHECKING:
 
     from trcks import AwaitableResult, AwaitableTuple, Result
 
-    from subscription_management.data_structures.domain.product import ProductUpdate
-
 type _DeleteProductError = (
     ProductNotDeletableBecauseStatusError | ProductWithIdDoesNotExistError
 )
 type _UpdateNotAllowedError = (
     ProductPayloadNotUpdatableBecauseStatusError
     | ProductStatusTransitionNotAllowedError
-    | ProductWithIdDoesNotExistError
 )
 
 type ProductServiceDep = Annotated[ProductService, Depends()]
-
-
-@final
-@dataclass(frozen=True, slots=True)
-class _BeforeProductAndAfterProduct:
-    before: Product
-    after: Product
 
 
 @final
@@ -65,20 +58,19 @@ class ProductService:
 
     @staticmethod
     def _ensure_that_payload_update_is_allowed(
-        products: _BeforeProductAndAfterProduct,
+        before: Product, after: Product
     ) -> Result[ProductPayloadNotUpdatableBecauseStatusError, None]:
-        if products.before.status == "draft":
+        if before.status == "draft":
             return "success", None
 
-        payload_is_identical = products.before == dataclasses.replace(
-            products.after, status=products.before.status
+        payload_is_identical = before == dataclasses.replace(
+            after, status=before.status
         )
         if payload_is_identical:
             return "success", None
 
         return "failure", ProductPayloadNotUpdatableBecauseStatusError(
-            id=products.before.id,
-            status=products.before.status,
+            id=before.id, status=before.status
         )
 
     @staticmethod
@@ -96,9 +88,9 @@ class ProductService:
 
     @staticmethod
     def _ensure_that_status_update_is_allowed(
-        products: _BeforeProductAndAfterProduct,
+        before: Product, after: Product
     ) -> Result[ProductStatusTransitionNotAllowedError, None]:
-        match products.before.status, products.after.status:
+        match before.status, after.status:
             case (
                 ("draft", "draft" | "published" | "deprecated")
                 | ("published", "published" | "deprecated")
@@ -107,18 +99,16 @@ class ProductService:
                 return "success", None
             case ("published", "draft") | ("deprecated", "draft" | "published"):
                 return "failure", ProductStatusTransitionNotAllowedError(
-                    id=products.before.id,
-                    before=products.before.status,
-                    after=products.after.status,
+                    id=before.id,
+                    before=before.status,
+                    after=after.status,
                 )
             case _ as status_update:  # pragma: no cover
                 assert_never(status_update)  # pyright: ignore[reportUnreachable]
 
     @staticmethod
-    def _merge_with_update(
-        before: Product, update: ProductUpdate
-    ) -> _BeforeProductAndAfterProduct:
-        after = Product(
+    def _merge_with_update(before: Product, update: ProductUpdate) -> Product:
+        return Product(
             id=before.id,
             monthly_fee_in_euros=(
                 before.monthly_fee_in_euros
@@ -128,7 +118,22 @@ class ProductService:
             name=(before.name if update.name is DO_NOT_UPDATE else update.name),
             status=(before.status if update.status is DO_NOT_UPDATE else update.status),
         )
-        return _BeforeProductAndAfterProduct(before=before, after=after)
+
+    @classmethod
+    def _update_product(
+        cls, before: Product, update: ProductUpdate
+    ) -> Result[_UpdateNotAllowedError, Product]:
+        after = cls._merge_with_update(before, update)
+
+        status_result = cls._ensure_that_status_update_is_allowed(before, after)
+        if status_result[0] == "failure":
+            return status_result
+
+        payload_result = cls._ensure_that_payload_update_is_allowed(before, after)
+        if payload_result[0] == "failure":
+            return payload_result
+
+        return "success", after
 
     def create_product(
         self, product: Product
@@ -163,17 +168,15 @@ class ProductService:
     def update_product(
         self, update: ProductUpdate
     ) -> AwaitableResult[
-        _UpdateNotAllowedError | ProductWithNameAlreadyExistsError,
+        _UpdateNotAllowedError
+        | ProductWithIdDoesNotExistError
+        | ProductWithNameAlreadyExistsError,
         Product,
     ]:
         return (
             Wrapper(update.id)
-            .map_to_awaitable_result(self.read_product_by_id)
-            .map_success(self._merge_with_update, update=update)
-            .tap_success_to_result(self._ensure_that_status_update_is_allowed)
-            .tap_success_to_result(self._ensure_that_payload_update_is_allowed)
-            .map_success_to_awaitable_result(
-                lambda products: self._product_repository.update_product(products.after)
-            )
+            .map_to_awaitable_result(self._product_repository.read_product_by_id)
+            .map_success_to_result(self._update_product, update=update)
+            .map_success_to_awaitable_result(self._product_repository.update_product)
             .core
         )
