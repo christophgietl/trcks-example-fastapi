@@ -46,14 +46,17 @@ type ProductServiceDep = Annotated[ProductService, Depends()]
 class ProductService:
     _product_repository: ProductRepositoryDep
 
-    def _ensure_by_id_that_product_can_be_deleted(
-        self, id_: UUID
-    ) -> AwaitableResult[_DeleteProductError, None]:
-        return (
-            Wrapper(id_)
-            .map_to_awaitable_result(self.read_product_by_id)
-            .map_success_to_result(self._ensure_that_product_can_be_deleted)
-            .core
+    @staticmethod
+    def _delete_product(
+        product: Product,
+    ) -> Result[
+        ProductNotDeletableBecauseStatusError,
+        UUID,
+    ]:
+        if product.status == "draft":
+            return "success", product.id
+        return "failure", ProductNotDeletableBecauseStatusError(
+            id=product.id, status=product.status
         )
 
     @staticmethod
@@ -71,19 +74,6 @@ class ProductService:
 
         return "failure", ProductPayloadNotUpdatableBecauseStatusError(
             id=before.id, status=before.status
-        )
-
-    @staticmethod
-    def _ensure_that_product_can_be_deleted(
-        product: Product,
-    ) -> Result[
-        ProductNotDeletableBecauseStatusError,
-        None,
-    ]:
-        if product.status == "draft":
-            return "success", None
-        return "failure", ProductNotDeletableBecauseStatusError(
-            id=product.id, status=product.status
         )
 
     @staticmethod
@@ -147,7 +137,8 @@ class ProductService:
     ) -> AwaitableResult[_DeleteProductError, Product]:
         return (
             Wrapper(id_)
-            .tap_to_awaitable_result(self._ensure_by_id_that_product_can_be_deleted)
+            .map_to_awaitable_result(self._product_repository.read_product_by_id)
+            .map_success_to_result(self._delete_product)
             .map_success_to_awaitable_result(self._product_repository.delete_product)
             .core
         )
