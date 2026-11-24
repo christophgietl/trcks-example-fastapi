@@ -246,14 +246,16 @@ composes its steps as follows:
 ```python
 return (
     Wrapper(subscription)
-    .tap_to_awaitable_result(self._read_product_and_ensure_status_is_published)
+    .map_to_awaitable_result(self._read_product_and_ensure_status_is_published)
     .map_success_to_awaitable_result(self._subscription_repository.create_subscription)
     .core
 )
 ```
 
 The chain starts from the plain wrapped value.
-`tap_to_awaitable_result` runs a check without changing the carried value.
+`map_to_awaitable_result` runs the first asynchronous step.
+It reads the product and checks that its status is `published`,
+passing the subscription through on success.
 Every subsequent `*_success_*` step runs only on the success track.
 The `map_success_to_awaitable_result` method transforms the value on success.
 The first failure short-circuits the remaining steps.
