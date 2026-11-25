@@ -19,6 +19,9 @@ from subscription_management.data_structures.schemas.subscription_schemas import
     PostSubscriptionRequest,
     PutSubscriptionRequest,
     SubscriptionResponse,
+    map_post_subscription_request_to_subscription_with_user_id_and_product_id,
+    map_put_subscription_request_to_subscription_with_user_id_and_product_id,
+    map_subscription_with_product_to_subscription_response,
 )
 from subscription_management.logic.services.subscription_service import (
     SubscriptionServiceDep,
@@ -48,9 +51,9 @@ async def create_subscription(
 ) -> SubscriptionResponse:
     result = (
         await Wrapper(post_subscription_request)
-        .map(PostSubscriptionRequest.to_subscription_with_user_id_and_product_id)
+        .map(map_post_subscription_request_to_subscription_with_user_id_and_product_id)
         .map_to_awaitable_result(subscription_service.create_subscription)
-        .map_success(SubscriptionResponse.from_subscription_with_product)
+        .map_success(map_subscription_with_product_to_subscription_response)
         .core
     )
     match result:
@@ -114,7 +117,7 @@ async def read_subscription_by_id(
     result = (
         await Wrapper(id_)
         .map_to_awaitable_result(subscription_service.read_subscription_by_id)
-        .map_success(SubscriptionResponse.from_subscription_with_product)
+        .map_success(map_subscription_with_product_to_subscription_response)
         .core
     )
     match result:
@@ -135,7 +138,7 @@ async def read_subscriptions(
 ) -> tuple[SubscriptionResponse, ...]:
     return await (
         AwaitableTupleWrapper(subscription_service.read_subscriptions())
-        .map(SubscriptionResponse.from_subscription_with_product)
+        .map(map_subscription_with_product_to_subscription_response)
         .core
     )
 
@@ -158,9 +161,12 @@ async def update_subscription(
 ) -> SubscriptionResponse:
     result = (
         await Wrapper(id_)
-        .map(put_subscription_request.to_subscription_with_user_id_and_product_id)
+        .map(
+            map_put_subscription_request_to_subscription_with_user_id_and_product_id,
+            put_subscription_request,
+        )
         .map_to_awaitable_result(subscription_service.update_subscription)
-        .map_success(SubscriptionResponse.from_subscription_with_product)
+        .map_success(map_subscription_with_product_to_subscription_response)
         .core
     )
     match result:

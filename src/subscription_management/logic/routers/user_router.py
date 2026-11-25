@@ -14,6 +14,9 @@ from subscription_management.data_structures.schemas.user_schemas import (
     PostUserRequest,
     PutUserRequest,
     UserResponse,
+    map_post_user_request_to_user,
+    map_put_user_request_to_user,
+    map_user_with_subscriptions_with_products_to_user_response,
 )
 from subscription_management.logic.services.user_service import UserServiceDep
 
@@ -37,9 +40,9 @@ async def create_user(
 ) -> UserResponse:
     result = (
         await Wrapper(post_user_request)
-        .map(PostUserRequest.to_user)
+        .map(map_post_user_request_to_user)
         .map_to_awaitable_result(user_service.create_user)
-        .map_success(UserResponse.from_user_with_subscriptions_with_products)
+        .map_success(map_user_with_subscriptions_with_products_to_user_response)
         .core
     )
     match result:
@@ -88,7 +91,7 @@ async def read_user_by_email(email: str, user_service: UserServiceDep) -> UserRe
     result = (
         await Wrapper(email)
         .map_to_awaitable_result(user_service.read_user_by_email)
-        .map_success(UserResponse.from_user_with_subscriptions_with_products)
+        .map_success(map_user_with_subscriptions_with_products_to_user_response)
         .core
     )
     match result:
@@ -112,7 +115,7 @@ async def read_user_by_id(id_: UUID, user_service: UserServiceDep) -> UserRespon
     result = (
         await Wrapper(id_)
         .map_to_awaitable_result(user_service.read_user_by_id)
-        .map_success(UserResponse.from_user_with_subscriptions_with_products)
+        .map_success(map_user_with_subscriptions_with_products_to_user_response)
         .core
     )
     match result:
@@ -131,7 +134,7 @@ async def read_user_by_id(id_: UUID, user_service: UserServiceDep) -> UserRespon
 async def read_users(user_service: UserServiceDep) -> tuple[UserResponse, ...]:
     return await (
         AwaitableTupleWrapper(user_service.read_users())
-        .map(UserResponse.from_user_with_subscriptions_with_products)
+        .map(map_user_with_subscriptions_with_products_to_user_response)
         .core
     )
 
@@ -154,9 +157,9 @@ async def update_user(
 ) -> UserResponse:
     result = (
         await Wrapper(id_)
-        .map(put_user_request.to_user)
+        .map(map_put_user_request_to_user, put_user_request)
         .map_to_awaitable_result(user_service.update_user)
-        .map_success(UserResponse.from_user_with_subscriptions_with_products)
+        .map_success(map_user_with_subscriptions_with_products_to_user_response)
         .core
     )
     match result:

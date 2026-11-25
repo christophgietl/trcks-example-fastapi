@@ -233,7 +233,7 @@ select = ["ALL"]
 
 [tool.ruff.lint.flake8-type-checking]
 runtime-evaluated-base-classes = [
-    "pydantic.BaseModel",
+    "typing.TypedDict",
     "sqlalchemy.orm.DeclarativeBase",
 ]
 runtime-evaluated-decorators = [

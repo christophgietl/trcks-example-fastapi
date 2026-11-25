@@ -1,73 +1,58 @@
-# pyright: reportUninitializedInstanceVariable=false
-# See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
-from typing import TYPE_CHECKING, Self, final
+from typing import TypedDict, final
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from subscription_management.data_structures.domain.subscription import (
+    SubscriptionWithProduct,
     SubscriptionWithUserIdAndProductId,
 )
 from subscription_management.data_structures.schemas.product_schemas import (
     ProductResponse,
+    map_product_to_product_response,
 )
 
-if TYPE_CHECKING:
-    from subscription_management.data_structures.domain.subscription import (
-        SubscriptionWithProduct,
-    )
 
-
-class _SubscriptionSchemaWithoutId(BaseModel, frozen=True):
+class _SubscriptionSchemaWithoutId(TypedDict):
     is_active: bool
 
 
-class _SubscriptionSchemaWithId(_SubscriptionSchemaWithoutId, frozen=True):
+class _SubscriptionSchemaWithId(_SubscriptionSchemaWithoutId):
     id: UUID
 
 
 @final
-class PostSubscriptionRequest(_SubscriptionSchemaWithId, frozen=True):
+class PostSubscriptionRequest(_SubscriptionSchemaWithId):
     user_id: UUID
     product_id: UUID
 
-    def to_subscription_with_user_id_and_product_id(
-        self,
-    ) -> SubscriptionWithUserIdAndProductId:
-        return SubscriptionWithUserIdAndProductId(
-            id=self.id,
-            is_active=self.is_active,
-            user_id=self.user_id,
-            product_id=self.product_id,
-        )
-
 
 @final
-class PutSubscriptionRequest(_SubscriptionSchemaWithoutId, frozen=True):
+class PutSubscriptionRequest(_SubscriptionSchemaWithoutId):
     user_id: UUID
     product_id: UUID
 
-    def to_subscription_with_user_id_and_product_id(
-        self, id_: UUID
-    ) -> SubscriptionWithUserIdAndProductId:
-        return SubscriptionWithUserIdAndProductId(
-            id=id_,
-            is_active=self.is_active,
-            user_id=self.user_id,
-            product_id=self.product_id,
-        )
-
 
 @final
-class SubscriptionResponse(_SubscriptionSchemaWithId, frozen=True):
+class SubscriptionResponse(_SubscriptionSchemaWithId):
     product: ProductResponse
 
-    @classmethod
-    def from_subscription_with_product(
-        cls, subscription: SubscriptionWithProduct
-    ) -> Self:
-        return cls(
-            id=subscription.id,
-            is_active=subscription.is_active,
-            product=ProductResponse.from_product(subscription.product),
-        )
+
+def map_post_subscription_request_to_subscription_with_user_id_and_product_id(
+    request: PostSubscriptionRequest,
+) -> SubscriptionWithUserIdAndProductId:
+    return SubscriptionWithUserIdAndProductId(**request)
+
+
+def map_put_subscription_request_to_subscription_with_user_id_and_product_id(
+    id_: UUID, request: PutSubscriptionRequest
+) -> SubscriptionWithUserIdAndProductId:
+    return SubscriptionWithUserIdAndProductId(id=id_, **request)
+
+
+def map_subscription_with_product_to_subscription_response(
+    subscription: SubscriptionWithProduct,
+) -> SubscriptionResponse:
+    return SubscriptionResponse(
+        id=subscription.id,
+        is_active=subscription.is_active,
+        product=map_product_to_product_response(subscription.product),
+    )
