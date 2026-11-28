@@ -385,6 +385,56 @@ async def test_update_product_modifies_product_in_database(
     assert frozenset(products_in_database) == frozenset((updated_product, products[1]))
 
 
+async def test_update_product_partially_modifies_product_in_database(
+    client: AsyncClient,
+    session: AsyncSession,
+) -> None:
+    product = Product(
+        id=uuid7(),
+        monthly_fee_in_euros=Decimal("4.50"),
+        name="Original Product",
+        status="draft",
+    )
+    await insert_products(session, product)
+
+    response = await client.put(
+        f"/products/{product.id}",
+        json={"name": "Updated Product"},
+    )
+
+    updated_product = dataclasses.replace(product, name="Updated Product")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == to_product_response_json(updated_product)
+
+    products_in_database = await select_products(session)
+    assert products_in_database == (updated_product,)
+
+
+async def test_update_product_partially_updates_status_of_published_product(
+    client: AsyncClient,
+    session: AsyncSession,
+) -> None:
+    product = Product(
+        id=uuid7(),
+        monthly_fee_in_euros=Decimal("4.50"),
+        name="Test Product",
+        status="published",
+    )
+    await insert_products(session, product)
+
+    response = await client.put(
+        f"/products/{product.id}",
+        json={"status": "deprecated"},
+    )
+
+    updated_product = dataclasses.replace(product, status="deprecated")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == to_product_response_json(updated_product)
+
+    products_in_database = await select_products(session)
+    assert products_in_database == (updated_product,)
+
+
 @pytest.mark.parametrize(
     ("initial_status", "target_status"),
     [("published", "draft"), ("deprecated", "draft"), ("deprecated", "published")],
@@ -419,6 +469,27 @@ async def test_update_product_status_forbidden_transitions_fail(
             f"{initial_status} to {target_status}."
         )
     }
+
+    products_in_database = await select_products(session)
+    assert products_in_database == (product,)
+
+
+async def test_update_product_with_empty_body_succeeds(
+    client: AsyncClient,
+    session: AsyncSession,
+) -> None:
+    product = Product(
+        id=uuid7(),
+        monthly_fee_in_euros=Decimal("7.77"),
+        name="Test Product",
+        status="published",
+    )
+    await insert_products(session, product)
+
+    response = await client.put(f"/products/{product.id}", json={})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == to_product_response_json(product)
 
     products_in_database = await select_products(session)
     assert products_in_database == (product,)

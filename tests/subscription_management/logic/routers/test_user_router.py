@@ -426,6 +426,28 @@ async def test_update_user_modifies_user_in_database(
     )
 
 
+async def test_update_user_with_empty_body_succeeds(
+    client: AsyncClient,
+    session: AsyncSession,
+) -> None:
+    user = User(id=uuid7(), email="spam@foo.org")
+    await insert_users(session, user)
+
+    response = await client.put(f"/users/{user.id}", json={})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == to_user_response_json(user)
+
+    users_in_database = await select_users(session)
+    assert users_in_database == (
+        UserWithSubscriptionsWithProducts(
+            id=user.id,
+            email=user.email,
+            subscriptions_with_products=(),
+        ),
+    )
+
+
 async def test_update_user_with_nonexistent_id_fails(
     client: AsyncClient,
     session: AsyncSession,

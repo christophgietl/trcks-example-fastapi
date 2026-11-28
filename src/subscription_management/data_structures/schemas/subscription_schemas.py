@@ -3,9 +3,13 @@
 from typing import TYPE_CHECKING, Self, final
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import MISSING, BaseModel
 
+from subscription_management.data_structures.domain.do_not_update import (
+    DO_NOT_UPDATE,
+)
 from subscription_management.data_structures.domain.subscription import (
+    SubscriptionUpdate,
     SubscriptionWithUserIdAndProductId,
 )
 from subscription_management.data_structures.schemas.product_schemas import (
@@ -18,7 +22,11 @@ if TYPE_CHECKING:
     )
 
 
-class _SubscriptionSchemaWithoutId(BaseModel, frozen=True):
+class _PartialSubscriptionSchemaWithoutId(BaseModel, frozen=True):
+    is_active: bool | MISSING
+
+
+class _SubscriptionSchemaWithoutId(_PartialSubscriptionSchemaWithoutId, frozen=True):
     is_active: bool
 
 
@@ -43,18 +51,19 @@ class PostSubscriptionRequest(_SubscriptionSchemaWithId, frozen=True):
 
 
 @final
-class PutSubscriptionRequest(_SubscriptionSchemaWithoutId, frozen=True):
-    user_id: UUID
-    product_id: UUID
+class PutSubscriptionRequest(_PartialSubscriptionSchemaWithoutId, frozen=True):
+    is_active: bool | MISSING = MISSING
+    user_id: UUID | MISSING = MISSING
+    product_id: UUID | MISSING = MISSING
 
-    def to_subscription_with_user_id_and_product_id(
-        self, id_: UUID
-    ) -> SubscriptionWithUserIdAndProductId:
-        return SubscriptionWithUserIdAndProductId(
+    def to_subscription_update(self, id_: UUID) -> SubscriptionUpdate:
+        return SubscriptionUpdate(
             id=id_,
-            is_active=self.is_active,
-            user_id=self.user_id,
-            product_id=self.product_id,
+            is_active=(DO_NOT_UPDATE if self.is_active is MISSING else self.is_active),
+            user_id=(DO_NOT_UPDATE if self.user_id is MISSING else self.user_id),
+            product_id=(
+                DO_NOT_UPDATE if self.product_id is MISSING else self.product_id
+            ),
         )
 
 

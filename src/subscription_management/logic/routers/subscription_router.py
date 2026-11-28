@@ -158,7 +158,7 @@ async def update_subscription(
 ) -> SubscriptionResponse:
     result = (
         await Wrapper(id_)
-        .map(put_subscription_request.to_subscription_with_user_id_and_product_id)
+        .map(put_subscription_request.to_subscription_update)
         .map_to_awaitable_result(subscription_service.update_subscription)
         .map_success(SubscriptionResponse.from_subscription_with_product)
         .core

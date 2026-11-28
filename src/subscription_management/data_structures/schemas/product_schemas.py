@@ -1,21 +1,31 @@
 # pyright: reportUninitializedInstanceVariable=false
 # See https://github.com/pydantic/pydantic/issues/10377#issuecomment-2342806423
 from decimal import Decimal
-from typing import Annotated, Self, final
+from typing import Annotated, Final, Self, final
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import MISSING, BaseModel, Field
 
+from subscription_management.data_structures.domain.do_not_update import (
+    DO_NOT_UPDATE,
+)
 from subscription_management.data_structures.domain.product import (
     Product,
     ProductStatus,
+    ProductUpdate,
 )
 
+_FEE_IN_EUROS_FIELD: Final = Field(decimal_places=2, ge=Decimal("0.00"))
 
-class _ProductSchemaWithoutId(BaseModel, frozen=True):
-    monthly_fee_in_euros: Annotated[
-        Decimal, Field(decimal_places=2, ge=Decimal("0.00"))
-    ]
+
+class _PartialProductSchemaWithoutId(BaseModel, frozen=True):
+    monthly_fee_in_euros: Annotated[Decimal, _FEE_IN_EUROS_FIELD] | MISSING
+    name: str | MISSING
+    status: ProductStatus | MISSING
+
+
+class _ProductSchemaWithoutId(_PartialProductSchemaWithoutId, frozen=True):
+    monthly_fee_in_euros: Annotated[Decimal, _FEE_IN_EUROS_FIELD]
     name: str
     status: ProductStatus
 
@@ -36,13 +46,21 @@ class PostProductRequest(_ProductSchemaWithId, frozen=True):
 
 
 @final
-class PutProductRequest(_ProductSchemaWithoutId, frozen=True):
-    def to_product(self, id_: UUID) -> Product:
-        return Product(
+class PutProductRequest(_PartialProductSchemaWithoutId, frozen=True):
+    monthly_fee_in_euros: Annotated[Decimal, _FEE_IN_EUROS_FIELD] | MISSING = MISSING
+    name: str | MISSING = MISSING
+    status: ProductStatus | MISSING = MISSING
+
+    def to_product_update(self, id_: UUID) -> ProductUpdate:
+        return ProductUpdate(
             id=id_,
-            monthly_fee_in_euros=self.monthly_fee_in_euros,
-            name=self.name,
-            status=self.status,
+            monthly_fee_in_euros=(
+                DO_NOT_UPDATE
+                if self.monthly_fee_in_euros is MISSING
+                else self.monthly_fee_in_euros
+            ),
+            name=DO_NOT_UPDATE if self.name is MISSING else self.name,
+            status=DO_NOT_UPDATE if self.status is MISSING else self.status,
         )
 
 

@@ -4,9 +4,15 @@ from typing import TYPE_CHECKING, Annotated, assert_never, final
 from fastapi import Depends
 from trcks.oop import Wrapper
 
+from subscription_management.data_structures.domain.do_not_update import (
+    DO_NOT_UPDATE,
+)
 from subscription_management.data_structures.domain.product_error import (
     ProductNotSubscribableBecauseStatusError,
     ProductWithIdDoesNotExistError,
+)
+from subscription_management.data_structures.domain.subscription import (
+    SubscriptionWithUserIdAndProductId,
 )
 from subscription_management.logic.repositories.product_repository import (
     ProductRepositoryDep,  # noqa: TC001
@@ -22,8 +28,8 @@ if TYPE_CHECKING:
 
     from subscription_management.data_structures.domain.product import Product
     from subscription_management.data_structures.domain.subscription import (
+        SubscriptionUpdate,
         SubscriptionWithProduct,
-        SubscriptionWithUserIdAndProductId,
     )
     from subscription_management.data_structures.domain.subscription_error import (
         SubscriptionWithIdAlreadyExistsError,
@@ -48,25 +54,54 @@ class SubscriptionService:
 
     @staticmethod
     def _ensure_product_status_is_published(
-        product: Product,
-    ) -> Result[ProductNotSubscribableBecauseStatusError, None]:
+        product: Product, subscription: SubscriptionWithUserIdAndProductId
+    ) -> Result[
+        ProductNotSubscribableBecauseStatusError,
+        SubscriptionWithUserIdAndProductId,
+    ]:
         match product.status:
             case "draft" | "deprecated":
                 return "failure", ProductNotSubscribableBecauseStatusError(
                     id=product.id, status=product.status
                 )
             case "published":
-                return "success", None
+                return "success", subscription
             case _:  # pragma: no cover
                 assert_never(product.status)  # pyright: ignore[reportUnreachable]
 
+    @staticmethod
+    def _merge_with_update(
+        before: SubscriptionWithUserIdAndProductId, update: SubscriptionUpdate
+    ) -> SubscriptionWithUserIdAndProductId:
+        return SubscriptionWithUserIdAndProductId(
+            id=before.id,
+            is_active=(
+                before.is_active
+                if update.is_active is DO_NOT_UPDATE
+                else update.is_active
+            ),
+            user_id=(
+                before.user_id if update.user_id is DO_NOT_UPDATE else update.user_id
+            ),
+            product_id=(
+                before.product_id
+                if update.product_id is DO_NOT_UPDATE
+                else update.product_id
+            ),
+        )
+
     def _read_product_and_ensure_status_is_published(
         self, subscription: SubscriptionWithUserIdAndProductId
-    ) -> AwaitableResult[_ProductNotSubscribableError, None]:
+    ) -> AwaitableResult[
+        _ProductNotSubscribableError, SubscriptionWithUserIdAndProductId
+    ]:
         return (
             Wrapper(subscription.product_id)
             .map_to_awaitable_result(self._product_repository.read_product_by_id)
-            .map_success_to_result(self._ensure_product_status_is_published)
+            .map_success_to_result(
+                self._ensure_product_status_is_published,
+                subscription=subscription,
+            )
             .core
         )
 
@@ -80,7 +115,7 @@ class SubscriptionService:
     ]:
         return (
             Wrapper(subscription)
-            .tap_to_awaitable_result(self._read_product_and_ensure_status_is_published)
+            .map_to_awaitable_result(self._read_product_and_ensure_status_is_published)
             .map_success_to_awaitable_result(
                 self._subscription_repository.create_subscription
             )
@@ -101,7 +136,7 @@ class SubscriptionService:
         return self._subscription_repository.read_subscriptions()
 
     def update_subscription(
-        self, subscription: SubscriptionWithUserIdAndProductId
+        self, update: SubscriptionUpdate
     ) -> AwaitableResult[
         _ProductNotSubscribableError
         | SubscriptionWithIdDoesNotExistError
@@ -109,8 +144,14 @@ class SubscriptionService:
         SubscriptionWithProduct,
     ]:
         return (
-            Wrapper(subscription)
-            .tap_to_awaitable_result(self._read_product_and_ensure_status_is_published)
+            Wrapper(update.id)
+            .map_to_awaitable_result(
+                self._subscription_repository.read_subscription_with_user_id_and_product_id_by_id
+            )
+            .map_success(self._merge_with_update, update=update)
+            .map_success_to_awaitable_result(
+                self._read_product_and_ensure_status_is_published
+            )
             .map_success_to_awaitable_result(
                 self._subscription_repository.update_subscription
             )

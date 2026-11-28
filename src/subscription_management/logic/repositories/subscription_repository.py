@@ -190,6 +190,18 @@ class SubscriptionRepository:
             .core
         )
 
+    def read_subscription_with_user_id_and_product_id_by_id(
+        self, id_: UUID
+    ) -> AwaitableResult[
+        SubscriptionWithIdDoesNotExistError, SubscriptionWithUserIdAndProductId
+    ]:
+        return (
+            Wrapper(id_)
+            .map_to_awaitable_result(self._read_subscription_by_id)
+            .map_success(SubscriptionModel.to_subscription_with_user_id_and_product_id)
+            .core
+        )
+
     def read_subscriptions(self) -> AwaitableTuple[SubscriptionWithProduct]:
         return (
             AwaitableTupleWrapper(self._read_subscriptions())
